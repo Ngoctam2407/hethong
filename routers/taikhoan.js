@@ -2,7 +2,9 @@ var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
+var auth = require('./auth');
 
+router.use(auth.requireAdmin);
 // 1. GET: Danh sách (Địa chỉ: /taikhoan)
 router.get('/', async (req, res) => {
     var tk = await TaiKhoan.find();
@@ -69,7 +71,7 @@ router.get('/xoa/:id', async (req, res) => {
     res.redirect('/taikhoan');
 });
 
-// GET: Chuyển đổi trạng thái khóa/mở (Địa chỉ: /taikhoan/trangthai/:id)
+// 7. GET: Chuyển đổi trạng thái khóa/mở (Địa chỉ: /taikhoan/trangthai/:id)
 router.get('/trangthai/:id', async (req, res) => {
     try {
         // 1. Tìm tài khoản hiện tại
@@ -89,4 +91,6 @@ router.get('/trangthai/:id', async (req, res) => {
         res.redirect('/taikhoan');
     }
 });
+
+
 module.exports = router;

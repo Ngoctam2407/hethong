@@ -8,10 +8,16 @@ router.use(requireAdmin);
 // 1. GET: Danh sách phòng học (Địa chỉ: /phonghoc)
 router.get('/', async (req, res) => {
     try {
-        var dsPhong = await PhongHoc.find();
-        res.render('phonghoc', { title: 'Danh sách phòng học', dsphong: dsPhong });
+        var ds = await PhongHoc.find().sort({ TenPhong: 1 });
+
+        // Sau đó truyền biến ds này vào trang ejs như bình thường
+        res.render('phonghoc', {
+            title: 'Cơ Sở Vật Chất',
+            dsphong: ds // Nhớ kiểm tra tên biến này khớp với file EJS của em nhé
+        });
     } catch (err) {
-        res.status(500).send("Lỗi khi lấy danh sách phòng");
+        console.error(err);
+        res.send("Có lỗi khi lấy danh sách phòng");
     }
 });
 

@@ -4,6 +4,11 @@
             <i class="fas fa-book-reader"></i> <span>Edu KT</span>
         </a>
 
+        <div class="search-box ms-3">
+            <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm lớp học..."
+                style="padding: 6px 15px; width: 220px; border-radius: 20px; border: 1px solid #ff99cc; outline: none; font-size: 0.9rem;">
+        </div>
+
         <div class="ms-auto d-flex align-items-center">
             <% if(isLoggedIn && user){ %>
                 <span class="me-3 fw-bold text-primary">
@@ -52,7 +57,7 @@
         <h1 class="display-3 fw-bold mb-4" style="color: #2d3436;">Hệ Thống<br><span style="color: #ff758c;">EDU KT
             </span></h1>
         <p class="text-muted fs-5 mb-5">Chào mừng bạn đã đến với nền tảng quản lý đào tạo hiện đại của Trung Tâm Khai
-            Trí. <br> Vui lòng đăng nhập để xem lịch học và phòng máy của riêng bạn.</p>
+            Trí. <br> Vui lòng đăng nhập để xem lịch học và phòng học của bạn.</p>
 </section>
 
 <% if(message){ %>
@@ -73,6 +78,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function () {
+                let value = this.value.toLowerCase();
+                let rows = document.querySelectorAll("table tbody tr");
+
+                rows.forEach(row => {
+                    // Kiểm tra xem hàng có dữ liệu không, row.cells[1] thường là tên lớp
+                    if (row.cells.length > 1) {
+                        let text = row.cells[1].textContent.toLowerCase();
+                        row.style.display = text.includes(value) ? "" : "none";
+                    }
+                });
+            });
+        }
+    </script>
 
     <script>
         function dongThongBao() {

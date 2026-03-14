@@ -65,9 +65,17 @@
                     <h2 class="fw-bold text-dark mb-1">Cơ Sở Vật Chất</h2>
                     <p class="text-muted mb-0">Quản lý không gian giảng dạy và học tập Edu KT</p>
                 </div>
-                <a href="/phonghoc/them" class="btn main-btn shadow-sm">
-                    <i class="fas fa-plus-circle me-2"></i>Thêm phòng học
-                </a>
+                <% if (dsphong.length>= 12) { %>
+                    <button class="btn btn-secondary shadow-sm"
+                        style="border-radius: 50px; padding: 10px 25px; cursor: not-allowed;" disabled
+                        title="Hệ thống đã đủ 12 phòng cố định theo sơ đồ">
+                        <i class="fas fa-lock me-2"></i>Đã đủ 12 phòng
+                    </button>
+                    <% } else { %>
+                        <a href="/phonghoc/them" class="btn main-btn shadow-sm">
+                            <i class="fas fa-plus-circle me-2"></i>Thêm phòng học (<%= dsphong.length %>/12)
+                        </a>
+                        <% } %>
             </div>
 
             <div class="table-card">
