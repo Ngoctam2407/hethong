@@ -18,57 +18,27 @@
 <body>
     <%- include('header') %>
 
-        <div class="container py-5">
-            <div class="form-container">
-                <h3 class="fw-bold text-center mb-4"><i class="fas fa-calendar-plus text-danger me-2"></i>Thêm Lịch Học
-                </h3>
-
-                <form action="/tkb/them" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Tên môn học</label>
-                        <input type="text" name="MonHoc" class="form-control" placeholder="Ví dụ: Lập trình Node.js"
-                            required>
+        <div class="table-card">
+            <form action="/tkb/them" method="POST">
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <label class="form-label"><i class="fas fa-book me-2 text-info"></i>Môn Học</label>
+                        <select name="MonHoc" class="form-select shadow-sm" required>
+                            <option value="" selected disabled>-- Chọn môn học từ danh sách --</option>
+                            <% dsmon.forEach(mon=> { %>
+                                <option value="<%= mon._id %>">
+                                    <%= mon.TenMonHoc %>
+                                </option>
+                                <% }) %>
+                        </select>
+                        <small class="text-muted ms-2">Dữ liệu được lấy từ danh mục Môn học</small>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Thứ trong tuần</label>
-                            <select name="Thu" class="form-select" required>
-                                <option value="Thứ 2">Thứ 2</option>
-                                <option value="Thứ 3">Thứ 3</option>
-                                <option value="Thứ 4">Thứ 4</option>
-                                <option value="Thứ 5">Thứ 5</option>
-                                <option value="Thứ 6">Thứ 6</option>
-                                <option value="Thứ 7">Thứ 7</option>
-                                <option value="Chủ Nhật">Chủ Nhật</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Ca học</label>
-                            <select name="CaHoc" class="form-select" required>
-                                <option value="Sáng">Sáng (07:30 - 11:00)</option>
-                                <option value="Chiều">Chiều (13:30 - 17:00)</option>
-                                <option value="Tối">Tối (18:00 - 21:00)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tiết bắt đầu</label>
-                            <input type="number" name="TietBatDau" class="form-control" min="1" max="10" required>
-                        </div>
-
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Tiết kết thúc</label>
-                            <input type="number" name="TietKetThuc" class="form-control" min="1" max="10" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Giảng viên giảng dạy</label>
-                        <select name="GiangVien" class="form-select" required>
-                            <option value="">-- Chọn giảng viên --</option>
-                            <% dsGiangVien.forEach(gv=> { %>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label"><i class="fas fa-user-tie me-2 text-success"></i>Giảng Viên</label>
+                        <select name="GiangVien" class="form-select shadow-sm" required>
+                            <option value="" selected disabled>-- Chọn giảng viên --</option>
+                            <% dsgiangvien.forEach(gv=> { %>
                                 <option value="<%= gv._id %>">
                                     <%= gv.HoVaTen %>
                                 </option>
@@ -76,26 +46,60 @@
                         </select>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Phòng học</label>
-                        <select name="PhongHoc" class="form-select" required>
-                            <option value="">-- Chọn phòng học --</option>
-                            <% dsPhong.forEach(phong=> { %>
-                                <option value="<%= phong._id %>">
-                                    <%= phong.TenPhong %> (<%= phong.LoaiPhong %>)
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label"><i class="fas fa-users me-2 text-warning"></i>Lớp Học</label>
+                        <select name="LopHoc" class="form-select shadow-sm" required>
+                            <option value="" selected disabled>-- Chọn lớp học --</option>
+                            <% dslop.forEach(lop=> { %>
+                                <option value="<%= lop._id %>">
+                                    <%= lop.TenLop %>
                                 </option>
                                 <% }) %>
                         </select>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn main-btn py-3">
-                            <i class="fas fa-save me-2"></i>Lưu Lịch Học
-                        </button>
-                        <a href="/tkb" class="btn btn-light py-2">Quay lại</a>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Phòng
+                            Học</label>
+                        <select name="PhongHoc" class="form-control shadow-sm" required>
+                            <option value="" selected disabled>-- Chọn phòng --</option>
+                            <% dsphong.forEach(p=> { %>
+                                <option value="<%= p._id %>">
+                                    <%= p.TenPhong %> (<%= p.LoaiPhong %> - Sức chứa: <%= p.SucChua %>)
+                                </option>
+                                <% }) %>
+                        </select>
                     </div>
-                </form>
-            </div>
+
+                    <div class="col-md-3 mb-4">
+                        <label class="form-label">Thứ</label>
+                        <select name="Thu" class="form-select shadow-sm">
+                            <% ["Thứ 2", "Thứ 3" , "Thứ 4" , "Thứ 5" , "Thứ 6" , "Thứ 7" , "Chủ Nhật" ].forEach(thu=> {
+                                %>
+                                <option value="<%= thu %>">
+                                    <%= thu %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 mb-4">
+                        <label class="form-label">Tiết Bắt Đầu</label>
+                        <input type="number" name="TietBatDau" min="1" max="12" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3 mb-4">
+                        <label class="form-label">Tiết Kết Thúc</label>
+                        <input type="number" name="TietKetThuc" min="1" max="12" class="form-control" required>
+                    </div>
+
+                    <div class="col-12 text-center mt-4">
+                        <button type="submit" class="btn main-btn px-5 shadow">
+                            <i class="fas fa-magic me-2"></i>Tạo buổi học ngay
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
 
         <%- include('footer') %>

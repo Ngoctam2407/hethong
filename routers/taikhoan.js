@@ -2,9 +2,9 @@ var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
-var auth = require('./auth');
+var { requireAdmin } = require('./auth');
 
-router.use(auth.requireAdmin);
+router.use(requireAdmin);
 // 1. GET: Danh sách (Địa chỉ: /taikhoan)
 router.get('/', async (req, res) => {
     var tk = await TaiKhoan.find();

@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 
         // Sau đó truyền biến ds này vào trang ejs như bình thường
         res.render('phonghoc', {
-            title: 'Cơ Sở Vật Chất',
+            title: 'Danh sách phòng học',
             dsphong: ds // Nhớ kiểm tra tên biến này khớp với file EJS của em nhé
         });
     } catch (err) {

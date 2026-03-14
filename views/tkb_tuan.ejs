@@ -1,0 +1,53 @@
+<div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white p-3">
+    <div class="calendar-wrapper">
+        <div class="calendar-header-grid">
+            <div class="time-col">Tiết</div>
+            <% const days=["Thứ 2", "Thứ 3" , "Thứ 4" , "Thứ 5" , "Thứ 6" , "Thứ 7" , "Chủ Nhật" ]; %>
+                <% days.forEach(day=> { %>
+                    <div class="day-col fw-bold text-uppercase">
+                        <%= day %>
+                    </div>
+                    <% }) %>
+        </div>
+
+
+        <div class="calendar-body-grid">
+            <% for(let t=1; t <=12; t++) { %>
+                <div class="time-slot" style="grid-row: <%= t %>;">T.<%= t %>
+                </div>
+                <% } %>
+
+                    <% const dayToCol={ "Thứ 2" : 2, "Thứ 3" : 3, "Thứ 4" : 4, "Thứ 5" : 5, "Thứ 6" : 6, "Thứ 7" :
+                        7, "Chủ Nhật" : 8 }; %>
+                        <% dsTKB.forEach(item=> { %>
+                            <div class="tkb-card color-<%= item.CaHoc === 'Sáng' ? 'sang' : (item.CaHoc === 'Chiều' ? 'chieu' : 'toi') %>"
+                                style="grid-column: <%= dayToCol[item.Thu] %>; 
+                    grid-row: <%= item.TietBatDau %> / span <%= (item.TietKetThuc - item.TietBatDau + 1) %>;">
+
+                                <div class="card-summary">
+                                    <strong class="text-truncate d-block">
+                                        <%= item.MonHoc %>
+                                    </strong>
+                                    <small><i class="fas fa-map-marker-alt"></i>
+                                        <%= item.PhongHoc?.TenPhong %>
+                                    </small>
+                                </div>
+
+                                <div class="card-detail-hover">
+                                    <div class="detail-content text-white">
+                                        <p class="mb-1"><i class="fas fa-user-tie me-1"></i>
+                                            <%= item.GiangVien?.HoVaTen %>
+                                        </p>
+                                        <p class="mb-1"><i class="fas fa-clock me-1"></i> Tiết: <%= item.TietBatDau %>-
+                                                <%= item.TietKetThuc %>
+                                        </p>
+                                        <p class="mb-0"><i class="fas fa-graduation-cap me-1"></i>
+                                            <%= item.LopHoc || 'Chưa rõ' %>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <% }) %>
+        </div>
+    </div>
+</div>

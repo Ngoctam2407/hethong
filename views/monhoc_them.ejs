@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <%- include('css') %>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+
+                    <div class="mb-4">
+                        <a href="/monhoc" class="text-decoration-none text-info fw-600">
+                            <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách môn học
+                        </a>
+                    </div>
+
+                    <div class="add-card p-4 p-md-5 shadow-lg border-0" style="border-radius: 25px; background: #fff;">
+                        <div class="text-center mb-5">
+                            <div class="icon-circle bg-info-subtle d-inline-block p-4 rounded-circle mb-3">
+                                <i class="fas fa-book-open fa-3x text-info"></i>
+                            </div>
+                            <h2 class="fw-bold">Thêm Môn Học Mới</h2>
+                            <p class="text-muted">Tâm ơi, hãy điền thông tin chi tiết của môn học vào đây nhé!</p>
+                        </div>
+
+                        <form action="/monhoc/them" method="POST">
+                            <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Mã Môn Học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom" style="color: #0dcaf0;">
+                                            <i class="fas fa-id-card"></i>
+                                        </span>
+                                        <input type="text" name="MaMonHoc" class="form-control form-control-custom"
+                                            placeholder="Ví dụ: NODEJS01" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Tên Môn Học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom" style="color: #0dcaf0;">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </span>
+                                        <input type="text" name="TenMonHoc" class="form-control form-control-custom"
+                                            placeholder="Ví dụ: Lập trình Backend với Node.js" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Số Tín Chỉ</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom" style="color: #0dcaf0;">
+                                            <i class="fas fa-star"></i>
+                                        </span>
+                                        <input type="number" name="SoTinChi" class="form-control form-control-custom"
+                                            placeholder="Ví dụ: 3" min="1" max="10" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Mô Tả Môn Học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"
+                                            style="color: #0dcaf0; align-items: flex-start; padding-top: 12px;">
+                                            <i class="fas fa-align-left"></i>
+                                        </span>
+                                        <textarea name="MoTa" class="form-control form-control-custom" rows="3"
+                                            placeholder="Nhập tóm tắt nội dung môn học..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn main-btn-monhoc shadow">
+                                    <i class="fas fa-save me-2"></i> Lưu môn học này
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%- include('footer') %>
+
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
+
+<style>
+    /* CSS đồng bộ phong cách với trang Thêm Lớp của Tâm */
+    body {
+        font-family: 'Quicksand', sans-serif;
+        background-color: #f4f7f6;
+    }
+
+    .add-card {
+        transition: transform 0.3s ease;
+    }
+
+    .icon-circle {
+        width: 100px;
+        height: 100px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .label-custom {
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .input-group-text-custom {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-right: none;
+        border-radius: 12px 0 0 12px !important;
+        width: 45px;
+        justify-content: center;
+    }
+
+    .form-control-custom {
+        border-radius: 0 12px 12px 0 !important;
+        padding: 12px 15px;
+        border: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+        transition: 0.3s;
+    }
+
+    /* Bo tròn cho textarea */
+    textarea.form-control-custom {
+        border-radius: 0 12px 12px 0 !important;
+    }
+
+    .form-control-custom:focus {
+        background-color: #fff;
+        border-color: #0dcaf0;
+        box-shadow: 0 0 0 4px rgba(13, 202, 240, 0.1);
+    }
+
+    .main-btn-monhoc {
+        background: linear-gradient(135deg, #17a2b8 0%, #0dcaf0 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: 0.3s;
+    }
+
+    .main-btn-monhoc:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(13, 202, 240, 0.4);
+        color: white;
+    }
+
+    .fw-600 {
+        font-weight: 600;
+    }
+</style>

@@ -2,12 +2,39 @@ var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
+
 // GET: Trang chủ
 router.get('/', async (req, res) => {
-    res.render('index', {
-        title: 'Trang chủ',
-        isLoggedIn: req.session && req.session.user ? true : false
-    });
+    try {
+        const user = req.session.user;
+        let dsLich = [];
+
+        if (user) {
+            // TÙY THEO QUYỀN HẠN MÀ LẤY DỮ LIỆU KHÁC NHAU
+            if (user.QuyenHan === 'admin') {
+                // Admin: Xem 5 lịch học mới nhất của toàn hệ thống
+                dsLich = await TKB.find().populate('MonHoc PhongHoc GiangVien').sort({ _id: -1 }).limit(5);
+
+            } else if (user.QuyenHan === 'giangvien') {
+                // Giảng viên: Chỉ xem những lịch mà mình đi dạy
+                dsLich = await TKB.find({ GiangVien: user._id }).populate('MonHoc PhongHoc').sort({ Thu: 1 });
+
+            } else if (user.QuyenHan === 'sinhvien') {
+                // Sinh viên: Xem lịch của lớp mà sinh viên đó thuộc về
+                // (Giả sử trong model TaiKhoan của sinh viên có lưu field LopHoc)
+                dsLich = await TKB.find({ LopHoc: user.LopHoc }).populate('MonHoc PhongHoc GiangVien').sort({ Thu: 1 });
+            }
+        }
+
+        res.render('index', {
+            title: 'Trang chủ Edu KT',
+            dsLich: dsLich,
+            user: user, // Gửi user sang để EJS kiểm tra quyền
+            isLoggedIn: !!user
+        });
+    } catch (err) {
+        res.status(500).send("Lỗi phân luồng dữ liệu rồi Tâm ơi!");
+    }
 });
 // GET: Lỗi
 router.get('/error', async (req, res) => {

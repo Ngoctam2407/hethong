@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <%- include('css') %>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+
+                    <div class="mb-4">
+                        <a href="/monhoc" class="text-decoration-none text-warning fw-600">
+                            <i class="fas fa-arrow-left me-2"></i>Trở về danh sách môn học
+                        </a>
+                    </div>
+
+                    <div class="add-card p-4 p-md-5 shadow-lg border-0" style="border-radius: 25px; background: #fff;">
+                        <div class="text-center mb-5">
+                            <div class="icon-circle bg-warning-subtle d-inline-block p-4 rounded-circle mb-3">
+                                <i class="fas fa-edit fa-3x text-warning"></i>
+                            </div>
+                            <h2 class="fw-bold">Cập Nhật Môn Học</h2>
+                            <p class="text-muted">Chỉnh sửa thông tin môn: <strong>
+                                    <%= monhoc.TenMonHoc %>
+                                </strong></p>
+                        </div>
+
+                        <form action="/monhoc/sua/<%= monhoc._id %>" method="POST">
+                            <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Mã môn học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom" style="color: #ff9800;">
+                                            <i class="fas fa-id-card"></i>
+                                        </span>
+                                        <input type="text" name="MaMonHoc" class="form-control form-control-custom"
+                                            value="<%= monhoc.MaMonHoc %>" required placeholder="Ví dụ: NODE01">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Tên môn học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom" style="color: #ff9800;">
+                                            <i class="fas fa-book"></i>
+                                        </span>
+                                        <input type="text" name="TenMonHoc" class="form-control form-control-custom"
+                                            value="<%= monhoc.TenMonHoc %>" required
+                                            placeholder="Ví dụ: Lập trình Node.js">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Số tín chỉ</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom" style="color: #ff9800;">
+                                            <i class="fas fa-star"></i>
+                                        </span>
+                                        <input type="number" name="SoTinChi" class="form-control form-control-custom"
+                                            value="<%= monhoc.SoTinChi %>" min="1" max="10" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Mô tả môn học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"
+                                            style="color: #ff9800; align-items: flex-start; padding-top: 12px;">
+                                            <i class="fas fa-align-left"></i>
+                                        </span>
+                                        <textarea name="MoTa" class="form-control form-control-custom"
+                                            rows="3"><%= monhoc.MoTa %></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn main-btn shadow"
+                                    style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: #fff; border: none; padding: 14px; border-radius: 12px; font-weight: 700; text-transform: uppercase;">
+                                    <i class="fas fa-save me-2"></i> Xác nhận cập nhật
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%- include('footer') %>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

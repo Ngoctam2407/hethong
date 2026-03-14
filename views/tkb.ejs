@@ -1,212 +1,189 @@
-<div class="view-switcher-container mb-3">
-    <div class="view-nav shadow-sm">
-        <button class="nav-item active" onclick="switchView('grid')">
-            <i class="fas fa-th-large"></i> <span>Chế độ Lưới</span>
-        </button>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="vi">
 
-<div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white p-3">
-    <div class="calendar-wrapper">
-        <div class="calendar-header-grid">
-            <div class="time-col">Tiết</div>
-            <% const days=["Thứ 2", "Thứ 3" , "Thứ 4" , "Thứ 5" , "Thứ 6" , "Thứ 7" , "Chủ Nhật" ]; %>
-                <% days.forEach(day=> { %>
-                    <div class="day-col fw-bold text-uppercase">
-                        <%= day %>
-                    </div>
-                    <% }) %>
-        </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        <div class="calendar-body-grid">
-            <% for(let t=1; t <=12; t++) { %>
-                <div class="time-slot" style="grid-row: <%= t %>;">T.<%= t %>
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .main-btn {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            border: none;
+            color: white;
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+
+        .main-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 123, 255, 0.3);
+            color: white;
+        }
+
+        /* LƯỚI THỜI KHÓA BIỂU */
+        .calendar-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-width: 900px;
+            background: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .calendar-header-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+            background: #f1f4f9;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .day-col {
+            padding: 15px 0;
+            text-align: center;
+            color: #007bff;
+            font-weight: 700;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .calendar-body-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+            grid-template-rows: repeat(12, 65px);
+            /* 12 tiết học */
+            position: relative;
+        }
+
+        .time-slot {
+            border-right: 1px solid #f1f1f1;
+            border-bottom: 1px solid #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: #adb5bd;
+            font-weight: 600;
+        }
+
+        /* THẺ MÔN HỌC - Style giống cái card ở trang chủ của Tâm */
+        .tkb-card {
+            margin: 3px;
+            border-radius: 12px;
+            padding: 8px;
+            font-size: 0.75rem;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: 0.3s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: none;
+        }
+
+        .tkb-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            z-index: 5;
+        }
+
+        /* Màu sắc theo buổi (Đồng bộ Gradient) */
+        .color-sang {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .color-chieu {
+            background: linear-gradient(135deg, #6610f2 0%, #007bff 100%);
+        }
+
+        .color-toi {
+            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+        }
+
+        .table-card {
+            border: none;
+            border-radius: 20px;
+            background: #ffffff;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+            /* Để xem được trên điện thoại */
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container mt-5 mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="fw-bold mb-1" style="font-size: 2.2rem;">Lịch Học <span>Của Tâm</span></h1>
+                    <p class="text-muted">Dưới đây là thời khóa biểu đã được phê duyệt</p>
                 </div>
-                <% } %>
+                <a href="/tkb/dangky" class="main-btn">
+                    <i class="fas fa-plus-circle me-2"></i>Đăng ký mới
+                </a>
+            </div>
 
-                    <% const dayToCol={ "Thứ 2" : 2, "Thứ 3" : 3, "Thứ 4" : 4, "Thứ 5" : 5, "Thứ 6" : 6, "Thứ 7" :
-                        7, "Chủ Nhật" : 8 }; %>
-                        <% dsTKB.forEach(item=> { %>
-                            <div class="tkb-card color-<%= item.CaHoc === 'Sáng' ? 'sang' : (item.CaHoc === 'Chiều' ? 'chieu' : 'toi') %>"
-                                style="grid-column: <%= dayToCol[item.Thu] %>; 
-                            grid-row: <%= item.TietBatDau || 1 %> / span <%= (item.TietKetThuc - item.TietBatDau + 1) || 3 %>;">
+            <div class="table-card">
+                <div class="calendar-wrapper">
+                    <div class="calendar-header-grid">
+                        <div class="day-col" style="background: #f8f9fa;">Tiết</div>
+                        <div class="day-col">Thứ 2</div>
+                        <div class="day-col">Thứ 3</div>
+                        <div class="day-col">Thứ 4</div>
+                        <div class="day-col">Thứ 5</div>
+                        <div class="day-col">Thứ 6</div>
+                        <div class="day-col">Thứ 7</div>
+                        <div class="day-col border-right-0">Chủ Nhật</div>
+                    </div>
 
-                                <div class="card-summary">
-                                    <strong class="text-truncate d-block">
-                                        <%= item.MonHoc %>
-                                    </strong>
-                                    <small><i class="fas fa-map-marker-alt"></i>
-                                        <%= item.PhongHoc?.TenPhong %>
-                                    </small>
-                                </div>
-
-                                <div class="card-detail-hover">
-                                    <div class="detail-content">
-                                        <p><i class="fas fa-user-tie me-1"></i>
-                                            <%= item.GiangVien?.HoVaTen %>
-                                        </p>
-                                        <p><i class="fas fa-clock me-1"></i> Tiết: <%= item.TietBatDau %>-<%=
-                                                    item.TietKetThuc %>
-                                        </p>
-                                        <p><i class="fas fa-graduation-cap me-1"></i> Lớp: <%= item.LopHoc || 'Chưa rõ'
-                                                %>
-                                        </p>
-                                    </div>
-                                </div>
+                    <div class="calendar-body-grid">
+                        <% for(let i=1; i<=12; i++) { %>
+                            <div class="time-slot">
+                                <%= i %>
                             </div>
-                            <% }) %>
+                            <% for(let j=2; j<=8; j++) { %>
+                                <div class="time-slot" id="slot-<%= i %>-<%= j %>"></div>
+                                <% } %>
+                                    <% } %>
+
+                                        <% dsTKB.forEach(tkb=> {
+                                            // logic tính toán vị trí dựa trên Thứ và Tiết
+                                            // Giả sử Thứ 2 là cột 2, Thứ 3 là cột 3...
+                                            // Tiết 1 là hàng 1, Tiết 2 là hàng 2...
+                                            %>
+                                            <div class="tkb-card color-chieu"
+                                                style="grid-column: <%= tkb.ThuIndex %>; grid-row: <%= tkb.TietBatDau %> / span <%= tkb.SoTiet %>;">
+                                                <div class="fw-bold">
+                                                    <%= tkb.MonHoc.TenMonHoc %>
+                                                </div>
+                                                <div class="opacity-75" style="font-size: 0.65rem;">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    <%= tkb.PhongHoc.TenPhong %>
+                                                </div>
+                                            </div>
+                                            <% }) %>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
-<style>
-    /* 1. Thanh điều hướng chế độ xem */
-    .view-switcher-container {
-        display: flex;
-        justify-content: flex-start;
-    }
+        <%- include('footer') %>
+</body>
 
-    .view-nav {
-        display: inline-flex;
-        background-color: #f1f3f4;
-        padding: 5px;
-        border-radius: 12px;
-        border: 1px solid #e0e0e0;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: 10px;
-        text-decoration: none;
-        color: #5f6368;
-        font-weight: 500;
-        font-size: 0.9rem;
-        border: none;
-        background: transparent;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .nav-item.active {
-        background: linear-gradient(135deg, #1e70ff 0%, #8337ff 100%);
-        color: white !important;
-        box-shadow: 0 4px 10px rgba(30, 112, 255, 0.2);
-    }
-
-    /* 2. Khung TKB tổng thể */
-    .calendar-wrapper {
-        display: flex;
-        flex-direction: column;
-        min-width: 900px;
-        background-color: #fff;
-        border: 1px solid #dee2e6;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    }
-
-    .calendar-header-grid {
-        display: grid;
-        grid-template-columns: 80px repeat(7, 1fr);
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        text-align: center;
-    }
-
-    .day-col {
-        padding: 12px 0;
-        border-right: 1px solid #eee;
-        color: #4e73df;
-    }
-
-    .calendar-body-grid {
-        display: grid;
-        grid-template-columns: 80px repeat(7, 1fr);
-        grid-template-rows: repeat(12, 60px);
-        position: relative;
-        background-color: #fff;
-        grid-auto-rows: 0;
-        overflow: hidden;
-    }
-
-    /* 3. Ô tiết học và đường kẻ */
-    .time-slot {
-        border-right: 1px solid #eee;
-        border-bottom: 1px solid #f0f0f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #fdfdfd;
-        font-size: 0.85rem;
-        color: #888;
-    }
-
-    /* 4. Thẻ môn học và hiệu ứng Hover mượt mà */
-    .tkb-card {
-        margin: 4px;
-        border-radius: 12px;
-        position: relative;
-        z-index: 2;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        box-sizing: border-box;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-    }
-
-    .card-summary {
-        padding: 8px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-
-    .card-detail-hover {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(5px);
-        color: white !important;
-        padding: 10px;
-        font-size: 0.75rem;
-        transform: translateY(101%);
-        transition: transform 0.3s ease;
-    }
-
-    .tkb-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        z-index: 10;
-    }
-
-    .tkb-card:hover .card-detail-hover {
-        transform: translateY(0);
-    }
-
-    /* 5. Màu sắc ca học rực rỡ */
-    .color-sang {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        color: #0d47a1;
-        border-left: 4px solid #0d47a1;
-    }
-
-    .color-chieu {
-        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-        color: #e65100;
-        border-left: 4px solid #e65100;
-    }
-
-    .color-toi {
-        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-        color: #1b5e20;
-        border-left: 4px solid #1b5e20;
-    }
-</style>
+</html>

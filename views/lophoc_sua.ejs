@@ -69,8 +69,15 @@
                                         <span class="input-group-text input-group-text-custom">
                                             <i class="fas fa-calendar-alt"></i>
                                         </span>
-                                        <input type="text" name="NienKhoa" class="form-control form-control-custom"
-                                            value="<%= lop.NienKhoa %>" placeholder="Ví dụ: 2024 - 2028">
+                                        <select name="NienKhoa" class="form-select form-control-custom">
+                                            <% let namBatDau=2021; let soNamHoc=5; for(let i=0; i < soNamHoc; i++) { let
+                                                nienKhoaHienTai=(namBatDau + i) + " - " + (namBatDau + i + 1); let
+                                                isSelected=(lop.NienKhoa===nienKhoaHienTai) ? 'selected' : '' ; %>
+                                                <option value="<%= nienKhoaHienTai %>" <%=isSelected %>>
+                                                    <%= nienKhoaHienTai %>
+                                                </option>
+                                                <% } %>
+                                        </select>
                                     </div>
                                 </div>
 

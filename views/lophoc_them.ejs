@@ -68,8 +68,15 @@
                                         <span class="input-group-text input-group-text-custom">
                                             <i class="fas fa-calendar-alt"></i>
                                         </span>
-                                        <input type="text" name="NienKhoa" class="form-control form-control-custom"
-                                            placeholder="2024-2025" required>
+                                        <select name="NienKhoa" class="form-select form-control-custom" required>
+                                            <option value="" selected disabled>Chọn niên khóa...</option>
+                                            <% let namBatDau=2021; let soNamHoc=5; // Hiện từ 2021 đến 2026 cho đủ 4-5
+                                                năm nhé for(let i=0; i < soNamHoc; i++) { let range=(namBatDau + i)
+                                                + " - " + (namBatDau + i + 1); %>
+                                                <option value="<%= range %>">Niên khóa <%= range %>
+                                                </option>
+                                                <% } %>
+                                        </select>
                                     </div>
                                 </div>
 
