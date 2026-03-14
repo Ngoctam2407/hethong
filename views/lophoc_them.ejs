@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <%- include('css') %>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+
+                    <div class="mb-4">
+                        <a href="/lophoc" class="text-decoration-none text-primary fw-600">
+                            <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách lớp
+                        </a>
+                    </div>
+
+                    <div class="add-card p-4 p-md-5 shadow-lg border-0" style="border-radius: 25px; background: #fff;">
+                        <div class="text-center mb-5">
+                            <div class="icon-circle bg-primary-subtle d-inline-block p-4 rounded-circle mb-3">
+                                <i class="fas fa-school fa-3x text-primary"></i>
+                            </div>
+                            <h2 class="fw-bold">Thêm Lớp Học</h2>
+                            <p class="text-muted">Tâm ơi, hãy điền thông tin để khởi tạo một lớp học mới cho hệ thống
+                                nhé!</p>
+                        </div>
+
+                        <form action="/lophoc/them" method="POST">
+                            <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Mã Lớp Học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom">
+                                            <i class="fas fa-hashtag"></i>
+                                        </span>
+                                        <input type="text" name="MaLop" class="form-control form-control-custom"
+                                            placeholder="Ví dụ: TH202401" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Tên Lớp Học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom">
+                                            <i class="fas fa-chalkboard"></i>
+                                        </span>
+                                        <input type="text" name="TenLop" class="form-control form-control-custom"
+                                            placeholder="Ví dụ: Lập trình Node.js nâng cao" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Niên Khóa</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </span>
+                                        <input type="text" name="NienKhoa" class="form-control form-control-custom"
+                                            placeholder="2024-2025" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Sĩ Số Dự Kiến</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom">
+                                            <i class="fas fa-users"></i>
+                                        </span>
+                                        <input type="number" name="SiSo" class="form-control form-control-custom"
+                                            placeholder="40" min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn main-btn shadow">
+                                    <i class="fas fa-check-circle me-2"></i> Hoàn tất thêm mới
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%- include('footer') %>
+
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
+
+<style>
+    /* CSS đồng bộ hoàn hảo - Tâm cứ yên tâm sử dụng nhé! */
+    body {
+        font-family: 'Quicksand', sans-serif;
+        background-color: #f4f7f6;
+    }
+
+    .add-card {
+        transition: transform 0.3s ease;
+    }
+
+    .icon-circle {
+        width: 100px;
+        height: 100px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .label-custom {
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .input-group-text-custom {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-right: none;
+        border-radius: 12px 0 0 12px !important;
+        color: #6610f2;
+        width: 45px;
+        justify-content: center;
+    }
+
+    .form-control-custom {
+        border-radius: 0 12px 12px 0 !important;
+        padding: 12px 15px;
+        border: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+        transition: 0.3s;
+    }
+
+    /* Trường hợp input không có group-text (như password ở file tài khoản) */
+    input[type="number"].form-control-custom,
+    input[type="password"].form-control-custom {
+        border-radius: 12px !important;
+    }
+
+    .form-control-custom:focus {
+        background-color: #fff;
+        border-color: #007bff;
+        box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+    }
+
+    .main-btn {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: 0.3s;
+    }
+
+    .main-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(102, 16, 242, 0.4);
+        color: white;
+    }
+
+    .fw-600 {
+        font-weight: 600;
+    }
+</style>

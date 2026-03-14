@@ -1,0 +1,83 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-danger" href="/">
+            <i class="fas fa-book-reader"></i> <span>Edu KT</span>
+        </a>
+
+        <div class="ms-auto d-flex align-items-center">
+            <% if(isLoggedIn && user){ %>
+                <span class="me-3 fw-bold text-primary">
+                    <i class="fas fa-user-circle me-1"></i>
+                    <%= user.HoVaTen %>
+                        <small class="text-muted d-none d-sm-inline" style="font-size: 0.7rem;">
+                            (<%= user.QuyenHan==='admin' ? 'Quản trị' : (user.QuyenHan==='giangvien' ? 'Giảng viên'
+                                : 'Sinh viên' ) %>)
+                        </small>
+                </span>
+
+                <% if(user.QuyenHan==='admin' ){ %>
+                    <a href="/taikhoan" class="btn btn-sm btn-outline-danger me-2">
+                        <i class="fas fa-users"></i> Quản lý tài khoản
+                    </a>
+                    <a href="/phonghoc" class="btn btn-sm btn-outline-primary me-2">
+                        <i class="fas fa-door-open"></i> Phòng học
+                    </a>
+                    <a href="/lophoc" class="btn btn-sm btn-outline-warning me-2">
+                        <i class="fas fa-users-class"></i> Lớp học
+                    </a>
+                    <a href="/tkb/quan-ly" class="btn btn-sm btn-outline-success me-2">
+                        <i class="fas fa-calendar-check"></i> Quản lý TKB
+                    </a>
+
+                    <% } else { %>
+                        <a href="/tkb" class="btn btn-sm btn-outline-info me-2">
+                            <i class="fas fa-calendar-alt"></i> Xem Thời khóa biểu
+                        </a>
+                        <% } %>
+
+                            <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
+                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                            </a>
+
+                            <% } else { %>
+                                <a href="/auth/dangnhap" class="btn btn-danger">
+                                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                                </a>
+                                <% } %>
+        </div>
+    </div>
+</nav>
+<section class="hero-banner">
+    <div class="container text-center">
+        <h1 class="display-3 fw-bold mb-4" style="color: #2d3436;">Hệ Thống<br><span style="color: #ff758c;">EDU KT
+            </span></h1>
+        <p class="text-muted fs-5 mb-5">Chào mừng bạn đã đến với nền tảng quản lý đào tạo hiện đại của Trung Tâm Khai
+            Trí. <br> Vui lòng đăng nhập để xem lịch học và phòng máy của riêng bạn.</p>
+</section>
+
+<% if(message){ %>
+
+    <div class="modal fade show" id="thongbaoModal" style="display:block; background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Thông báo</h5>
+                    <button type="button" class="btn-close" onclick="dongThongBao()"></button>
+                </div>
+
+                <div class="modal-body text-center">
+                    <%- message %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function dongThongBao() {
+            document.getElementById("thongbaoModal").style.display = "none";
+        }
+    </script>
+
+    <% } %>

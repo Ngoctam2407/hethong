@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .hero-banner {
+            /* Chỗ này quan trọng nè Tâm: 
+           Giảm từ 100px xuống còn 40px cho phía trên và 20px cho phía dưới */
+            padding: 40px 0 20px 0;
+            background: radial-gradient(circle at top right, #e3f2fd, #ffffff);
+
+            /* Nếu muốn sát lên trên nữa, Tâm có thể thêm dòng này: */
+            margin-top: -10px;
+        }
+
+        .main-btn {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            border: none;
+            color: white;
+            padding: 10px 30px;
+            /* Anh thu nhỏ nút lại một xíu cho cân đối */
+            border-radius: 50px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .main-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 123, 255, 0.3);
+            color: white;
+        }
+
+        .feature-box {
+            border: none;
+            border-radius: 20px;
+            background: #ffffff;
+            padding: 25px;
+            /* Giảm nhẹ padding bên trong box */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .hero-banner h1 {
+            font-size: 2.8rem;
+            /* Giảm kích thước font một chút để không quá choán chỗ */
+            margin-bottom: 15px;
+        }
+
+        .hero-banner h1 span {
+            color: #007bff !important;
+        }
+
+        .hero-banner p {
+            margin-bottom: 25px;
+            /* Giảm khoảng cách dưới đoạn văn bản */
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Phần đầu   -->
+    <%- include('header') %>
+
+        <!-- Nội dung   -->
+        <div class="container mt-5">
+            <% if (isLoggedIn) { %>
+                <h3 class="fw-bold mb-4">Phòng học của bạn</h3>
+                <div class="list-group shadow-sm">
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-4"
+                        style="border-radius: 15px;">
+                        <div>
+                            <h5 class="mb-1 fw-bold text-primary">Phòng P.05 - Lập trình Node.js</h5>
+                            <small class="text-muted">Giảng viên: Nguyễn Văn A | 51 Máy tính</small>
+                        </div>
+                        <span class="badge bg-success rounded-pill p-2 px-3">Đang diễn ra</span>
+                    </div>
+                </div>
+                <% } else { %>
+                    <div class="row g-4 mt-4">
+                        <div class="col-md-4 text-center">
+                            <div class="feature-box">
+                                <i class="fas fa-bullhorn fa-3x text-warning mb-3"></i>
+                                <h5>Tin Tức</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="feature-box">
+                                <i class="fas fa-school fa-3x text-info mb-3"></i>
+                                <h5>Giới thiệu về Trung Tâm</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="feature-box">
+                                <i class="fas fa-headset fa-3x text-success mb-3"></i>
+                                <h5>Box chat hỗ trợ </h5>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+        </div>
+
+        <!-- Phần cuối  -->
+        <%- include('footer') %>
+
+</body>
+
+</html>

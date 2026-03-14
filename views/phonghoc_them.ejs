@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <%- include('css') %>
+</head>
+
+<body>
+
+    <%- include('header') %>
+
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-7">
+
+                    <div class="mb-4">
+                        <a href="/phonghoc" class="text-decoration-none text-primary fw-600">
+                            <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách
+                        </a>
+                    </div>
+
+                    <div class="add-card p-4 p-md-5">
+
+                        <div class="text-center mb-5">
+                            <div class="icon-circle bg-success-subtle d-inline-block p-4 rounded-circle mb-3">
+                                <i class="fas fa-door-open fa-3x text-success"></i>
+                            </div>
+
+                            <h2 class="fw-bold">Thêm Phòng Học</h2>
+                            <p class="text-muted">Nhập thông tin phòng học mới</p>
+                        </div>
+
+                        <form action="/phonghoc/them" method="POST">
+
+                            <div class="row">
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Tên phòng</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom">
+                                            <i class="fas fa-building"></i>
+                                        </span>
+
+                                        <input type="text" name="TenPhong" class="form-control form-control-custom"
+                                            placeholder="Ví dụ: A101" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Loại phòng</label>
+
+                                    <select name="LoaiPhong" class="form-select form-control-custom">
+                                        <option value="LyThuyet">Lý thuyết</option>
+                                        <option value="ThucHanh">Thực hành</option>
+                                        <option value="MayTinh">Máy tính</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Sức chứa</label>
+
+                                    <input type="number" name="SucChua" class="form-control form-control-custom"
+                                        placeholder="Ví dụ: 60 sinh viên" required>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Ghi chú</label>
+
+                                    <textarea name="GhiChu" class="form-control form-control-custom"
+                                        placeholder="Ví dụ: Có máy chiếu, điều hòa..."></textarea>
+                                </div>
+
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn main-btn shadow">
+                                    <i class="fas fa-check-circle me-2"></i>Thêm phòng học
+                                </button>
+                            </div>
+
+                        </form>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%- include('footer') %>
+
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

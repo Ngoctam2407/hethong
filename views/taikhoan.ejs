@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <%- include('css') %>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container mt-5 mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Thành Viên Hệ Thống</h2>
+                    <p class="text-muted mb-0">Quản lý và phân quyền người dùng Edu KT</p>
+                </div>
+                <a href="/taikhoan/them" class="btn main-btn shadow-sm">
+                    <i class="fas fa-plus-circle me-2"></i>Thêm thành viên
+                </a>
+            </div>
+
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background-color: #f8f9fa;">
+                            <tr class="text-secondary">
+                                <th class="ps-4 py-3" style="width: 80px;">STT</th>
+                                <th class="py-3">Họ và tên</th>
+                                <th class="py-3">Thông tin liên hệ</th>
+                                <th class="py-3">Tên đăng nhập</th>
+                                <th class="py-3 text-center">Quyền hạn</th>
+                                <th class="py-3 text-center">Trạng thái</th>
+                                <th class="py-3 text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% var stt=1; %>
+                                <% taikhoan.forEach(tk=> { %>
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-muted">
+                                            <%= stt++ %>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-dark">
+                                                <%= tk.HoVaTen %>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small text-muted"><i class="far fa-envelope me-1"></i>
+                                                <%= tk.Email %>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="px-2 py-1 bg-light rounded text-primary fw-600"
+                                                style="font-size: 0.85em; border: 1px solid #e9ecef;">
+                                                @<%= tk.TenDangNhap %>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+
+                                            <% if (tk.QuyenHan==='admin' ) { %>
+
+                                                <span
+                                                    class="badge badge-soft bg-primary-subtle text-primary border border-primary-subtle">
+                                                    <i class="fas fa-shield-alt me-1"></i>Quản trị
+                                                </span>
+
+                                                <% } else if (tk.QuyenHan==='giangvien' ) { %>
+
+                                                    <span
+                                                        class="badge badge-soft bg-warning-subtle text-warning border border-warning-subtle">
+                                                        <i class="fas fa-chalkboard-teacher me-1"></i>Giảng viên
+                                                    </span>
+
+                                                    <% } else { %>
+
+                                                        <span
+                                                            class="badge badge-soft bg-info-subtle text-info border border-info-subtle">
+                                                            <i class="fas fa-user-graduate me-1"></i>Sinh viên
+                                                        </span>
+
+                                                        <% } %>
+
+                                        </td>
+                                        <td class="text-center">
+                                            <% if(tk.TrangThai==1) { %>
+                                                <a href="/taikhoan/trangthai/<%= tk._id %>"
+                                                    class="btn btn-sm btn-success shadow-sm"
+                                                    title="Đang hoạt động - Nhấn để khóa">
+                                                    <i class="fas fa-unlock"></i> Đang mở
+                                                </a>
+                                                <% } else { %>
+                                                    <a href="/taikhoan/trangthai/<%= tk._id %>"
+                                                        class="btn btn-sm btn-danger shadow-sm"
+                                                        title="Đang bị khóa - Nhấn để mở">
+                                                        <i class="fas fa-lock"></i> Đã khóa
+                                                    </a>
+                                                    <% } %>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center gap-2">
+                                                <a href="/taikhoan/sua/<%= tk._id %>"
+                                                    class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm"
+                                                    title="Chỉnh sửa">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="/taikhoan/xoa/<%= tk._id %>"
+                                                    class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm"
+                                                    onclick="return confirm('Tâm ơi, em có chắc muốn xóa người dùng này không?')"
+                                                    title="Xóa">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <%- include('footer') %>
+
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <%- include('css') %>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <div class="mb-4">
+                        <a href="/phonghoc" class="text-decoration-none text-primary fw-600">
+                            <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách phòng
+                        </a>
+                    </div>
+
+                    <div class="add-card p-4 p-md-5 shadow-lg border-0" style="border-radius: 25px; background: #fff;">
+                        <div class="text-center mb-5">
+                            <div class="icon-circle bg-warning-subtle d-inline-block p-4 rounded-circle mb-3">
+                                <i class="fas fa-edit fa-3x text-warning"></i>
+                            </div>
+                            <h2 class="fw-bold">Cập Nhật Phòng Học</h2>
+                            <p class="text-muted">Tâm ơi, hãy điều chỉnh thông tin phòng học bên dưới nhé!</p>
+                        </div>
+
+                        <form action="/phonghoc/sua/<%= phong._id %>" method="POST">
+                            <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Tên phòng</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"><i
+                                                class="fas fa-door-open"></i></span>
+                                        <input type="text" name="TenPhong" class="form-control form-control-custom"
+                                            value="<%= phong.TenPhong %>" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Loại phòng</label>
+                                    <select name="LoaiPhong" class="form-select form-control-custom">
+                                        <option value="lythuyet" <%=phong.LoaiPhong==='lythuyet' ? 'selected' : '' %>
+                                            >Phòng lý thuyết</option>
+                                        <option value="thuchanh" <%=phong.LoaiPhong==='thuchanh' ? 'selected' : '' %>
+                                            >Phòng thực hành</option>
+                                        <option value="maytinh" <%=phong.LoaiPhong==='maytinh' ? 'selected' : '' %>
+                                            >Phòng máy tính</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Sức chứa</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"><i
+                                                class="fas fa-users"></i></span>
+                                        <input type="number" name="SucChua" class="form-control form-control-custom"
+                                            value="<%= phong.SucChua %>" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Trạng thái phòng</label>
+                                    <select name="TrangThai" class="form-select form-control-custom">
+                                        <option value="1" <%=phong.TrangThai==1 ? 'selected' : '' %>>Đang hoạt động (Sẵn
+                                            sàng)</option>
+                                        <option value="0" <%=phong.TrangThai==0 ? 'selected' : '' %>>Tạm ngưng (Bảo trì)
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Ghi chú chi tiết</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"><i
+                                                class="fas fa-sticky-note"></i></span>
+                                        <textarea name="GhiChu" class="form-control form-control-custom" rows="3"
+                                            placeholder="Ví dụ: Máy chiếu bị mờ, cần thay bóng đèn..."><%= phong.GhiChu %></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn btn-update shadow">
+                                    <i class="fas fa-save me-2"></i> Lưu thay đổi ngay
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%- include('footer') %>
+</body>
+
+</html>
+
+<style>
+    /* Style đồng bộ cho trang Sửa */
+    .btn-update {
+        background: linear-gradient(135deg, #f1b44c 0%, #ff9f05 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-update:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(255, 159, 5, 0.4);
+        color: white;
+    }
+
+    .label-custom {
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .input-group-text-custom {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-right: none;
+        border-radius: 12px 0 0 12px !important;
+        color: #ff9f05;
+        width: 45px;
+        justify-content: center;
+    }
+
+    .form-control-custom {
+        border-radius: 0 12px 12px 0 !important;
+        padding: 12px 15px;
+        border: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+    }
+
+    textarea.form-control-custom {
+        border-radius: 0 12px 12px 0 !important;
+    }
+</style>
