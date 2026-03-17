@@ -10,7 +10,8 @@ const tkbSchema = new mongoose.Schema({
     Thu: { type: String, required: true },
     CaHoc: { type: String, required: false, default: "" }, // Tâm có thể để trống lúc tạo, sau đó tự động gán dựa vào tiết bắt đầu
     TietBatDau: { type: Number, required: true },
-    TietKetThuc: { type: Number, required: true }
+    TietKetThuc: { type: Number, required: true },
+    TrangThai: { type: String, enum: ['cho-duyet', 'da-duyet'], default: 'cho-duyet' }
 });
 
 module.exports = mongoose.model('TKB', tkbSchema);

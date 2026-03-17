@@ -140,31 +140,19 @@
         <%- include('footer') %>
 
             <script>
-                async function duyetLich(button, id) {
-                    try {
-                        // Tâm nhớ thêm tiền tố /tkb vào trước /duyet nhé
-                        const response = await fetch(`/tkb/duyet/${id}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        });
+                async function duyetLich(id) {
+                    const response = await fetch(`/tkb/cap-nhat-trang-thai/${id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'duyet' }) // Gửi chữ 'duyet' lên nè
+                    });
 
-                        const result = await response.json();
-
-                        if (result.success) {
-                            const row = document.getElementById(`row-${id}`);
-                            row.style.transition = "all 0.5s ease";
-                            row.style.opacity = "0";
-                            row.style.transform = "translateX(50px)";
-                            setTimeout(() => row.remove(), 500);
-                        } else {
-                            alert("Lỗi từ Server: " + result.message);
-                        }
-                    } catch (err) {
-                        console.error(err);
-                        alert("Vẫn chưa kết nối được! Tâm kiểm tra lại dấu /tkb trong code JavaScript nha.");
+                    if (response.ok) {
+                        // Làm mờ và xóa dòng đó đi cho đẹp mắt
+                        document.getElementById(`row-${id}`).remove();
+                        alert("Tâm đã duyệt thành công! Môn học đã hiện lên lưới rồi nhé.");
                     }
+                }
                 }
             </script>
 </body>

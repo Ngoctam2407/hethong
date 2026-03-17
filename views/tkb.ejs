@@ -153,31 +153,42 @@
                     </div>
 
                     <div class="calendar-body-grid">
-                        <% for(let i=1; i<=12; i++) { %>
-                            <div class="time-slot">
-                                <%= i %>
+                        <% for(let t=1; t <=12; t++) { %>
+                            <div class="time-slot" style="grid-column: 1; grid-row: <%= t %>;">
+                                T.<%= t %>
                             </div>
-                            <% for(let j=2; j<=8; j++) { %>
-                                <div class="time-slot" id="slot-<%= i %>-<%= j %>"></div>
-                                <% } %>
-                                    <% } %>
+                            <% } %>
 
-                                        <% dsTKB.forEach(tkb=> {
-                                            // logic tính toán vị trí dựa trên Thứ và Tiết
-                                            // Giả sử Thứ 2 là cột 2, Thứ 3 là cột 3...
-                                            // Tiết 1 là hàng 1, Tiết 2 là hàng 2...
-                                            %>
-                                            <div class="tkb-card color-chieu"
-                                                style="grid-column: <%= tkb.ThuIndex %>; grid-row: <%= tkb.TietBatDau %> / span <%= tkb.SoTiet %>;">
-                                                <div class="fw-bold">
-                                                    <%= tkb.MonHoc.TenMonHoc %>
-                                                </div>
-                                                <div class="opacity-75" style="font-size: 0.65rem;">
-                                                    <i class="fas fa-map-marker-alt"></i>
-                                                    <%= tkb.PhongHoc.TenPhong %>
-                                                </div>
-                                            </div>
-                                            <% }) %>
+                                <% const dayToCol={ "Thứ 2" : 2, "Thứ 3" : 3, "Thứ 4" : 4, "Thứ 5" : 5, "Thứ 6" :
+                                    6, "Thứ 7" : 7, "Chủ Nhật" : 8 }; dsTKB.forEach(tkb=> {
+                                    // 2. Lấy số cột từ bảng từ điển phía trên
+                                    const colIndex = dayToCol[tkb.Thu] || 2;
+
+                                    // 3. Tính xem môn này học trong bao nhiêu tiết để thẻ giãn ra (span)
+                                    const spanTiet = (tkb.TietKetThuc - tkb.TietBatDau) + 1;
+                                    %>
+                                    <div class="tkb-card color-<%= tkb.CaHoc === 'Sáng' ? 'sang' : (tkb.CaHoc === 'Chiều' ? 'chieu' : 'toi') %>"
+                                        style="grid-column: <%= colIndex %>; grid-row: <%= tkb.TietBatDau %> / span <%= spanTiet %>;">
+
+                                        <div class="fw-bold text-truncate">
+                                            <%= tkb.MonHoc.TenMonHoc %>
+                                        </div>
+
+                                        <div class="opacity-75" style="font-size: 0.65rem;">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            <%= tkb.PhongHoc ? tkb.PhongHoc.TenPhong : 'Chưa rõ phòng' %>
+                                        </div>
+
+                                        <div class="card-detail-hover">
+                                            <small><i class="fas fa-user-tie me-1"></i>
+                                                <%= tkb.GiangVien?.HoVaTen %>
+                                            </small>
+                                            <br>
+                                            <small><i class="fas fa-clock me-1"></i> Tiết <%= tkb.TietBatDau %>-
+                                                    <%= tkb.TietKetThuc %></small>
+                                        </div>
+                                    </div>
+                                    <% }) %>
                     </div>
                 </div>
             </div>
