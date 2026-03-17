@@ -126,75 +126,79 @@
 </head>
 
 <body>
-    <%- include('header') %>
 
-        <div class="container mt-5 mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="fw-bold mb-1" style="font-size: 2.2rem;">Lịch Học <span>Của Tâm</span></h1>
-                    <p class="text-muted">Dưới đây là thời khóa biểu đã được phê duyệt</p>
-                </div>
-                <a href="/tkb/dangky" class="main-btn">
-                    <i class="fas fa-plus-circle me-2"></i>Đăng ký mới
-                </a>
+    <div class="container mt-5 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-bold mb-1" style="font-size: 2.2rem;">Lịch Học <span>Của Tâm</span></h1>
+                <p class="text-muted">Dưới đây là thời khóa biểu đã được phê duyệt</p>
             </div>
+            <a href="/tkb/dangky" class="main-btn">
+                <i class="fas fa-plus-circle me-2"></i>Đăng ký mới
+            </a>
+        </div>
 
-            <div class="table-card">
-                <div class="calendar-wrapper">
-                    <div class="calendar-header-grid">
-                        <div class="day-col" style="background: #f8f9fa;">Tiết</div>
-                        <div class="day-col">Thứ 2</div>
-                        <div class="day-col">Thứ 3</div>
-                        <div class="day-col">Thứ 4</div>
-                        <div class="day-col">Thứ 5</div>
-                        <div class="day-col">Thứ 6</div>
-                        <div class="day-col">Thứ 7</div>
-                        <div class="day-col border-right-0">Chủ Nhật</div>
-                    </div>
+        <div class="table-card">
+            <div class="calendar-wrapper">
+                <div class="calendar-header-grid">
+                    <div class="day-col" style="background: #f8f9fa;">Tiết</div>
+                    <div class="day-col">Thứ 2</div>
+                    <div class="day-col">Thứ 3</div>
+                    <div class="day-col">Thứ 4</div>
+                    <div class="day-col">Thứ 5</div>
+                    <div class="day-col">Thứ 6</div>
+                    <div class="day-col">Thứ 7</div>
+                    <div class="day-col border-right-0">Chủ Nhật</div>
+                </div>
 
-                    <div class="calendar-body-grid">
-                        <% for(let t=1; t <=12; t++) { %>
-                            <div class="time-slot" style="grid-column: 1; grid-row: <%= t %>;">
-                                T.<%= t %>
-                            </div>
-                            <% } %>
+                <div class="calendar-body-grid">
+                    <% for(let t=1; t <=12; t++) { %>
+                        <div class="time-slot" style="grid-column: 1; grid-row: <%= t %>;">
+                            T.<%= t %>
+                        </div>
+                        <% } %>
 
-                                <% const dayToCol={ "Thứ 2" : 2, "Thứ 3" : 3, "Thứ 4" : 4, "Thứ 5" : 5, "Thứ 6" :
-                                    6, "Thứ 7" : 7, "Chủ Nhật" : 8 }; dsTKB.forEach(tkb=> {
-                                    // 2. Lấy số cột từ bảng từ điển phía trên
-                                    const colIndex = dayToCol[tkb.Thu] || 2;
+                            <% const dayToCol={ "Thứ 2" : 2, "Thứ 3" : 3, "Thứ 4" : 4, "Thứ 5" : 5, "Thứ 6" : 6, "Thứ 7"
+                                : 7, "Chủ Nhật" : 8 }; dsTKB.forEach(tkb=> {
+                                // 2. Lấy số cột từ bảng từ điển phía trên
+                                const colIndex = dayToCol[tkb.Thu] || 2;
 
-                                    // 3. Tính xem môn này học trong bao nhiêu tiết để thẻ giãn ra (span)
-                                    const spanTiet = (tkb.TietKetThuc - tkb.TietBatDau) + 1;
-                                    %>
-                                    <div class="tkb-card color-<%= tkb.CaHoc === 'Sáng' ? 'sang' : (tkb.CaHoc === 'Chiều' ? 'chieu' : 'toi') %>"
-                                        style="grid-column: <%= colIndex %>; grid-row: <%= tkb.TietBatDau %> / span <%= spanTiet %>;">
+                                // 3. Tính xem môn này học trong bao nhiêu tiết để thẻ giãn ra (span)
+                                const spanTiet = (tkb.TietKetThuc - tkb.TietBatDau) + 1;
+                                %>
+                                <div class="tkb-card color-<%= tkb.CaHoc === 'Sáng' ? 'sang' : (tkb.CaHoc === 'Chiều' ? 'chieu' : 'toi') %>"
+                                    style="grid-column: <%= colIndex %>; grid-row: <%= tkb.TietBatDau %> / span <%= spanTiet %>;">
 
-                                        <div class="fw-bold text-truncate">
-                                            <%= tkb.MonHoc.TenMonHoc %>
-                                        </div>
-
-                                        <div class="opacity-75" style="font-size: 0.65rem;">
-                                            <i class="fas fa-map-marker-alt me-1"></i>
-                                            <%= tkb.PhongHoc ? tkb.PhongHoc.TenPhong : 'Chưa rõ phòng' %>
-                                        </div>
-
-                                        <div class="card-detail-hover">
-                                            <small><i class="fas fa-user-tie me-1"></i>
-                                                <%= tkb.GiangVien?.HoVaTen %>
-                                            </small>
-                                            <br>
-                                            <small><i class="fas fa-clock me-1"></i> Tiết <%= tkb.TietBatDau %>-
-                                                    <%= tkb.TietKetThuc %></small>
-                                        </div>
+                                    <div class="fw-bold text-truncate">
+                                        <%= tkb.MonHoc.TenMonHoc %>
                                     </div>
-                                    <% }) %>
-                    </div>
+
+                                    <div class="opacity-75" style="font-size: 0.65rem;">
+                                        <i class="fas fa-users me-1"></i>
+                                        <%= tkb.LopHoc ? tkb.LopHoc.TenLop : 'Chưa rõ lớp' %>
+                                    </div>
+
+                                    <div class="opacity-75" style="font-size: 0.65rem;">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        <%= tkb.PhongHoc ? tkb.PhongHoc.TenPhong : 'Chưa rõ phòng' %>
+                                    </div>
+
+                                    <div class="card-detail-hover">
+                                        <small><i class="fas fa-user-tie me-1"></i>
+                                            <%= tkb.GiangVien?.HoVaTen %>
+                                        </small>
+                                        <br>
+                                        <small><i class="fas fa-clock me-1"></i> Tiết <%= tkb.TietBatDau %>-
+                                                <%= tkb.TietKetThuc %></small>
+                                    </div>
+                                </div>
+                                <% }) %>
                 </div>
             </div>
         </div>
+    </div>
 
-        <%- include('footer') %>
+    <%- include('footer') %>
 </body>
 
 </html>

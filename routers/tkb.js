@@ -16,20 +16,41 @@ const timeOverlap = (start, end) => ({
 // GET: Hiện danh sách TKB
 router.get('/', async (req, res) => {
     try {
-        // Populate giúp lấy thông tin chi tiết từ bảng khác qua ID
-        const dsTKB = await TKB.find()
-            .populate('GiangVien', 'HoVaTen')
-            .populate('PhongHoc', 'TenPhong');
+        const user = req.session.user;
+        if (!user) return res.redirect('/auth/dangnhap'); // Chưa đăng nhập thì mời ra ngoài nè
+
+        // 1. Tạo điều kiện lọc ban đầu (chỉ lấy những môn đã da-duyet)
+        let query = { TrangThai: 'da-duyet' };
+
+        // 2. PHÂN LUỒNG TẠI ĐÂY:
+        if (user.VaiTro === 'SinhVien') {
+            // Nếu là Sinh viên: Chỉ tìm những lịch của đúng Lớp đó
+            // (Tâm kiểm tra xem trong DB bảng TKB có trường 'LopHoc' không nhé)
+            query.LopHoc = user.LopHoc;
+        } else if (user.VaiTro === 'GiangVien') {
+            // Nếu là Giảng viên: Chỉ tìm những lịch mà ID giảng viên khớp với người đang logged in
+            query.GiangVien = user._id;
+        }
+        // Nếu là Admin thì query giữ nguyên { TrangThai: 'da-duyet' } để xem tất cả
+
+        // 3. Thực hiện tìm kiếm
+        const thoiKhoaBieu = await TKB.find(query)
+            .populate('MonHoc')
+            .populate('PhongHoc')
+            .populate('GiangVien')
+            .populate('LopHoc')
+            .sort({ Thu: 1, TietBatDau: 1 }); // Sắp xếp cho đẹp nè Tâm
 
         res.render('tkb', {
-            title: 'Thời Khóa Biểu Edu KT',
-            dsTKB: dsTKB
+            title: 'Thời Khóa Biểu',
+            user,
+            dsTKB: thoiKhoaBieu// Gửi danh sách đã lọc riêng cho từng người
         });
     } catch (err) {
-        res.status(500).send("Lỗi rồi Tâm ơi: " + err);
+        console.error(err);
+        res.status(500).send("Lỗi hệ thống rồi Tâm ơi!");
     }
 });
-
 // GET: Hiện trang thêm TKB
 router.post('/them', async (req, res) => {
     try {
@@ -85,29 +106,23 @@ router.post('/them', async (req, res) => {
     }
 });
 
-// POST: Lưu TKB mới
-router.post('/them', async (req, res) => {
-    try {
-        const moi = new TKB(req.body);
-        await moi.save();
-        req.session.success = "Thêm lịch học thành công rồi Tâm ơi! 🎉";
-        res.redirect('/tkb');
-    } catch (err) {
-        res.send("Lỗi lưu TKB: " + err);
-    }
-});
+
 // GET: Hiện trang Sửa TKB
 router.get('/sua/:id', async (req, res) => {
     try {
         const item = await TKB.findById(req.params.id);
         const dsPhong = await PhongHoc.find();
         const dsGiangVien = await TaiKhoan.find({ QuyenHan: 'giangvien' });
+        const dsMonHoc = await MonHoc.find();
+        const dsLopHoc = await LopHoc.find();
 
         res.render('tkb_sua', {
             title: 'Chỉnh Sửa Lịch Học',
-            item: item,
+            tkb: item,
             dsPhong: dsPhong,
-            dsGiangVien: dsGiangVien
+            dsGiangVien: dsGiangVien,
+            dsMonHoc: dsMonHoc,
+            dsLopHoc: dsLopHoc
         });
     } catch (err) {
         res.send("Lỗi không tìm thấy lịch để sửa Tâm ơi: " + err);
@@ -117,6 +132,12 @@ router.get('/sua/:id', async (req, res) => {
 // POST: Cập nhật TKB sau khi sửa
 router.post('/sua/:id', async (req, res) => {
     try {
+        const { TietBatDau } = req.body;
+        const tietBD = parseInt(TietBatDau, 10);
+
+        // Tự động tính lại ca học nếu Tâm có thay đổi tiết
+        req.body.CaHoc = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
+
         await TKB.findByIdAndUpdate(req.params.id, req.body);
         req.session.success = "Đã cập nhật lịch học mới rồi nhé Tâm! ✨";
         res.redirect('/tkb');
@@ -144,7 +165,8 @@ router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
         const dsLich = await TKB.find({ TrangThai: 'da-duyet' })
             .populate('MonHoc')
             .populate('PhongHoc')
-            .populate('GiangVien');
+            .populate('GiangVien')
+            .populate('LopHoc')
 
         // 2. Map dữ liệu để tính toán vị trí Grid cho EJS dễ vẽ
         const dsTKB = dsLich.map(item => {
@@ -167,7 +189,7 @@ router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
 
         });
 
-        res.render('tkb_luoi', { // Tên file EJS của Tâm
+        res.render('tkb', { // Tên file EJS của Tâm
             title: 'Thời Khóa Biểu Của Tâm',
             dsTKB: dsTKB
         });
@@ -205,60 +227,68 @@ router.get('/dangky', async (req, res) => {
     }
 });
 
-// Route lưu dữ liệu
 router.post('/dang-ky-luu', async (req, res) => {
     try {
-        const { MonHoc, GiangVien, LopHoc, Thu, TietBatDau, TietKetThuc, PhongHoc } = req.body;
+        // 1. Đổi tên biến lấy từ body để không trùng với tên Model (thêm chữ ID vào sau)
+        const {
+            MonHoc: monHocID,
+            GiangVien: giangVienID,
+            LopHoc: lopHocID,
+            Thu,
+            TietBatDau,
+            TietKetThuc,
+            PhongHoc: phongHocID
+        } = req.body;
+
         const tietBD = parseInt(TietBatDau, 10);
         const tietKT = parseInt(TietKetThuc, 10);
 
         if (tietKT < tietBD) {
             req.session.error = "Tiết kết thúc phải >= tiết bắt đầu";
-            return res.redirect('back');
+            return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
-        const conflictQuery = {
-            Thu,
-            ...timeOverlap(tietBD, tietKT)
-        };
+        const conflictQuery = { Thu, ...timeOverlap(tietBD, tietKT) };
 
+        // 2. Sử dụng đúng ID đã đổi tên để kiểm tra xung đột
         const [gvConflict, roomConflict, lopConflict] = await Promise.all([
-            TKB.findOne({ GiangVien, ...conflictQuery }),
-            TKB.findOne({ PhongHoc, ...conflictQuery }),
-            TKB.findOne({ LopHoc, ...conflictQuery })
+            TKB.findOne({ GiangVien: giangVienID, ...conflictQuery }),
+            TKB.findOne({ PhongHoc: phongHocID, ...conflictQuery }),
+            TKB.findOne({ LopHoc: lopHocID, ...conflictQuery })
         ]);
 
-        if (gvConflict) {
-            req.session.error = "Giảng viên đang bận giờ này";
-            return res.redirect('back');
-        }
-        if (roomConflict) {
-            req.session.error = "Phòng đang dùng giờ này";
-            return res.redirect('back');
-        }
-        if (lopConflict) {
-            req.session.error = "Lớp này đã có tiết khác giờ này";
-            return res.redirect('back');
-        }
+        if (gvConflict) { req.session.error = "Giảng viên đang bận giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
+        if (roomConflict) { req.session.error = "Phòng đang dùng giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
+        if (lopConflict) { req.session.error = "Lớp này đã có tiết khác giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
 
-        // optional: phòng chứa >= sĩ số
-        const lop = await LopHoc.findById(LopHoc);
-        const phong = await PhongHoc.findById(PhongHoc);
-        if (phong.SucChua < lop.SiSo) {
-            req.session.error = `Phòng ${phong.TenPhong} chỉ chứa ${phong.SucChua}, Lớp ${lop.SiSo}`;
-            return res.redirect('back');
+        // 3. ĐÂY LÀ ĐOẠN QUAN TRỌNG: Gọi Model đúng cách
+        // Giả sử ở đầu file Tâm đã khai báo: const LopHocModel = require('../models/lophoc');
+        // Và const PhongHocModel = require('../models/phonghoc');
+
+        const lop = await LopHoc.findById(lopHocID); // Dùng tên Model.findById(biến ID)
+        const phong = await PhongHoc.findById(phongHocID);
+
+        if (phong && lop && phong.SucChua < lop.SiSo) {
+            req.session.error = `Phòng ${phong.TenPhong} chỉ chứa ${phong.SucChua}, Lớp có tận ${lop.SiSo} sinh viên!`;
+            return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
         const caHocTuDong = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
 
         const lichMoi = new TKB({
-            MonHoc, GiangVien, LopHoc, Thu,
-            TietBatDau: tietBD, TietKetThuc: tietKT, PhongHoc,
-            CaHoc: caHocTuDong, TrangThai: 'cho-duyet' // nếu có
+            MonHoc: monHocID,
+            GiangVien: giangVienID,
+            LopHoc: lopHocID,
+            Thu,
+            TietBatDau: tietBD,
+            TietKetThuc: tietKT,
+            PhongHoc: phongHocID,
+            CaHoc: caHocTuDong,
+            TrangThai: 'cho-duyet'
         });
 
         await lichMoi.save();
-        req.session.success = "Lưu lịch thành công";
+        req.session.success = "Lưu lịch thành công rồi nhé Tâm!";
         res.redirect('/tkb');
     } catch (err) {
         console.error(err);
@@ -297,7 +327,7 @@ router.get('/danhsachcho', async (req, res) => {
 });
 
 // Route xử lý duyệt lịch học
-router.post('/duyet/:id', async (req, res) => {
+router.post('/da-duyet/:id', async (req, res) => {
     try {
         // 1. Tìm thông tin cái lịch đang định duyệt
         const lichSapDuyet = await TKB.findById(req.params.id);

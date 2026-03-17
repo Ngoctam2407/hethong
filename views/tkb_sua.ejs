@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <%- include('css') %>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <div class="mb-4">
+                        <a href="/tkb" class="text-decoration-none text-primary fw-600">
+                            <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách TKB
+                        </a>
+                    </div>
+
+                    <div class="add-card p-4 p-md-5 shadow-lg border-0" style="border-radius: 25px; background: #fff;">
+                        <div class="text-center mb-5">
+                            <div class="icon-circle bg-primary-subtle d-inline-block p-4 rounded-circle mb-3">
+                                <i class="fas fa-calendar-check fa-3x text-primary"></i>
+                            </div>
+                            <h2 class="fw-bold">Cập Nhật Thời Khóa Biểu</h2>
+                            <p class="text-muted">Tâm ơi, hãy kiểm tra kỹ các thông tin trước khi lưu nhé!</p>
+                        </div>
+
+                        <form action="/tkb/sua/<%= tkb._id %>" method="POST">
+                            <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom">Môn học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"><i
+                                                class="fas fa-book"></i></span>
+                                        <select name="MonHoc" class="form-select form-control-custom" required>
+                                            <% dsMonHoc.forEach(mon=> { %>
+                                                <option value="<%= mon._id %>"
+                                                    <%=tkb.MonHoc.toString()===mon._id.toString() ? 'selected' : '' %>>
+                                                    <%= mon.TenMonHoc %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Giảng viên</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"><i
+                                                class="fas fa-user-tie"></i></span>
+                                        <select name="GiangVien" class="form-select form-control-custom" required>
+                                            <% dsGiangVien.forEach(gv=> { %>
+                                                <option value="<%= gv._id %>"
+                                                    <%=tkb.GiangVien.toString()===gv._id.toString() ? 'selected' : '' %>
+                                                    >
+                                                    <%= gv.HoVaTen %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Lớp học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"><i
+                                                class="fas fa-users"></i></span>
+                                        <select name="LopHoc" class="form-select form-control-custom" required>
+                                            <% dsLopHoc.forEach(lop=> { %>
+                                                <option value="<%= lop._id %>"
+                                                    <%=tkb.LopHoc.toString()===lop._id.toString() ? 'selected' : '' %>>
+                                                    <%= lop.TenLop %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Thứ</label>
+                                    <select name="Thu" class="form-select form-control-custom">
+                                        <% ["Thứ 2", "Thứ 3" , "Thứ 4" , "Thứ 5" , "Thứ 6" , "Thứ 7" , "Chủ Nhật"
+                                            ].forEach(thu=> { %>
+                                            <option value="<%= thu %>" <%=tkb.Thu===thu ? 'selected' : '' %>><%= thu %>
+                                            </option>
+                                            <% }) %>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Phòng học</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text input-group-text-custom"><i
+                                                class="fas fa-map-marker-alt"></i></span>
+                                        <select name="PhongHoc" class="form-select form-control-custom" required>
+                                            <% dsPhong.forEach(phong=> { %>
+                                                <option value="<%= phong._id %>"
+                                                    <%=tkb.PhongHoc.toString()===phong._id.toString() ? 'selected' : ''
+                                                    %>>
+                                                    <%= phong.TenPhong %> (Sức chứa: <%= phong.SucChua %>)
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Tiết bắt đầu</label>
+                                    <input type="number" name="TietBatDau" class="form-control form-control-custom"
+                                        value="<%= tkb.TietBatDau %>" min="1" max="12" required
+                                        style="border-radius: 12px !important;">
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom">Tiết kết thúc</label>
+                                    <input type="number" name="TietKetThuc" class="form-control form-control-custom"
+                                        value="<%= tkb.TietKetThuc %>" min="1" max="12" required
+                                        style="border-radius: 12px !important;">
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn btn-update shadow">
+                                    <i class="fas fa-save me-2"></i> Cập nhật lịch học
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%- include('footer') %>
+</body>
+
+</html>
+
+<style>
+    /* Style đồng bộ cho trang Sửa TKB - Dùng tông xanh dương */
+    .btn-update {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 14px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-update:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+        color: white;
+    }
+
+    .label-custom {
+        font-weight: 700;
+        color: #444;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .input-group-text-custom {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-right: none;
+        border-radius: 12px 0 0 12px !important;
+        color: #007bff;
+        width: 45px;
+        justify-content: center;
+    }
+
+    .form-control-custom {
+        border-radius: 0 12px 12px 0 !important;
+        padding: 12px 15px;
+        border: 1px solid #e9ecef;
+        background-color: #f8f9fa;
+    }
+
+    .bg-primary-subtle {
+        background-color: #e7f1ff !important;
+    }
+</style>

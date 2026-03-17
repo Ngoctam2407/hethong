@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
+var TKB = require('../models/tkb');
 
 // GET: Trang chủ
 router.get('/', async (req, res) => {
