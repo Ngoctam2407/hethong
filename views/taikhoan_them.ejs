@@ -20,80 +20,106 @@
 
         <div class="container py-5">
             <div class="row justify-content-center">
-                <div class="col-lg-7">
-
+                <div class="col-lg-8">
                     <div class="mb-4">
                         <a href="/taikhoan" class="text-decoration-none text-primary fw-600">
                             <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách
                         </a>
                     </div>
 
-                    <div class="add-card p-4 p-md-5">
+                    <div class="add-card p-4 p-md-5 shadow-sm bg-white" style="border-radius: 20px;">
                         <div class="text-center mb-5">
                             <div class="icon-circle bg-primary-subtle d-inline-block p-4 rounded-circle mb-3">
-                                <i class="fas fa-user-shield fa-3x text-primary"></i>
+                                <i class="fas fa-user-plus fa-3x text-primary"></i>
                             </div>
-                            <h2 class="fw-bold">Thêm Tài Khoản</h2>
-                            <p class="text-muted">Điền thông tin để tạo quyền truy cập cho thành viên mới</p>
+                            <h2 class="fw-bold">Thêm Thành Viên</h2>
+                            <p class="text-muted">Chọn loại tài khoản và điền thông tin chi tiết</p>
                         </div>
 
                         <form action="/taikhoan/them" method="POST">
                             <div class="row">
                                 <div class="col-md-12 mb-4">
-                                    <label class="label-custom">Họ và tên</label>
+                                    <label class="label-custom fw-bold">Họ và tên</label>
                                     <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom"><i
-                                                class="fas fa-id-card"></i></span>
-                                        <input type="text" name="HoVaTen" class="form-control form-control-custom"
+                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                        <input type="text" name="HoVaTen" class="form-control"
                                             placeholder="Ví dụ: Nguyễn Văn A" required>
                                     </div>
                                 </div>
 
-                                <div class="col-md-12 mb-4">
-                                    <label class="label-custom">Địa chỉ Email</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom"><i
-                                                class="fas fa-envelope"></i></span>
-                                        <input type="email" name="Email" class="form-control form-control-custom"
-                                            placeholder="name@example.com" required>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-12 mb-4">
-                                    <label class="label-custom">Tên đăng nhập (Username)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom"><i
-                                                class="fas fa-at"></i></span>
-                                        <input type="text" name="TenDangNhap" class="form-control form-control-custom"
-                                            placeholder="username123" required>
-                                    </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom fw-bold">Email</label>
+                                    <input type="email" name="Email" class="form-control" placeholder="name@example.com"
+                                        required>
                                 </div>
 
                                 <div class="col-md-6 mb-4">
-                                    <label class="label-custom">Mật khẩu</label>
-                                    <input type="password" name="MatKhau" class="form-control form-control-custom"
-                                        placeholder="••••••••" required>
+                                    <label class="label-custom fw-bold">Tên đăng nhập</label>
+                                    <input type="text" name="TenDangNhap" class="form-control" placeholder="username123"
+                                        required>
                                 </div>
 
                                 <div class="col-md-6 mb-4">
-                                    <label class="label-custom">Xác nhận mật khẩu</label>
-                                    <input type="password" name="XacNhanMatKhau"
-                                        class="form-control form-control-custom" placeholder="••••••••" required>
+                                    <label class="label-custom fw-bold">Mật khẩu</label>
+                                    <input type="password" name="MatKhau" class="form-control" placeholder="••••••••"
+                                        required>
                                 </div>
 
-                                <div class="col-md-12 mb-4">
-                                    <label class="label-custom">Phân quyền</label>
-                                    <select name="QuyenHan" class="form-select form-control-custom">
-                                        <option value="sinhvien">Người dùng / Sinh viên</option>
-                                        <option value="giangvien">Người dùng / Giảng viên</option>
-                                        <option value="admin">Quản trị viên (Admin)</option>
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom fw-bold">Phân quyền</label>
+                                    <select name="QuyenHan" id="roleSelect" class="form-select border-primary"
+                                        onchange="toggleExtraFields()">
+                                        <option value="sinhvien">Sinh viên</option>
+                                        <option value="giangvien">Giảng viên</option>
+                                        <option value="admin">Quản trị viên</option>
                                     </select>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <div id="sinhvienFields" class="row extra-fields">
+                                    <h5 class="text-primary mb-3"><i class="fas fa-graduation-cap me-2"></i>Thông tin
+                                        học tập</h5>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Mã số sinh viên (MSSV)</label>
+                                        <input type="text" name="MSSV" class="form-control" placeholder="SV-2026-01">
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Lớp học</label>
+                                        <select name="IDLop" class="form-select">
+                                            <option value="">-- Chọn lớp --</option>
+                                            <% dsLop.forEach(lop=> { %>
+                                                <option value="<%= lop._id %>">
+                                                    <%= lop.TenLop %>
+                                                </option>
+                                                <% }) %>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="giangvienFields" class="row extra-fields" style="display: none;">
+                                    <h5 class="text-success mb-3"><i class="fas fa-chalkboard-teacher me-2"></i>Thông
+                                        tin chuyên môn</h5>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Mã giảng viên</label>
+                                        <input type="text" name="MaGV" class="form-control" placeholder="GV-KT-01">
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Lĩnh vực dạy</label>
+                                        <input type="text" name="LinhVuc" class="form-control"
+                                            placeholder="Ví dụ: Tin học văn phòng">
+                                    </div>
+                                    <div class="col-md-12 mb-4">
+                                        <label class="label-custom fw-bold">Số điện thoại liên hệ</label>
+                                        <input type="text" name="SoDienThoai" class="form-control"
+                                            placeholder="09xx xxx xxx">
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="d-grid gap-2 mt-3">
-                                <button type="submit" class="btn main-btn shadow">
-                                    <i class="fas fa-check-circle me-2"></i> Hoàn tất thêm mới
+                                <button type="submit" class="btn btn-primary btn-lg shadow rounded-pill">
+                                    <i class="fas fa-save me-2"></i>Lưu thông tin thành viên
                                 </button>
                             </div>
                         </form>
@@ -103,7 +129,27 @@
         </div>
 
         <%- include('footer') %>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+            <script>
+                function toggleExtraFields() {
+                    const role = document.getElementById('roleSelect').value;
+                    const svFields = document.getElementById('sinhvienFields');
+                    const gvFields = document.getElementById('giangvienFields');
+
+                    // Ẩn tất cả trước khi hiện cái cần thiết
+                    svFields.style.display = 'none';
+                    gvFields.style.display = 'none';
+
+                    if (role === 'sinhvien') {
+                        svFields.style.display = 'flex';
+                    } else if (role === 'giangvien') {
+                        gvFields.style.display = 'flex';
+                    }
+                }
+                // Gọi hàm ngay khi load trang để hiển thị đúng trạng thái mặc định
+                window.onload = toggleExtraFields;
+            </script>
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 

@@ -2,6 +2,9 @@ var express = require('express');
 var router = express.Router();
 var LopHoc = require('../models/lophoc'); // Model này Tâm nhớ định nghĩa MaLop, TenLop, NienKhoa, SiSo nhé
 var { requireAdmin } = require('./auth');
+var TaiKhoan = require('../models/taikhoan');
+var SinhVien = require('../models/sinhvien');
+var GiangVien = require('../models/giangvien');
 
 // Chỉ cho phép Admin truy cập để quản lý lớp học thôi Tâm nhé
 router.use(requireAdmin);

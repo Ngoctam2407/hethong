@@ -3,6 +3,9 @@ var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
 var { requireAdmin } = require('./auth');
+var LopHoc = require('../models/lophoc');
+var SinhVien = require('../models/sinhvien');
+var GiangVien = require('../models/giangvien');
 
 router.use(requireAdmin);
 // 1. GET: Danh sách (Địa chỉ: /taikhoan)
@@ -12,8 +15,9 @@ router.get('/', async (req, res) => {
 });
 
 // 2. GET: Form Thêm (Địa chỉ: /taikhoan/them)
-router.get('/them', (req, res) => {
-    res.render('taikhoan_them', { title: 'Thêm tài khoản' });
+router.get('/them', async (req, res) => {
+    var dsLop = await LopHoc.find();
+    res.render('taikhoan_them', { title: 'Thêm tài khoản', dsLop: dsLop });
 });
 
 // 3. POST: Xử lý Thêm
@@ -45,24 +49,56 @@ router.post('/them', async (req, res) => {
 
 // 4. GET: Form Sửa (Địa chỉ: /taikhoan/sua/:id)
 router.get('/sua/:id', async (req, res) => {
-    var data = await TaiKhoan.findById(req.params.id);
-    res.render('taikhoan_sua', { title: 'Sửa tài khoản', tk: data });
+    var tk = await TaiKhoan.findById(req.params.id);
+    var dsLop = await LopHoc.find();
+    let detail = null; // Khai báo biến detail trước
+
+    // Dùng tk.QuyenHan để kiểm tra
+    if (tk.QuyenHan === 'sinhvien') {
+        detail = await SinhVien.findOne({ IDTaiKhoan: tk._id });
+    } else if (tk.QuyenHan === 'giangvien') {
+        detail = await GiangVien.findOne({ IDTaiKhoan: tk._id });
+    }
+    res.render('taikhoan_sua', { title: 'Sửa tài khoản', tk: tk, dsLop: dsLop, detail: detail });
+
 });
 
 // 5. POST: Xử lý Cập nhật
 router.post('/sua/:id', async (req, res) => {
-    var data = {
-        HoVaTen: req.body.HoVaTen,
-        Email: req.body.Email,
-        QuyenHan: req.body.QuyenHan,
-        TrangThai: req.body.TrangThai
-    };
-    if (req.body.MatKhau) {
-        var salt = bcrypt.genSaltSync(10);
-        data['MatKhau'] = bcrypt.hashSync(req.body.MatKhau, salt);
+    try {
+        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, MSSV, IDLop, MaGV, LinhVuc, SoDienThoai } = req.body;
+
+        // A. Cập nhật bảng TaiKhoan (Chung)
+        let updateData = { HoVaTen, Email, TenDangNhap, QuyenHan };
+
+        // Nếu Tâm có nhập mật khẩu mới thì mới mã hóa và cập nhật
+        if (MatKhau && MatKhau.trim() !== "" && MatKhau !== "********") {
+            const salt = bcrypt.genSaltSync(10);
+            updateData.MatKhau = bcrypt.hashSync(MatKhau, salt);
+        }
+
+        await TaiKhoan.findByIdAndUpdate(req.params.id, updateData);
+
+        // B. Cập nhật bảng phụ (Riêng)
+        if (QuyenHan === 'sinhvien') {
+            await SinhVien.findOneAndUpdate(
+                { IDTaiKhoan: req.params.id },
+                { MSSV, IDLop },
+                { upsert: true } // Nếu chưa có thì tạo mới luôn cho chắc
+            );
+        } else if (QuyenHan === 'giangvien') {
+            await GiangVien.findOneAndUpdate(
+                { IDTaiKhoan: req.params.id },
+                { MaGV, LinhVuc, SoDienThoai },
+                { upsert: true }
+            );
+        }
+
+        res.redirect('/taikhoan');
+    } catch (error) {
+        console.error(error);
+        res.send("Lỗi khi cập nhật tài khoản!");
     }
-    await TaiKhoan.findByIdAndUpdate(req.params.id, data);
-    res.redirect('/taikhoan');
 });
 
 // 6. GET: Xóa (Địa chỉ: /taikhoan/xoa/:id)
