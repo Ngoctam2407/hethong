@@ -53,38 +53,70 @@
         </div>
     </div>
 </nav>
-<section class="hero-banner">
-    <div class="container text-center">
-        <h1 class="display-3 fw-bold mb-4" style="color: #2d3436;">Hệ Thống<br><span style="color: #ff758c;">EDU KT
-            </span></h1>
-        <p class="text-muted fs-5 mb-5">Chào mừng bạn đã đến với nền tảng quản lý đào tạo hiện đại của Trung Tâm Khai
-            Trí. <br> Vui lòng đăng nhập để xem lịch học và phòng học của bạn.</p>
-</section>
+<% if (typeof path !=='undefined' && (path==='/' || path==='/taikhoan' )) { %>
+    <section class="hero-banner py-5">
+        <div class="container text-center">
 
-<% if(message){ %>
+            <% if (!user) { %>
+                <h1 class="display-3 fw-bold mb-4" style="color: #2d3436;">
+                    Hệ Thống<br><span style="color: #ff758c;">EDU KT</span>
+                </h1>
+                <p class="text-muted fs-5 mb-5">
+                    Chào mừng bạn đến với Trung Tâm Khai Trí. <br>
+                    Vui lòng <strong>Đăng nhập</strong> để quản lý học tập.
+                </p>
 
-    <div class="modal fade show" id="thongbaoModal" style="display:block; background:rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+                <% } else if (user.QuyenHan==='admin' ) { %>
+                    <h1 class="display-4 fw-bold mb-4" style="color: #2d3436;">
+                        Chào Admin, <span style="color: #6c5ce7;">
+                            <%= user.HoVaTen %>
+                        </span>
+                    </h1>
+                    <p class="text-muted fs-5 mb-4">Cố gắng cập nhật thông tin thường xuyên nhé!</p>
+                    <% } else if (user.QuyenHan==='giangvien' ) { %>
+                        <h1 class="display-4 fw-bold mb-4" style="color: #2d3436;">
+                            Chào Thầy/Cô, <span style="color: #fab1a0;">
+                                <%= user.HoVaTen %>
+                            </span>
+                        </h1>
+                        <p class="text-muted fs-5 mb-4">Chúc Thầy/Cô một ngày lên lớp tràn đầy năng lượng!</p>
 
-                <div class="modal-header">
-                    <h5 class="modal-title">Thông báo</h5>
-                    <button type="button" class="btn-close" onclick="dongThongBao()"></button>
-                </div>
+                        <% } else if (user.QuyenHan==='sinhvien' ) { %>
+                            <h1 class="display-4 fw-bold mb-4" style="color: #2d3436;">
+                                Chào Bạn, <span style="color: #00cec9;">
+                                    <%= user.HoVaTen %>
+                                </span>
+                            </h1>
+                            <p class="text-muted fs-5 mb-4">Đã đến lúc bắt đầu bài học mới rồi. Cố lên nhé!</p>
+                            <% } %>
 
-                <div class="modal-body text-center">
-                    <%- message %>
-                </div>
-
-            </div>
         </div>
-    </div>
-
-
-    <script>
-        function dongThongBao() {
-            document.getElementById("thongbaoModal").style.display = "none";
-        }
-    </script>
-
+    </section>
     <% } %>
+        <% if(message){ %>
+
+            <div class="modal fade show" id="thongbaoModal" style="display:block; background:rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">Thông báo</h5>
+                            <button type="button" class="btn-close" onclick="dongThongBao()"></button>
+                        </div>
+
+                        <div class="modal-body text-center">
+                            <%- message %>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <script>
+                function dongThongBao() {
+                    document.getElementById("thongbaoModal").style.display = "none";
+                }
+            </script>
+
+            <% } %>

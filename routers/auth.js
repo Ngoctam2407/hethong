@@ -35,8 +35,8 @@ router.post('/dangnhap', async (req, res) => {
 
                     // --- PHÂN LUỒNG TÁC NHÂN CHO ADMIN TÂM ---
                     if (taikhoan.QuyenHan === 'admin') {
-                        req.session.success = 'Chào mừng Admin Tâm quay lại vương quốc! ';
-                        return res.redirect('/taikhoan'); // Admin vào thẳng trang Quản lý thành viên
+                        req.session.success = 'Chào mừng Admin ! ';
+                        return res.redirect('/');
 
                     } else if (taikhoan.QuyenHan === 'giangvien') {
                         req.session.success = 'Chào Giảng viên! Chúc thầy/cô có buổi dạy tốt.';
@@ -49,11 +49,11 @@ router.post('/dangnhap', async (req, res) => {
                 }
 
             } else {
-                req.session.error = 'Mật khẩu hổng đúng, em kiểm tra lại nha.';
+                req.session.error = 'Mật khẩu không đúng, kiểm tra lại.';
                 return res.redirect('/dangnhap');
             }
         } else {
-            req.session.error = 'Tên đăng nhập này anh chưa thấy trong máy Tâm ơi.';
+            req.session.error = 'Tên đăng nhập này không tồn tại trong máy .';
             return res.redirect('/dangnhap');
         }
     } catch (err) {

@@ -63,8 +63,19 @@
         <div class="container mt-5 mb-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h2 class="fw-bold">📅 Danh sách lịch học đã đăng ký</h2>
-                    <p class="text-muted">Trạng thái: <span class="text-warning fw-bold">Chờ duyệt</span></p>
+                    <h2 class="fw-bold">📅 Danh sách lịch học</h2>
+                    <p class="text-muted">
+                        Trạng thái:
+                        <% if (dstkb && dstkb.length> 0) { %>
+                            <% if (dstkb[0].TrangThai==='cho-duyet' ) { %>
+                                <span class="text-warning fw-bold">Chờ duyệt</span>
+                                <% } else { %>
+                                    <span class="text-success fw-bold">Đã duyệt</span>
+                                    <% } %>
+                                        <% } else { %>
+                                            <span class="text-muted fw-bold">Trống</span>
+                                            <% } %>
+                    </p>
                 </div>
                 <a href="/tkb/dangky" class="btn main-btn">
                     <i class="fas fa-plus-circle me-2"></i>Đăng ký thêm
@@ -116,23 +127,26 @@
 
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
-                                            <button onclick="duyetLich( '<%= item._id %>')"
-                                                class="btn btn-sm btn-light rounded-circle text-success border shadow-sm btn-circle"
-                                                title="Phê duyệt">
-                                                <i class="fas fa-check"></i>
-                                            </button>
+                                            <% if (item.TrangThai==='cho-duyet' ) { %>
+                                                <button onclick="duyetLich( '<%= item._id %>')"
+                                                    class="btn btn-sm btn-light rounded-circle text-success border shadow-sm btn-circle"
+                                                    title="Phê duyệt">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <% } %>
 
-                                            <a href="/tkb/sua/<%= item._id %>"
-                                                class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm btn-circle"
-                                                title="Chỉnh sửa">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
+                                                    <a href="/tkb/sua/<%= item._id %>"
+                                                        class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm btn-circle"
+                                                        title="Chỉnh sửa">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
 
-                                            <a href="/tkb/xoa/<%= item._id %>"
-                                                class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm btn-circle"
-                                                onclick="return confirm('Tâm có chắc muốn xóa không?')" title="Xóa">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </a>
+                                                    <a href="/tkb/xoa/<%= item._id %>"
+                                                        class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm btn-circle"
+                                                        onclick="return confirm('Tâm có chắc muốn xóa không?')"
+                                                        title="Xóa">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -141,24 +155,51 @@
                 </table>
             </div>
         </div>
-        <%- include('footer') %>
 
-            <script>
-                async function duyetLich(id) {
+        <script>
+            async function duyetLich(id) {
+                // 1. Hỏi ý kiến Tâm một lần nữa cho chắc
+                if (!confirm("Tâm có chắc chắn muốn phê duyệt lịch học này không?")) return;
+
+                try {
+                    // 2. Gửi yêu cầu cập nhật lên Server
                     const response = await fetch(`/tkb/da-duyet/${id}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'da-duyet' }) // Gửi chữ 'da-duyet' lên nè
+                        body: JSON.stringify({ status: 'da-duyet' })
                     });
 
-                    if (response.ok) {
-                        // Làm mờ và xóa dòng đó đi cho đẹp mắt
-                        document.getElementById(`row-${id}`).remove();
-                        alert("Tâm đã duyệt thành công! Môn học đã hiện lên lưới rồi nhé.");
-                    }
-                }
+                    // 3. Đợi Server trả về kết quả JSON
+                    const data = await response.json();
 
-            </script>
+                    if (response.ok && data.success) {
+                        // 4. Hiệu ứng làm mờ và xóa dòng (Professional hơn)
+                        const row = document.getElementById(`row-${id}`);
+                        row.style.transition = "all 0.5s ease";
+                        row.style.backgroundColor = "#d4edda"; // Tô màu xanh báo hiệu thành công
+                        row.style.opacity = "0";
+
+                        setTimeout(() => {
+                            row.remove();
+                            // Kiểm tra nếu không còn dòng nào thì tải lại trang để hiện thông báo trống
+                            const remainingRows = document.querySelectorAll('tbody tr').length;
+                            if (remainingRows === 0) {
+                                location.reload();
+                            }
+                        }, 500);
+
+                        console.log("Thông báo từ server:", data.message);
+                    } else {
+                        alert("Lỗi: " + (data.message || "Không thể duyệt lịch lúc này."));
+                    }
+                } catch (error) {
+                    console.error("Lỗi kết nối:", error);
+                    alert("Lỗi kết nối mạng rồi Tâm ơi, kiểm tra lại nhé!");
+                }
+            }
+        </script>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

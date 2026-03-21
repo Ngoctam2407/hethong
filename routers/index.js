@@ -2,41 +2,90 @@ var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
+var PhongHoc = require('../models/phonghoc');
+var LopHoc = require('../models/lophoc');
+var SinhVien = require('../models/sinhvien');
+var GiangVien = require('../models/giangvien');
 var TKB = require('../models/tkb');
 
 // GET: Trang chủ
 router.get('/', async (req, res) => {
     try {
         const user = req.session.user;
+
+        // 1. ĐỊNH NGHĨA KHUNG GIỜ TRƯỚC (Để máy tính biết tiết mấy)
+        const khungGioHoc = [
+            { tiet: 1, batDau: "07:00", ketThuc: "07:45" },
+            { tiet: 2, batDau: "07:45", ketThuc: "08:30" },
+            { tiet: 3, batDau: "08:30", ketThuc: "09:15" },
+            { tiet: 4, batDau: "09:15", ketThuc: "10:00" },
+            { tiet: 5, batDau: "10:00", ketThuc: "10:45" },
+            { tiet: 6, batDau: "13:00", ketThuc: "13:45" },
+            { tiet: 7, batDau: "13:45", ketThuc: "14:30" },
+            { tiet: 8, batDau: "14:30", ketThuc: "15:15" },
+            { tiet: 9, batDau: "15:15", ketThuc: "16:00" },
+            { tiet: 10, batDau: "16:00", ketThuc: "16:45" },
+            { tiet: 11, batDau: "18:00", ketThuc: "18:45" },
+            { tiet: 12, batDau: "18:45", ketThuc: "19:30" }
+        ];
+
+        // 2. XÁC ĐỊNH THỜI GIAN HIỆN TẠI
+        const gioHienTai = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        const tietHienTai = khungGioHoc.find(g => gioHienTai >= g.batDau && gioHienTai < g.ketThuc)?.tiet;
+        const dsThu = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+        const thuHomNay = dsThu[new Date().getDay()];
+
+        // 3. TRUY VẤN DỮ LIỆU THỐNG KÊ (Dùng await để đợi lấy xong số liệu)
+        let lichDangHoc = [];
+        if (tietHienTai) {
+            lichDangHoc = await TKB.find({
+                TrangThai: 'da-duyet',
+                Thu: thuHomNay,
+                TietBatDau: { $lte: tietHienTai },
+                TietKetThuc: { $gte: tietHienTai }
+            });
+        }
+
+        const soLopDangHoc = lichDangHoc.length;
+        const tongPhong = await PhongHoc.countDocuments();
+        const tongGV = await TaiKhoan.countDocuments({ QuyenHan: 'giangvien' });
+
+        // 4. PHÂN LUỒNG HIỂN THỊ DANH SÁCH
         let dsLich = [];
+        let dsTaiKhoan = [];
 
         if (user) {
-            // TÙY THEO QUYỀN HẠN MÀ LẤY DỮ LIỆU KHÁC NHAU
             if (user.QuyenHan === 'admin') {
-                // Admin: Xem 5 lịch học mới nhất của toàn hệ thống
                 dsLich = await TKB.find().populate('MonHoc PhongHoc GiangVien').sort({ _id: -1 }).limit(5);
-
+                dsTaiKhoan = await TaiKhoan.find();
             } else if (user.QuyenHan === 'giangvien') {
-                // Giảng viên: Chỉ xem những lịch mà mình đi dạy
                 dsLich = await TKB.find({ GiangVien: user._id }).populate('MonHoc PhongHoc').sort({ Thu: 1 });
-
             } else if (user.QuyenHan === 'sinhvien') {
-                // Sinh viên: Xem lịch của lớp mà sinh viên đó thuộc về
-                // (Giả sử trong model TaiKhoan của sinh viên có lưu field LopHoc)
                 dsLich = await TKB.find({ LopHoc: user.LopHoc }).populate('MonHoc PhongHoc GiangVien').sort({ Thu: 1 });
             }
         }
 
+        // 5. RENDER DỮ LIỆU SANG EJS
         res.render('index', {
             title: 'Trang chủ Edu KT',
+            path: '/',
+            dsTaiKhoan: dsTaiKhoan,
             dsLich: dsLich,
-            user: user, // Gửi user sang để EJS kiểm tra quyền
+            user: user,
+            thongKeDashboard: [
+                soLopDangHoc,
+                tongPhong - soLopDangHoc,
+                tongGV - soLopDangHoc
+            ],
             isLoggedIn: !!user
         });
+
     } catch (err) {
-        res.status(500).send("Lỗi phân luồng dữ liệu rồi Tâm ơi!");
+        console.error(err);
+        res.status(500).send("Lỗi phân luồng dữ liệu rồi Tâm ơi! Kiểm tra Terminal nhé.");
     }
 });
+
 // GET: Lỗi
 router.get('/error', async (req, res) => {
     res.render('error', {
@@ -115,5 +164,7 @@ router.get('/dangxuat', (req, res) => {
         res.redirect('/');
     });
 });
+
+
 
 module.exports = router;
