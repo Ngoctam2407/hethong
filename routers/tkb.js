@@ -6,6 +6,8 @@ var TaiKhoan = require('../models/taikhoan');
 var MonHoc = require('../models/monhoc');
 var LopHoc = require('../models/lophoc');
 
+
+
 // helpers
 const timeOverlap = (start, end) => ({
     $or: [
@@ -257,9 +259,9 @@ router.post('/dang-ky-luu', async (req, res) => {
             TKB.findOne({ LopHoc: lopHocID, ...conflictQuery })
         ]);
 
-        if (gvConflict) { req.session.error = "Giảng viên đang bận giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
+        if (gvConflict) { req.session.error = "Giảng viên đang sắp có lịch dạy giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
         if (roomConflict) { req.session.error = "Phòng đang dùng giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
-        if (lopConflict) { req.session.error = "Lớp này đã có tiết khác giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
+        if (lopConflict) { req.session.error = "Lớp này đã lớp khác dạy giờ này rồi , nên không được đăng ký đâu nhé."; return res.redirect(req.get('referer') || '/tkb/dangky'); }
 
         // 3. ĐÂY LÀ ĐOẠN QUAN TRỌNG: Gọi Model đúng cách
         // Giả sử ở đầu file Tâm đã khai báo: const LopHocModel = require('../models/lophoc');

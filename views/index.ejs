@@ -263,10 +263,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="floating-chat" title="Hỗ trợ trực tuyến">
-                                <i class="fas fa-comment-dots"></i>
-                            </div>
                             <% } %>
                 </div>
 
@@ -336,6 +332,133 @@
                         </div>
                     </footer>
                     <% } %>
+                  <div class="chat-box shadow-lg" id="chat-box" style="display: none; border-radius: 15px; overflow: hidden; position: fixed; bottom: 100px; right: 30px; z-index: 1001; width: 330px; border: 1px solid #eee; background: #fff;">
+    <div class="chat-box-header p-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #007bff 0%, #6610f2 100%); color: white;">
+        <span class="fw-bold"><i class="fas fa-robot me-2"></i>Hỗ trợ Edu KT</span>
+        <span onclick="toggleChat()" style="cursor:pointer;"><i class="fas fa-times"></i></span>
+    </div>
+
+    <div class="chat-box-body p-3" id="chat-content" style="height: 300px; overflow-y: auto; background-color: #f8f9fa; font-size: 13.5px;">
+        <div class="bot-msg mb-3">
+            <span class="p-2 shadow-sm bg-white d-inline-block" style="border-radius: 15px; border-bottom-left-radius: 0; border: 1px solid #eee;">
+                Chào Tâm! 👋 Mình là trợ lý ảo của Edu KT. Bạn cần mình tra cứu lịch học hay phòng trống giúp không nè?
+            </span>
+        </div>
+    </div>
+
+    <div class="p-2 border-top bg-light" id="quick-replies">
+        <div class="d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="askBot('lich-hoc')" style="font-size: 12px;">📅 Lịch học</button>
+            <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="askBot('phong-trong')" style="font-size: 12px;">🏫 Phòng trống</button>
+            <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="askBot('tra-cuu-nhanh')" style="font-size: 12px;">🔍 Cách tra cứu</button>
+        </div>
+    </div>
+
+    <div class="chat-box-footer p-2 border-top bg-white">
+        <div class="input-group">
+            <input type="text" id="user-input" class="form-control form-control-sm border-0" placeholder="Nhập tên lớp/phòng để tìm..." onkeypress="if(event.key === 'Enter') handleSearch()">
+            <button class="btn btn-primary btn-sm" onclick="handleSearch()" style="border-radius: 50%; width: 32px; height: 32px; padding: 0;">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="floating-chat" title="Hỗ trợ trực tuyến" onclick="toggleChat()">
+    <i class="fas fa-comment-dots"></i>
+</div>
+
+<script>
+    // Lấy dữ liệu từ Backend đổ vào (Cực kỳ quan trọng)
+    const dsLichHoc = <%- JSON.stringify(typeof dsLich !== 'undefined' ? dsLich : []) %>;
+    const thongKe = <%- JSON.stringify(typeof thongKeDashboard !== 'undefined' ? thongKeDashboard : [0,0,0]) %>;
+
+    const botData = {
+        "lich-hoc": { 
+            q: "Hôm nay mình có lịch học không?", 
+            a: "Tâm ơi, bạn nhớ đăng nhập để xem lịch cá nhân nhé! Nếu đã đăng nhập, hãy nhìn lên bảng tin trang chủ nè." 
+        },
+        "phong-trong": { 
+            q: "Còn phòng nào trống không?", 
+            a: `Hiện tại hệ thống đang có **${thongKe[1] || 0} phòng trống**. Tâm có thể gõ tên phòng (ví dụ: P101) vào ô chat để mình tìm chi tiết nha!` 
+        },
+        "tra-cuu-nhanh": { 
+            q: "Hướng dẫn tra cứu nhanh", 
+            a: "Tâm chỉ cần gõ trực tiếp **Tên môn học** hoặc **Mã phòng** vào ô nhập liệu bên dưới, mình sẽ tìm ngay cho bạn! 🔎" 
+        },
+        "dang-ky": { 
+            q: "Cách đăng ký môn", 
+            a: "Bạn vào mục 'Đăng ký lịch', chọn môn rồi gửi yêu cầu. Admin sẽ duyệt cho Tâm sớm nhất!" 
+        }
+    };
+
+    function toggleChat() {
+        const box = document.getElementById('chat-box');
+        box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
+        if(box.style.display === 'block') document.getElementById('user-input').focus();
+    }
+
+    function displayMsg(text, isUser = false) {
+        const content = document.getElementById('chat-content');
+        const align = isUser ? 'text-end' : 'text-start';
+        const bg = isUser ? 'bg-primary text-white' : 'bg-white text-dark';
+        const radius = isUser ? 'border-bottom-right-radius: 0;' : 'border-bottom-left-radius: 0; border: 1px solid #eee;';
+
+        content.innerHTML += `
+            <div class="${align} mb-3">
+                <span class="p-2 d-inline-block shadow-sm" style="border-radius: 15px; ${radius} max-width: 85%; line-height: 1.5;">
+                    ${text}
+                </span>
+            </div>`;
+        content.scrollTop = content.scrollHeight;
+    }
+
+    function askBot(key) {
+        const data = botData[key];
+        displayMsg(data.q, true);
+        setTimeout(() => displayMsg(data.a), 500);
+    }
+
+    // Xử lý tra cứu khi Tâm gõ phím
+   // HÀM TRA CỨU NHANH KHI TÂM GÕ VÀO Ô CHAT
+function handleSearch() {
+    const input = document.getElementById('user-input');
+    const query = input.value.trim().toUpperCase(); // Lấy từ khóa Tâm gõ và viết hoa lên
+    if (!query) return;
+
+    // 1. Hiển thị câu hỏi của Tâm lên màn hình chat
+    displayMsg(input.value, true);
+    input.value = ""; // Xóa trống ô nhập để chuẩn bị cho lần gõ sau
+
+    setTimeout(() => {
+        // 2. ĐÂY CHÍNH LÀ ĐOẠN CODE TÂM HỎI NÈ:
+        // Nó sẽ lọc qua danh sách dsLichHoc (đã được lấy từ Server qua EJS)
+        const results = dsLichHoc.filter(item => {
+            // Kiểm tra an toàn: nếu MonHoc hoặc PhongHoc bị null sẽ không bị văng lỗi (crash)
+            const tenMon = (item.MonHoc && item.MonHoc.TenMonHoc) ? item.MonHoc.TenMonHoc.toUpperCase() : "";
+            const tenPhong = (item.PhongHoc && item.PhongHoc.TenPhong) ? item.PhongHoc.TenPhong.toUpperCase() : "";
+            
+            // Trả về true nếu tên môn hoặc tên phòng có chứa từ khóa Tâm gõ
+            return tenMon.includes(query) || tenPhong.includes(query);
+        });
+
+        // 3. Trả lời kết quả cho Tâm
+        if (results.length > 0) {
+            let reply = `Mình tìm thấy ${results.length} thông tin cho "<b>${query}</b>":<br><br>`;
+            
+            results.forEach(item => {
+                reply += `📖 <b>${item.MonHoc.TenMonHoc}</b><br>`;
+                reply += `🏛 Phòng: ${item.PhongHoc ? item.PhongHoc.TenPhong : 'Chưa xếp phòng'}<br>`;
+                reply += `👨‍🏫 GV: ${item.GiangVien ? item.GiangVien.HoVaTen : 'Đang cập nhật'}<br>---<br>`;
+            });
+            
+            displayMsg(reply + "Tâm còn muốn tra cứu thêm gì không?");
+        } else {
+            displayMsg(`Hic, mình lục tung dữ liệu rồi mà không thấy lớp hay phòng "<b>${query}</b>" nào hết. Tâm kiểm tra lại chính tả xem sao nhé! 🌿`);
+        }
+    }, 600); // Tạo độ trễ 0.6s cho cảm giác Bot đang "suy nghĩ"
+}
+</script>
 </body>
 
 </html>

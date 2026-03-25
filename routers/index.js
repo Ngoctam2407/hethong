@@ -53,6 +53,9 @@ router.get('/', async (req, res) => {
         // 4. PHÂN LUỒNG HIỂN THỊ DANH SÁCH
         let dsLich = [];
         let dsTaiKhoan = [];
+        const lichChoBot = await TKB.find({ TrangThai: 'da-duyet' })
+    .populate('MonHoc PhongHoc GiangVien')
+    .limit(20); // Lấy khoảng 20 bản ghi mới nhất để Bot tra cứu nhanh
 
         if (user) {
             if (user.QuyenHan === 'admin') {

@@ -4,6 +4,7 @@ var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
 
 
+
 // GET: Hiện trang đăng nhập
 router.get('/dangnhap', async (req, res) => {
     res.render('dangnhap', {
