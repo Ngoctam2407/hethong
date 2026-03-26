@@ -130,8 +130,14 @@
     <div class="container mt-5 mb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="fw-bold mb-1" style="font-size: 2.2rem;">Lịch Học <span>Của Tâm</span></h1>
-                <p class="text-muted">Dưới đây là thời khóa biểu đã được phê duyệt</p>
+                <h1 class="fw-bold mb-1" style="font-size: 2.2rem;">
+                    Lịch Học <span>Của <%= user.HoVaTen %></span>
+                </h1>
+                <p class="text-muted">
+                    Chào <strong>
+                        <%= user.HoVaTen %>
+                    </strong>, dưới đây là thời khóa biểu cá nhân của bạn.
+                </p>
             </div>
             <a href="/tkb/dangky" class="main-btn">
                 <i class="fas fa-plus-circle me-2"></i>Đăng ký mới

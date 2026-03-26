@@ -4,7 +4,10 @@ var TKB = require('../models/tkb');
 var PhongHoc = require('../models/phonghoc');
 var TaiKhoan = require('../models/taikhoan');
 var MonHoc = require('../models/monhoc');
+var GiangVien = require('../models/giangvien');
+var SinhVien = require('../models/sinhvien');
 var LopHoc = require('../models/lophoc');
+var { requireAdmin } = require('./auth');
 
 
 
@@ -25,11 +28,11 @@ router.get('/', async (req, res) => {
         let query = { TrangThai: 'da-duyet' };
 
         // 2. PHÂN LUỒNG TẠI ĐÂY:
-        if (user.VaiTro === 'SinhVien') {
+        if (user.QuyenHan === 'SinhVien') {
             // Nếu là Sinh viên: Chỉ tìm những lịch của đúng Lớp đó
             // (Tâm kiểm tra xem trong DB bảng TKB có trường 'LopHoc' không nhé)
             query.LopHoc = user.LopHoc;
-        } else if (user.VaiTro === 'GiangVien') {
+        } else if (user.QuyenHan === 'GiangVien') {
             // Nếu là Giảng viên: Chỉ tìm những lịch mà ID giảng viên khớp với người đang logged in
             query.GiangVien = user._id;
         }
@@ -163,43 +166,44 @@ router.get('/xoa/:id', async (req, res) => {
 });
 router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
     try {
-        // 1. Chỉ lấy những lịch đã được duyệt
-        const dsLich = await TKB.find({ TrangThai: 'da-duyet' })
-            .populate('MonHoc')
-            .populate('PhongHoc')
-            .populate('GiangVien')
-            .populate('LopHoc')
+        const user = req.session.user;
+        if (!user) return res.redirect('/auth/dangnhap');
 
-        // 2. Map dữ liệu để tính toán vị trí Grid cho EJS dễ vẽ
-        const dsTKB = dsLich.map(item => {
-            // Chuyển "Thứ 2" thành cột 2, "Thứ 3" thành cột 3...
-            // Nếu DB của Tâm lưu là "Thứ 2", "Thứ 3" thì dùng logic này:
-            let thuIndex = 2; // Mặc định thứ 2
-            if (item.Thu === 'Thứ 3') thuIndex = 3;
-            else if (item.Thu === 'Thứ 4') thuIndex = 4;
-            else if (item.Thu === 'Thứ 5') thuIndex = 5;
-            else if (item.Thu === 'Thứ 6') thuIndex = 6;
-            else if (item.Thu === 'Thứ 7') thuIndex = 7;
-            else if (item.Thu === 'Chủ Nhật') thuIndex = 8;
+        // 1. Khởi tạo query mặc định
+        let query = { TrangThai: 'da-duyet' };
 
-            return {
-                ...item._doc,
-                ThuIndex: thuIndex,
-                // Tính số tiết để biết cái thẻ kéo dài bao nhiêu ô (span)
-                SoTiet: (item.TietKetThuc - item.TietBatDau) + 1
-            };
+        // 2. PHÂN LUỒNG: Tâm lưu ý chỗ này để hiện đúng lịch từng người nhé
+        if (user.QuyenHan === 'sinhvien') {
+            // Vì bảng TaiKhoan không có LopHoc, mình cần tìm ở bảng SinhVien để lấy ID lớp
+            const thongTinSV = await require('../models/sinhvien').findOne({ IDTaiKhoan: user._id });
+            if (thongTinSV) query.LopHoc = thongTinSV.IDLop;
+        } else if (user.QuyenHan === 'giangvien') {
+            // Giảng viên thì lọc theo ID tài khoản của họ
+            query.GiangVien = user._id;
+        }
 
-        });
+        // 3. Lấy dữ liệu và dùng .populate để "đổ đầy" thông tin
+        const dsLich = await TKB.find(query).populate('MonHoc PhongHoc GiangVien LopHoc');
 
-        res.render('tkb', { // Tên file EJS của Tâm
-            title: 'Thời Khóa Biểu Của Tâm',
-            dsTKB: dsTKB
+        // 4. Tối ưu đoạn tính ThuIndex (Dùng Object thay vì if/else dài dòng)
+        const thuMap = { 'Thứ 2': 2, 'Thứ 3': 3, 'Thứ 4': 4, 'Thứ 5': 5, 'Thứ 6': 6, 'Thứ 7': 7, 'Chủ Nhật': 8 };
+
+        const dsTKB = dsLich.map(item => ({
+            ...item._doc,
+            ThuIndex: thuMap[item.Thu] || 2,
+            SoTiet: (item.TietKetThuc - item.TietBatDau) + 1
+        }));
+
+        res.render('tkb', {
+            title: 'Thời Khóa Biểu Của Tôi',
+            dsTKB: dsTKB,
+            user: user
         });
     } catch (err) {
-        res.status(500).send("Lỗi lưới: " + err.message);
+        console.error(err);
+        res.status(500).send("Lỗi lưới rồi Tâm ơi: " + err.message);
     }
 });
-
 
 // Trong file routers/taikhoan.js
 // Route hiển thị trang đăng ký
@@ -298,6 +302,7 @@ router.post('/dang-ky-luu', async (req, res) => {
     }
 });
 
+router.use(requireAdmin);
 router.get('/danhsach', async (req, res) => {
     try {
         // Tâm lưu ý: Phải có .populate để nó hiện ra Tên Môn, Tên Phòng nhé

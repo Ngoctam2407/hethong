@@ -53,10 +53,6 @@ router.get('/', async (req, res) => {
         // 4. PHÂN LUỒNG HIỂN THỊ DANH SÁCH
         let dsLich = [];
         let dsTaiKhoan = [];
-        const lichChoBot = await TKB.find({ TrangThai: 'da-duyet' })
-    .populate('MonHoc PhongHoc GiangVien')
-    .limit(20); // Lấy khoảng 20 bản ghi mới nhất để Bot tra cứu nhanh
-
         if (user) {
             if (user.QuyenHan === 'admin') {
                 dsLich = await TKB.find().populate('MonHoc PhongHoc GiangVien').sort({ _id: -1 }).limit(5);
@@ -85,7 +81,7 @@ router.get('/', async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lỗi phân luồng dữ liệu rồi Tâm ơi! Kiểm tra Terminal nhé.");
+        res.status(500).send("Lỗi phân luồng dữ liệu rồi! Kiểm tra Terminal nhé.");
     }
 });
 
@@ -112,9 +108,8 @@ router.get('/dangnhap', async (req, res) => {
 // POST: Xử lý Đăng nhập
 router.post('/dangnhap', async (req, res) => {
     try {
-        // Kiểm tra xem đã đăng nhập chưa
         if (req.session.user) {
-            req.session.error = 'Tâm ơi, em đang ở trong hệ thống rồi mà!';
+            req.session.error = 'Bạn đang ở trong hệ thống rồi mà!';
             return res.redirect('/');
         }
 
@@ -122,41 +117,53 @@ router.post('/dangnhap', async (req, res) => {
         const taikhoan = await TaiKhoan.findOne({ TenDangNhap: TenDangNhap });
 
         if (taikhoan) {
-            // So sánh mật khẩu
             if (bcrypt.compareSync(MatKhau, taikhoan.MatKhau)) {
                 if (taikhoan.TrangThai == 0) {
-                    req.session.error = 'Tài khoản của Tâm đang tạm khóa nhé.';
+                    req.session.error = 'Tài khoản của bạn đang tạm khóa nhé.';
                     return res.redirect('/dangnhap');
                 } else {
-                    // LƯU SESSION
-                    req.session.user = taikhoan;
 
-                    // --- PHÂN LUỒNG TÁC NHÂN CHO ADMIN TÂM ---
+                    // --- ĐOẠN NÀY LÀ LINH HỒN CỦA "CÁ NHÂN HÓA" NÈ TÂM ---
+                    let userSession = taikhoan.toObject(); // Biến tài khoản thành vật thể để thêm đồ vào
+
+                    if (taikhoan.QuyenHan === 'sinhvien') {
+                        // Tìm xem sinh viên này học lớp nào ở bảng SinhVien
+                        const sv = await SinhVien.findOne({ IDTaiKhoan: taikhoan._id });
+                        if (sv) {
+                            userSession.LopHoc = sv.IDLop; // Gắn ID lớp vào để qua bên kia lọc TKB
+                        }
+                    } else if (taikhoan.QuyenHan === 'giangvien') {
+                        // Giảng viên thì đã có _id sẵn rồi
+                        userSession.GiangVien = taikhoan._id;
+                    }
+
+                    // LƯU SESSION ĐÃ CÓ ĐỦ ĐỒ CHƠI
+                    req.session.user = userSession;
+                    // ---------------------------------------------------
+
+                    // PHÂN LUỒNG TÁC NHÂN (Giữ nguyên xi của Tâm nè)
                     if (taikhoan.QuyenHan === 'admin') {
-                        req.session.success = 'Chào mừng Admin Tâm quay lại vương quốc! ';
-                        return res.redirect('/taikhoan'); // Admin vào thẳng trang Quản lý thành viên
-
+                        req.session.success = 'Chào mừng Admin ! ';
+                        return res.redirect('/taikhoan');
                     } else if (taikhoan.QuyenHan === 'giangvien') {
                         req.session.success = 'Chào Giảng viên! Chúc thầy/cô có buổi dạy tốt.';
-                        return res.redirect('/'); // Giảng viên vào trang Quản lý phòng học để xem lịch dạy
-
+                        return res.redirect('/');
                     } else {
                         req.session.success = 'Chào bạn sinh viên! Cố gắng học tập nhé.';
-                        return res.redirect('/'); // Sinh viên thì về trang chủ (nơi hiện danh sách phòng học)
+                        return res.redirect('/');
                     }
                 }
-
             } else {
-                req.session.error = 'Mật khẩu hổng đúng, em kiểm tra lại nha.';
+                req.session.error = 'Mật khẩu hổng đúng, kiểm tra lại nha.';
                 return res.redirect('/dangnhap');
             }
         } else {
-            req.session.error = 'Tên đăng nhập này anh chưa thấy trong máy Tâm ơi.';
+            req.session.error = 'Tên đăng nhập này chưa thấy trong máy.';
             return res.redirect('/dangnhap');
         }
     } catch (err) {
         console.error(err);
-        req.session.error = 'Có chút lỗi kỹ thuật, Tâm thử lại nhé!';
+        req.session.error = 'Có chút lỗi kỹ thuật, thử lại nhé!';
         res.redirect('/dangnhap');
     }
 });

@@ -21,30 +21,44 @@ router.get('/them', async (req, res) => {
 });
 
 // 3. POST: Xử lý Thêm
+// 3. POST: Xử lý Thêm (Bản nâng cấp cho Tâm)
 router.post('/them', async (req, res) => {
+    try {
+        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MSSV, MaGV } = req.body;
 
-    if (!req.body) {
-        return res.send("Không nhận được dữ liệu form");
+        const salt = bcrypt.genSaltSync(10);
+        const data = {
+            HoVaTen,
+            Email,
+            TenDangNhap,
+            MatKhau: bcrypt.hashSync(MatKhau, salt),
+            QuyenHan,
+            TrangThai: 1
+        };
+
+        // Bước 1: Tạo tài khoản chính
+        const tkMoi = await TaiKhoan.create(data);
+
+        // Bước 2: Tạo bản ghi ở bảng phụ để "định danh" cho Hà/Đan
+        if (QuyenHan === 'sinhvien') {
+            await SinhVien.create({
+                IDTaiKhoan: tkMoi._id,
+                MSSV: MSSV || "Chưa có",
+                IDLop: IDLop // Đây chính là chìa khóa để lọc TKB sau này nè Tâm!
+            });
+        } else if (QuyenHan === 'giangvien') {
+            await GiangVien.create({
+                IDTaiKhoan: tkMoi._id,
+                MaGV: MaGV || "GV000"
+            });
+        }
+
+        req.session.success = `Đã tạo tài khoản cho ${HoVaTen} thành công!`;
+        res.redirect('/taikhoan');
+    } catch (err) {
+        console.error(err);
+        res.send("Lỗi khi thêm tài khoản rồi Tâm ơi: " + err.message);
     }
-
-    if (!req.body.HoVaTen) {
-        return res.send("Thiếu họ và tên");
-    }
-
-    var salt = bcrypt.genSaltSync(10);
-
-    var data = {
-        HoVaTen: req.body.HoVaTen,
-        Email: req.body.Email,
-        TenDangNhap: req.body.TenDangNhap,
-        MatKhau: bcrypt.hashSync(req.body.MatKhau, salt),
-        QuyenHan: req.body.QuyenHan,
-        TrangThai: 1
-    };
-
-    await TaiKhoan.create(data);
-
-    res.redirect('/taikhoan');
 });
 
 // 4. GET: Form Sửa (Địa chỉ: /taikhoan/sua/:id)

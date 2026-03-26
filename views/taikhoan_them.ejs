@@ -101,6 +101,16 @@
                                     <h5 class="text-success mb-3"><i class="fas fa-chalkboard-teacher me-2"></i>Thông
                                         tin chuyên môn</h5>
                                     <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Học vị</label>
+                                        <select name="HocVi" class="form-select border-success shadow-sm">
+                                            <option value="Thạc sĩ" selected>Thạc sĩ</option>
+                                            <option value="Tiến sĩ">Tiến sĩ</option>
+                                            <option value="Kỹ sư">Kỹ sư</option>
+                                            <option value="Cử nhân">Cử nhân</option>
+                                            <option value="Giảng viên">Khác / Giảng viên</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
                                         <label class="label-custom fw-bold">Mã giảng viên</label>
                                         <input type="text" name="MaGV" class="form-control" placeholder="GV-KT-01">
                                     </div>
@@ -128,28 +138,28 @@
             </div>
         </div>
 
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-            <script>
-                function toggleExtraFields() {
-                    const role = document.getElementById('roleSelect').value;
-                    const svFields = document.getElementById('sinhvienFields');
-                    const gvFields = document.getElementById('giangvienFields');
+        <script>
+            function toggleExtraFields() {
+                const role = document.getElementById('roleSelect').value;
+                const svFields = document.getElementById('sinhvienFields');
+                const gvFields = document.getElementById('giangvienFields');
 
-                    // Ẩn tất cả trước khi hiện cái cần thiết
-                    svFields.style.display = 'none';
-                    gvFields.style.display = 'none';
+                // Ẩn tất cả trước khi hiện cái cần thiết
+                svFields.style.display = 'none';
+                gvFields.style.display = 'none';
 
-                    if (role === 'sinhvien') {
-                        svFields.style.display = 'flex';
-                    } else if (role === 'giangvien') {
-                        gvFields.style.display = 'flex';
-                    }
+                if (role === 'sinhvien') {
+                    svFields.style.display = 'flex';
+                } else if (role === 'giangvien') {
+                    gvFields.style.display = 'flex';
                 }
-                // Gọi hàm ngay khi load trang để hiển thị đúng trạng thái mặc định
-                window.onload = toggleExtraFields;
-            </script>
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            }
+            // Gọi hàm ngay khi load trang để hiển thị đúng trạng thái mặc định
+            window.onload = toggleExtraFields;
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
