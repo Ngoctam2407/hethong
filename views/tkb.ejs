@@ -10,200 +10,312 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
         body {
             font-family: 'Quicksand', sans-serif;
-            background-color: #f8f9fa;
+            background-color: #f4f7fe;
         }
 
         .main-btn {
-            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
             border: none;
             color: white;
-            padding: 10px 30px;
+            padding: 10px 25px;
             border-radius: 50px;
+            text-decoration: none;
             font-weight: 600;
             transition: 0.3s;
-            text-decoration: none;
+            display: inline-block;
         }
 
         .main-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(0, 123, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(110, 142, 251, 0.4);
             color: white;
         }
 
-        /* LƯỚI THỜI KHÓA BIỂU */
-        .calendar-wrapper {
+        /* --- STYLE MA TRẬN (ADMIN & GIẢNG VIÊN) --- */
+        .table-admin-wrapper {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        .admin-cell {
+            height: 120px;
+            vertical-align: top;
+            padding: 8px !important;
+            min-width: 160px;
+        }
+
+        .tkb-card {
+            border-radius: 12px;
+            padding: 10px;
+            color: white;
+            height: 100%;
+            transition: 0.3s;
             display: flex;
             flex-direction: column;
-            min-width: 900px;
-            background: #fff;
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        .calendar-header-grid {
-            display: grid;
-            grid-template-columns: 80px repeat(7, 1fr);
-            background: #f1f4f9;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .day-col {
-            padding: 15px 0;
-            text-align: center;
-            color: #007bff;
-            font-weight: 700;
-            border-right: 1px solid #dee2e6;
-        }
-
-        .calendar-body-grid {
-            display: grid;
-            grid-template-columns: 80px repeat(7, 1fr);
-            grid-template-rows: repeat(12, 65px);
-            /* 12 tiết học */
+            justify-content: space-between;
             position: relative;
         }
 
-        .time-slot {
-            border-right: 1px solid #f1f1f1;
-            border-bottom: 1px solid #f1f1f1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            color: #adb5bd;
-            font-weight: 600;
-        }
-
-        /* THẺ MÔN HỌC - Style giống cái card ở trang chủ của Tâm */
-        .tkb-card {
-            margin: 3px;
-            border-radius: 12px;
-            padding: 8px;
-            font-size: 0.75rem;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            transition: 0.3s;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            border: none;
-        }
-
-        .tkb-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-            z-index: 5;
-        }
-
-        /* Màu sắc theo buổi (Đồng bộ Gradient) */
         .color-sang {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
 
         .color-chieu {
-            background: linear-gradient(135deg, #6610f2 0%, #007bff 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
         .color-toi {
-            background: linear-gradient(135deg, #434343 0%, #000000 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
         }
 
-        .table-card {
-            border: none;
-            border-radius: 20px;
-            background: #ffffff;
-            padding: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            overflow-x: auto;
-            /* Để xem được trên điện thoại */
+        /* --- STYLE LƯỚI 7 CỘT (SINH VIÊN) --- */
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+        }
+
+        .day-col {
+            background: #fff;
+            border-radius: 15px;
+            min-height: 450px;
+            border: 1px solid #edf2f7;
+        }
+
+        .day-title {
+            background: #6e8efb;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 15px 15px 0 0;
+            font-weight: 700;
+        }
+
+        .user-item-card {
+            background: #fff;
+            margin: 10px;
+            padding: 12px;
+            border-radius: 10px;
+            border-left: 5px solid #6e8efb;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        @media (max-width: 1200px) {
+            .user-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .user-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
+    <%- include('header') %>
 
-    <div class="container mt-5 mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="fw-bold mb-1" style="font-size: 2.2rem;">
-                    Lịch Học <span>Của <%= user.HoVaTen %></span>
-                </h1>
-                <p class="text-muted">
-                    Chào <strong>
-                        <%= user.HoVaTen %>
-                    </strong>, dưới đây là thời khóa biểu cá nhân của bạn.
-                </p>
+        <div class="container-fluid py-5 px-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Hệ Thống Lịch Học Khai Trí</h2>
+                    <p class="text-muted">Chào <b>
+                            <%= user.HoVaTen %>
+                        </b> (<%= user.QuyenHan %>). Chúc bạn một ngày tốt lành!</p>
+                </div>
+                <% if(user.QuyenHan !=='sinhvien' ) { %>
+                    <a href="/tkb/dangky" class="main-btn"><i class="fas fa-plus me-2"></i>Đăng Ký Lịch</a>
+                    <% } %>
             </div>
-            <a href="/tkb/dangky" class="main-btn">
-                <i class="fas fa-plus-circle me-2"></i>Đăng ký mới
-            </a>
-        </div>
 
-        <div class="table-card">
-            <div class="calendar-wrapper">
-                <div class="calendar-header-grid">
-                    <div class="day-col" style="background: #f8f9fa;">Tiết</div>
-                    <div class="day-col">Thứ 2</div>
-                    <div class="day-col">Thứ 3</div>
-                    <div class="day-col">Thứ 4</div>
-                    <div class="day-col">Thứ 5</div>
-                    <div class="day-col">Thứ 6</div>
-                    <div class="day-col">Thứ 7</div>
-                    <div class="day-col border-right-0">Chủ Nhật</div>
+            <% if(user.QuyenHan==='Admin' || user.QuyenHan==='admin' || user.QuyenHan==='giangvien' ) { %>
+                <div class="table-admin-wrapper">
+                    <table class="table table-bordered m-0">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th style="width: 120px;">Thứ / Buổi</th>
+                                <% dsphong.forEach(function(phong) { %>
+                                    <th><i class="fas fa-door-open me-1 text-primary"></i>
+                                        <%= phong.TenPhong %>
+                                    </th>
+                                    <% }); %>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% cacThu.forEach(function(thu) { %>
+                                <% cacBuoi.forEach(function(buoi) { %>
+                                    <tr>
+                                        <td class="text-center align-middle bg-light">
+                                            <div class="fw-bold text-primary">
+                                                <%= thu %>
+                                            </div>
+                                            <small class="badge bg-secondary-subtle text-dark">
+                                                <%= buoi %>
+                                            </small>
+                                        </td>
+                                        <% dsphong.forEach(function(phong) { %>
+                                            <td class="admin-cell">
+                                                <% var lich=dsTKB.find(function(i) { return i.Thu===thu &&
+                                                    i.CaHoc===buoi && i.PhongHoc &&
+                                                    i.PhongHoc._id.toString()===phong._id.toString(); }); if
+                                                    (user.QuyenHan==='giangvien' && lich) { if (lich.GiangVien &&
+                                                    lich.GiangVien._id.toString() !==user._id.toString()) { lich=null;}
+                                                    } %>
+                                                    <% if(lich) { %>
+                                                        <div class="tkb-card color-<%= lich.CaHoc === 'Sáng'?'sang':(lich.CaHoc === 'Chiều'?'chieu':'toi') %> shadow-sm"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modal<%= lich._id %>"
+                                                            style="cursor: pointer;">
+                                                            <div class="class-name text-truncate">
+                                                                <%= lich.LopHoc ? lich.LopHoc.TenLop : 'N/A' %>
+                                                            </div>
+                                                            <div class="sub-info text-truncate-2">
+                                                                <%= lich.MonHoc?.TenMonHoc %>
+                                                            </div>
+                                                            <div
+                                                                class="mt-2 pt-1 border-top border-white border-opacity-25 d-flex justify-content-between align-items-center">
+                                                                <span style="font-size: 0.65rem;">T:<%= lich.TietBatDau
+                                                                        %>-<%= lich.TietKetThuc %></span>
+                                                                <i class="fas fa-eye"
+                                                                    style="font-size: 0.7rem; opacity: 0.7;"></i>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="modal fade" id="modal<%= lich._id %>" tabindex="-1"
+                                                            aria-hidden="true">
+                                                            <div class="modal-dialog modal-dialog-centered">
+                                                                <div class="modal-content border-0 shadow-lg"
+                                                                    style="border-radius: 20px;">
+                                                                    <div class="modal-header border-0 pb-0">
+                                                                        <h5 class="fw-bold text-primary"><i
+                                                                                class="fas fa-info-circle me-2"></i>Chi
+                                                                            Tiết Lịch Học</h5>
+                                                                        <button type="button" class="btn-close"
+                                                                            data-bs-dismiss="modal"
+                                                                            aria-label="Close"></button>
+                                                                    </div>
+                                                                    <div class="modal-body p-4 text-dark">
+                                                                        <div class="mb-3">
+                                                                            <label class="text-muted small d-block">Môn
+                                                                                học & Lớp</label>
+                                                                            <span class="fw-bold fs-5 text-primary">
+                                                                                <%= lich.MonHoc?.TenMonHoc %> - <%=
+                                                                                        lich.LopHoc?.TenLop %>
+                                                                            </span>
+                                                                        </div>
+                                                                        <div class="row g-3">
+                                                                            <div class="col-6">
+                                                                                <label
+                                                                                    class="text-muted small d-block">Giảng
+                                                                                    viên</label>
+                                                                                <span class="fw-semibold">
+                                                                                    <%= lich.GiangVien?.HoVaTen
+                                                                                        || 'Chưa cập nhật' %>
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="col-6">
+                                                                                <label
+                                                                                    class="text-muted small d-block">Phòng
+                                                                                    học</label>
+                                                                                <span class="fw-semibold text-danger">
+                                                                                    <%= lich.PhongHoc?.TenPhong %>
+                                                                                </span>
+                                                                            </div>
+                                                                            <div class="col-12">
+                                                                                <label
+                                                                                    class="text-muted small d-block">Thời
+                                                                                    gian</label>
+                                                                                <span class="fw-semibold">
+                                                                                    <%= lich.Thu %>, <%= lich.CaHoc %>
+                                                                                            (Tiết <%= lich.TietBatDau %>
+                                                                                                -<%= lich.TietKetThuc %>
+                                                                                                    )
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div class="d-flex gap-2 mt-4">
+                                                                            <button
+                                                                                class="btn btn-light rounded-pill flex-grow-1 fw-bold"
+                                                                                data-bs-dismiss="modal">Đóng</button>
+
+                                                                            <% if(user.QuyenHan==='Admin' ||
+                                                                                user.QuyenHan==='admin' ) { %>
+                                                                                <a href="/tkb/sua/<%= lich._id %>"
+                                                                                    class="btn btn-primary rounded-pill flex-grow-1 fw-bold">Sửa
+                                                                                    lịch</a>
+                                                                                <form
+                                                                                    action="/tkb/xoa/<%= lich._id %>?_method=DELETE"
+                                                                                    method="POST" class="flex-grow-1"
+                                                                                    onsubmit="return confirm('Tâm có chắc muốn xóa lịch này không?')">
+                                                                                    <button
+                                                                                        class="btn btn-outline-danger rounded-pill w-100 fw-bold">Xóa</button>
+                                                                                </form>
+                                                                                <% } %>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <% } %>
+                                            </td>
+                                            <% }); %>
+                                    </tr>
+                                    <% }); %>
+                                        <% }); %>
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="calendar-body-grid">
-                    <% for(let t=1; t <=12; t++) { %>
-                        <div class="time-slot" style="grid-column: 1; grid-row: <%= t %>;">
-                            T.<%= t %>
-                        </div>
-                        <% } %>
-
-                            <% const dayToCol={ "Thứ 2" : 2, "Thứ 3" : 3, "Thứ 4" : 4, "Thứ 5" : 5, "Thứ 6" : 6, "Thứ 7"
-                                : 7, "Chủ Nhật" : 8 }; dsTKB.forEach(tkb=> {
-                                // 2. Lấy số cột từ bảng từ điển phía trên
-                                const colIndex = dayToCol[tkb.Thu] || 2;
-
-                                // 3. Tính xem môn này học trong bao nhiêu tiết để thẻ giãn ra (span)
-                                const spanTiet = (tkb.TietKetThuc - tkb.TietBatDau) + 1;
-                                %>
-                                <div class="tkb-card color-<%= tkb.CaHoc === 'Sáng' ? 'sang' : (tkb.CaHoc === 'Chiều' ? 'chieu' : 'toi') %>"
-                                    style="grid-column: <%= colIndex %>; grid-row: <%= tkb.TietBatDau %> / span <%= spanTiet %>;">
-
-                                    <div class="fw-bold text-truncate">
-                                        <%= tkb.MonHoc.TenMonHoc %>
-                                    </div>
-
-                                    <div class="opacity-75" style="font-size: 0.65rem;">
-                                        <i class="fas fa-users me-1"></i>
-                                        <%= tkb.LopHoc ? tkb.LopHoc.TenLop : 'Chưa rõ lớp' %>
-                                    </div>
-
-                                    <div class="opacity-75" style="font-size: 0.65rem;">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        <%= tkb.PhongHoc ? tkb.PhongHoc.TenPhong : 'Chưa rõ phòng' %>
-                                    </div>
-
-                                    <div class="card-detail-hover">
-                                        <small><i class="fas fa-user-tie me-1"></i>
-                                            <%= tkb.GiangVien?.HoVaTen %>
-                                        </small>
-                                        <br>
-                                        <small><i class="fas fa-clock me-1"></i> Tiết <%= tkb.TietBatDau %>-
-                                                <%= tkb.TietKetThuc %></small>
-                                    </div>
+                <% } else { %>
+                    <div class="user-grid">
+                        <% cacThu.forEach(function(thu) { %>
+                            <div class="day-col">
+                                <div class="day-title">
+                                    <%= thu %>
                                 </div>
-                                <% }) %>
-                </div>
-            </div>
+                                <div class="day-body">
+                                    <% var items=dsTKB.filter(function(i) { return i.Thu===thu; }); if(items.length> 0)
+                                        {
+                                        items.forEach(function(item) {
+                                        %>
+                                        <div class="user-item-card">
+                                            <div class="fw-bold text-primary">
+                                                <%= item.MonHoc?.TenMonHoc %>
+                                            </div>
+                                            <div class="small fw-semibold mt-1 text-dark">
+                                                <i class="fas fa-users-class me-1 text-success"></i>Lớp: <%=
+                                                    item.LopHoc?.TenLop || 'N/A' %>
+                                            </div>
+                                            <div class="small text-muted"><i class="fas fa-clock me-1"></i>Tiết <%=
+                                                    item.TietBatDau %>-<%= item.TietKetThuc %>
+                                            </div>
+                                            <div class="small mt-1"><i
+                                                    class="fas fa-map-marker-alt me-1 text-danger"></i>P: <%=
+                                                    item.PhongHoc?.TenPhong %>
+                                            </div>
+                                            <div class="mt-2 pt-1 border-top text-secondary" style="font-size: 0.7rem;">
+                                                GV: <%= item.GiangVien?.HoVaTen %>
+                                            </div>
+                                        </div>
+                                        <% }); } else { %>
+                                            <div class="text-center mt-5 text-muted opacity-25 small">Trống</div>
+                                            <% } %>
+                                </div>
+                            </div>
+                            <% }); %>
+                    </div>
+                    <% } %>
         </div>
-    </div>
-
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

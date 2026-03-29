@@ -10,8 +10,15 @@
                     <i class="fas fa-user-circle me-1"></i>
                     <%= user.HoVaTen %>
                         <small class="text-muted d-none d-sm-inline" style="font-size: 0.7rem;">
-                            (<%= user.QuyenHan==='admin' ? 'Quản trị' : (user.QuyenHan==='giangvien' ? 'Giảng viên'
-                                : 'Sinh viên' ) %>)
+                            (
+                            <% if(user.QuyenHan==='admin' ) { %>
+                                Quản trị
+                                <% } else if(user.QuyenHan==='giangvien' ) { %>
+                                    Giảng viên
+                                    <% } else { %>
+                                        Sinh viên <%= user.TenLopHienThi ? '- ' + user.TenLopHienThi : '' %>
+                                            <% } %>
+                                                )
                         </small>
                 </span>
 
@@ -30,8 +37,14 @@
                                         class="fas fa-chalkboard-teacher text-warning me-2"></i>Quản lý lớp học</a></li>
                             <li><a class="dropdown-item py-2" href="/monhoc"><i
                                         class="fas fa-book text-success me-2"></i>Quản lý môn học</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item py-2" href="/tkb"><i
+                                        class="fas fa-calendar-alt text-success me-2"></i>Quản lý TKB tổng quát</a></li>
                             <li><a class="dropdown-item py-2" href="/tkb/danhsach"><i
-                                        class="fas fa-calendar-check text-info me-2"></i>Quản lý TKB</a></li>
+                                        class="fas fa-calendar-check text-info me-2"></i>Quản lý danh sách đăng ký
+                                    tkb</a></li>
                         </ul>
                     </div>
 
