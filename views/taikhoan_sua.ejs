@@ -87,12 +87,13 @@
                                         học tập</h5>
                                     <div class="col-md-6 mb-4">
                                         <label class="label-custom fw-bold">MSSV</label>
-                                        <input type="text" name="MSSV" class="form-control"
-                                            value="<%= detail && detail.MSSV ? detail.MSSV : '' %>">
+                                        <input type="text" id="mssvInput" class="form-control"
+                                            value="<%= detail && detail.MSSV ? detail.MSSV : 'Tự động sinh theo lớp' %>" readonly>
+                                        <div class="form-text">Đổi lớp sẽ tự sinh lại MSSV theo mã lớp mới.</div>
                                     </div>
                                     <div class="col-md-6 mb-4">
                                         <label class="label-custom fw-bold">Lớp học</label>
-                                        <select name="IDLop" class="form-select">
+                                        <select name="IDLop" id="lopHocSelect" class="form-select">
                                             <option value="">-- Chọn lớp --</option>
                                             <% dsLop.forEach(lop=> { %>
                                                 <option value="<%= lop._id %>" <%=(detail && detail.IDLop &&
@@ -153,11 +154,16 @@
                 const role = document.getElementById('roleSelect').value;
                 const svFields = document.getElementById('sinhvienFields');
                 const gvFields = document.getElementById('giangvienFields');
+                const lopHocSelect = document.getElementById('lopHocSelect');
 
                 svFields.style.display = 'none';
                 gvFields.style.display = 'none';
+                lopHocSelect.required = false;
 
-                if (role === 'sinhvien') svFields.style.display = 'flex';
+                if (role === 'sinhvien') {
+                    svFields.style.display = 'flex';
+                    lopHocSelect.required = true;
+                }
                 else if (role === 'giangvien') gvFields.style.display = 'flex';
             }
 

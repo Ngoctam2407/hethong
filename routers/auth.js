@@ -2,6 +2,24 @@ var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
+var SinhVien = require('../models/sinhvien');
+var GiangVien = require('../models/giangvien');
+
+async function taoDuLieuSession(taikhoan) {
+    let userSession = taikhoan.toObject ? taikhoan.toObject() : { ...taikhoan };
+
+    if (taikhoan.QuyenHan === 'sinhvien') {
+        const sv = await SinhVien.findOne({ IDTaiKhoan: taikhoan._id }).populate('IDLop', 'TenLop');
+        if (sv) {
+            userSession.LopHoc = sv.IDLop ? sv.IDLop._id : sv.IDLop;
+            userSession.TenLopHienThi = sv.IDLop ? sv.IDLop.TenLop : '';
+        }
+    } else if (taikhoan.QuyenHan === 'giangvien') {
+        userSession.GiangVien = taikhoan._id;
+    }
+
+    return userSession;
+}
 
 
 
@@ -31,8 +49,8 @@ router.post('/dangnhap', async (req, res) => {
                     req.session.error = 'Tài khoản của Tâm đang tạm khóa nhé.';
                     return res.redirect('/dangnhap');
                 } else {
-                    // LƯU SESSION
-                    req.session.user = taikhoan;
+                    // LƯU SESSION có kèm dữ liệu phụ để các trang phân luồng ổn định hơn
+                    req.session.user = await taoDuLieuSession(taikhoan);
 
                     // --- PHÂN LUỒNG TÁC NHÂN CHO ADMIN TÂM ---
                     if (taikhoan.QuyenHan === 'admin') {
@@ -71,6 +89,86 @@ router.get('/dangxuat', (req, res) => {
     });
 });
 
+router.get('/hoso', requireLogin, async (req, res) => {
+    try {
+        const tk = await TaiKhoan.findById(req.session.user._id);
+        if (!tk) {
+            req.session.error = 'Không tìm thấy tài khoản của bạn.';
+            return res.redirect('/auth/dangnhap');
+        }
+
+        if (tk.QuyenHan === 'admin') {
+            req.session.error = 'Trang này chỉ dành cho sinh viên và giảng viên.';
+            return res.redirect('/taikhoan');
+        }
+
+        let detail = null;
+        if (tk.QuyenHan === 'sinhvien') {
+            detail = await SinhVien.findOne({ IDTaiKhoan: tk._id }).populate('IDLop', 'MaLop TenLop');
+        } else if (tk.QuyenHan === 'giangvien') {
+            detail = await GiangVien.findOne({ IDTaiKhoan: tk._id });
+        }
+
+        res.render('hoso_canhan', {
+            title: 'Thông tin cá nhân',
+            tk,
+            detail
+        });
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Không tải được hồ sơ cá nhân.';
+        res.redirect('/');
+    }
+});
+
+router.post('/hoso', requireLogin, async (req, res) => {
+    try {
+        const tk = await TaiKhoan.findById(req.session.user._id);
+        if (!tk) {
+            req.session.error = 'Không tìm thấy tài khoản của bạn.';
+            return res.redirect('/auth/dangnhap');
+        }
+
+        if (tk.QuyenHan === 'admin') {
+            req.session.error = 'Trang này chỉ dành cho sinh viên và giảng viên.';
+            return res.redirect('/taikhoan');
+        }
+
+        const { HoVaTen, Email, TenDangNhap, MatKhau, SoDienThoai, NgaySinh, LinhVuc, ChuyenNganh } = req.body;
+        let updateData = { HoVaTen, Email, TenDangNhap };
+
+        if (MatKhau && MatKhau.trim() !== '') {
+            const salt = bcrypt.genSaltSync(10);
+            updateData.MatKhau = bcrypt.hashSync(MatKhau, salt);
+        }
+
+        await TaiKhoan.findByIdAndUpdate(tk._id, updateData);
+
+        if (tk.QuyenHan === 'sinhvien') {
+            await SinhVien.findOneAndUpdate(
+                { IDTaiKhoan: tk._id },
+                { SoDienThoai, NgaySinh: NgaySinh || null },
+                { upsert: true }
+            );
+        } else if (tk.QuyenHan === 'giangvien') {
+            await GiangVien.findOneAndUpdate(
+                { IDTaiKhoan: tk._id },
+                { SoDienThoai, LinhVuc, ChuyenNganh },
+                { upsert: true }
+            );
+        }
+
+        const taiKhoanMoi = await TaiKhoan.findById(tk._id);
+        req.session.user = await taoDuLieuSession(taiKhoanMoi);
+        req.session.success = 'Đã cập nhật thông tin cá nhân thành công.';
+        res.redirect('/auth/hoso');
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Lỗi khi cập nhật thông tin cá nhân: ' + err.message;
+        res.redirect('/auth/hoso');
+    }
+});
+
 
 function requireAdmin(req, res, next) {
 
@@ -90,5 +188,15 @@ function requireAdmin(req, res, next) {
     next();
 }
 
+function requireLogin(req, res, next) {
+    if (!req.session.user) {
+        req.session.error = "Bạn cần đăng nhập trước!";
+        return res.redirect('/auth/dangnhap');
+    }
+
+    next();
+}
+
 module.exports = router;
 module.exports.requireAdmin = requireAdmin; // Xuất thêm hàm middleware để kiểm tra quyền admin
+module.exports.requireLogin = requireLogin;

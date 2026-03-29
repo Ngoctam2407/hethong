@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <%- include('css') %>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="mb-4">
+                        <a href="/" class="text-decoration-none text-primary fw-600">
+                            <i class="fas fa-arrow-left me-2"></i>Trở về trang chủ
+                        </a>
+                    </div>
+
+                    <div class="add-card p-4 p-md-5 shadow-sm bg-white" style="border-radius: 20px;">
+                        <div class="text-center mb-5">
+                            <div class="icon-circle bg-primary-subtle d-inline-block p-4 rounded-circle mb-3">
+                                <i class="fas fa-id-card fa-3x text-primary"></i>
+                            </div>
+                            <h2 class="fw-bold">Thông Tin Cá Nhân</h2>
+                            <p class="text-muted">Bạn có thể tự cập nhật thông tin cá nhân của mình tại đây</p>
+                        </div>
+
+                        <form action="/auth/hoso" method="POST">
+                            <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom fw-bold">Họ và tên</label>
+                                    <input type="text" name="HoVaTen" class="form-control" value="<%= tk.HoVaTen %>" required>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom fw-bold">Email</label>
+                                    <input type="email" name="Email" class="form-control" value="<%= tk.Email %>" required>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label class="label-custom fw-bold">Tên đăng nhập</label>
+                                    <input type="text" name="TenDangNhap" class="form-control" value="<%= tk.TenDangNhap %>" required>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <label class="label-custom fw-bold">Mật khẩu mới</label>
+                                    <input type="password" name="MatKhau" class="form-control"
+                                        placeholder="Để trống nếu không muốn đổi mật khẩu">
+                                </div>
+
+                                <% if (tk.QuyenHan === 'sinhvien') { %>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">MSSV</label>
+                                        <input type="text" class="form-control" value="<%= detail && detail.MSSV ? detail.MSSV : '' %>" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Lớp học</label>
+                                        <input type="text" class="form-control"
+                                            value="<%= detail && detail.IDLop ? (detail.IDLop.MaLop + ' - ' + detail.IDLop.TenLop) : '' %>" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Ngày sinh</label>
+                                        <input type="date" name="NgaySinh" class="form-control"
+                                            value="<%= detail && detail.NgaySinh ? new Date(detail.NgaySinh).toISOString().slice(0, 10) : '' %>">
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Số điện thoại</label>
+                                        <input type="text" name="SoDienThoai" class="form-control"
+                                            value="<%= detail && detail.SoDienThoai ? detail.SoDienThoai : '' %>">
+                                    </div>
+                                <% } %>
+
+                                <% if (tk.QuyenHan === 'giangvien') { %>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Mã giảng viên</label>
+                                        <input type="text" class="form-control" value="<%= detail && detail.MaGV ? detail.MaGV : '' %>" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Học vị</label>
+                                        <input type="text" class="form-control" value="<%= detail && detail.HocVi ? detail.HocVi : '' %>" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Lĩnh vực dạy</label>
+                                        <input type="text" name="LinhVuc" class="form-control"
+                                            value="<%= detail && detail.LinhVuc ? detail.LinhVuc : '' %>">
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <label class="label-custom fw-bold">Chuyên ngành</label>
+                                        <input type="text" name="ChuyenNganh" class="form-control"
+                                            value="<%= detail && detail.ChuyenNganh ? detail.ChuyenNganh : '' %>">
+                                    </div>
+                                    <div class="col-md-12 mb-4">
+                                        <label class="label-custom fw-bold">Số điện thoại</label>
+                                        <input type="text" name="SoDienThoai" class="form-control"
+                                            value="<%= detail && detail.SoDienThoai ? detail.SoDienThoai : '' %>">
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg shadow rounded-pill">
+                                    <i class="fas fa-save me-2"></i>Lưu thông tin cá nhân
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

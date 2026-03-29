@@ -7,6 +7,39 @@ var LopHoc = require('../models/lophoc');
 var SinhVien = require('../models/sinhvien');
 var GiangVien = require('../models/giangvien');
 
+function taoTienToMSSV(maLop) {
+    const chunks = String(maLop || '').toUpperCase().match(/[A-Z]+/g) || [];
+    if (chunks.length === 0) return 'SV';
+    if (chunks.length === 1) return chunks[0].slice(0, 3);
+    return `${chunks[0].charAt(0)}${chunks[chunks.length - 1]}`;
+}
+
+async function taoMSSVTuDong(IDLop, boQuaSinhVienId) {
+    const lop = await LopHoc.findById(IDLop);
+    if (!lop) throw new Error('Không tìm thấy lớp học để tạo MSSV tự động.');
+
+    const tienTo = taoTienToMSSV(lop.MaLop);
+    const dieuKien = {
+        MSSV: new RegExp(`^${tienTo}\\d{3}$`)
+    };
+
+    if (boQuaSinhVienId) {
+        dieuKien._id = { $ne: boQuaSinhVienId };
+    }
+
+    const dsSinhVien = await SinhVien.find(dieuKien).sort({ MSSV: 1 }).lean();
+    let soThuTuMax = 0;
+
+    dsSinhVien.forEach(function (sv) {
+        const match = String(sv.MSSV || '').match(/(\d{3})$/);
+        if (match) {
+            soThuTuMax = Math.max(soThuTuMax, parseInt(match[1], 10));
+        }
+    });
+
+    return `${tienTo}${String(soThuTuMax + 1).padStart(3, '0')}`;
+}
+
 router.use(requireAdmin);
 // 1. GET: Danh sách (Địa chỉ: /taikhoan)
 router.get('/', async (req, res) => {
@@ -24,7 +57,14 @@ router.get('/them', async (req, res) => {
 // 3. POST: Xử lý Thêm (Bản nâng cấp cho Tâm)
 router.post('/them', async (req, res) => {
     try {
-        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MSSV, MaGV } = req.body;
+        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MaGV } = req.body;
+
+        if (QuyenHan === 'sinhvien') {
+            if (!IDLop) {
+                req.session.error = 'Sinh viên bắt buộc phải chọn lớp học.';
+                return res.redirect('/taikhoan/them');
+            }
+        }
 
         const salt = bcrypt.genSaltSync(10);
         const data = {
@@ -41,9 +81,10 @@ router.post('/them', async (req, res) => {
 
         // Bước 2: Tạo bản ghi ở bảng phụ để "định danh" cho Hà/Đan
         if (QuyenHan === 'sinhvien') {
+            const MSSV = await taoMSSVTuDong(IDLop);
             await SinhVien.create({
                 IDTaiKhoan: tkMoi._id,
-                MSSV: MSSV || "Chưa có",
+                MSSV,
                 IDLop: IDLop // Đây chính là chìa khóa để lọc TKB sau này nè Tâm!
             });
         } else if (QuyenHan === 'giangvien') {
@@ -80,7 +121,14 @@ router.get('/sua/:id', async (req, res) => {
 // 5. POST: Xử lý Cập nhật
 router.post('/sua/:id', async (req, res) => {
     try {
-        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, MSSV, IDLop, MaGV, LinhVuc, SoDienThoai } = req.body;
+        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MaGV, LinhVuc, SoDienThoai } = req.body;
+
+        if (QuyenHan === 'sinhvien') {
+            if (!IDLop) {
+                req.session.error = 'Sinh viên bắt buộc phải chọn lớp học.';
+                return res.redirect('/taikhoan/sua/' + req.params.id);
+            }
+        }
 
         // A. Cập nhật bảng TaiKhoan (Chung)
         let updateData = { HoVaTen, Email, TenDangNhap, QuyenHan };
@@ -95,6 +143,12 @@ router.post('/sua/:id', async (req, res) => {
 
         // B. Cập nhật bảng phụ (Riêng)
         if (QuyenHan === 'sinhvien') {
+            const thongTinSVCu = await SinhVien.findOne({ IDTaiKhoan: req.params.id });
+            const doiLop = !thongTinSVCu || String(thongTinSVCu.IDLop) !== String(IDLop);
+            const MSSV = doiLop
+                ? await taoMSSVTuDong(IDLop, thongTinSVCu ? thongTinSVCu._id : null)
+                : thongTinSVCu.MSSV;
+
             await SinhVien.findOneAndUpdate(
                 { IDTaiKhoan: req.params.id },
                 { MSSV, IDLop },

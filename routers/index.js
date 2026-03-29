@@ -12,6 +12,7 @@ var TKB = require('../models/tkb');
 router.get('/', async (req, res) => {
     try {
         const user = req.session.user;
+        const tuKhoaTraCuu = String(req.query.q || '').trim();
 
         // 1. ĐỊNH NGHĨA KHUNG GIỜ TRƯỚC (Để máy tính biết tiết mấy)
         const khungGioHoc = [
@@ -50,9 +51,10 @@ router.get('/', async (req, res) => {
         const tongPhong = await PhongHoc.countDocuments();
         const tongGV = await TaiKhoan.countDocuments({ QuyenHan: 'giangvien' });
 
-        // 4. PHÂN LUỒNG HIỂN THỊ DANH SÁCH
+        // 4. PHÂN LUỒNG HIỂN THỊ DỮ LIỆU
         let dsLich = [];
         let dsTaiKhoan = [];
+        let ketQuaTraCuu = null;
         if (user) {
             if (user.QuyenHan === 'admin') {
                 dsLich = await TKB.find().populate('MonHoc PhongHoc GiangVien').sort({ _id: -1 }).limit(5);
@@ -64,6 +66,67 @@ router.get('/', async (req, res) => {
             }
         }
 
+        if (tuKhoaTraCuu) {
+            const tuKhoaRegex = new RegExp(`^${tuKhoaTraCuu}$`, 'i');
+
+            let sinhVien = await SinhVien.findOne({ MSSV: tuKhoaRegex })
+                .populate('IDTaiKhoan', 'HoVaTen TenDangNhap')
+                .populate('IDLop', 'MaLop TenLop');
+
+            if (!sinhVien) {
+                const taiKhoanSV = await TaiKhoan.findOne({ TenDangNhap: tuKhoaRegex, QuyenHan: 'sinhvien' });
+                if (taiKhoanSV) {
+                    sinhVien = await SinhVien.findOne({ IDTaiKhoan: taiKhoanSV._id })
+                        .populate('IDTaiKhoan', 'HoVaTen TenDangNhap')
+                        .populate('IDLop', 'MaLop TenLop');
+                }
+            }
+
+            if (sinhVien && sinhVien.IDLop) {
+                const dsLichTraCuu = await TKB.find({ LopHoc: sinhVien.IDLop._id, TrangThai: 'da-duyet' })
+                    .populate('MonHoc PhongHoc GiangVien LopHoc')
+                    .sort({ Thu: 1, TietBatDau: 1 });
+
+                ketQuaTraCuu = {
+                    loai: 'sinhvien',
+                    tieuDe: `Kết quả tra cứu sinh viên`,
+                    moTa: `${sinhVien.IDTaiKhoan?.HoVaTen || 'Sinh viên'} - ${sinhVien.MSSV} - ${sinhVien.IDLop.TenLop}`,
+                    dsLich: dsLichTraCuu
+                };
+            } else {
+                let giangVien = await GiangVien.findOne({ MaGV: tuKhoaRegex })
+                    .populate('IDTaiKhoan', 'HoVaTen TenDangNhap');
+
+                if (!giangVien) {
+                    const taiKhoanGV = await TaiKhoan.findOne({ TenDangNhap: tuKhoaRegex, QuyenHan: 'giangvien' });
+                    if (taiKhoanGV) {
+                        giangVien = await GiangVien.findOne({ IDTaiKhoan: taiKhoanGV._id })
+                            .populate('IDTaiKhoan', 'HoVaTen TenDangNhap');
+                    }
+                }
+
+                if (giangVien && giangVien.IDTaiKhoan) {
+                    const dsLichTraCuu = await TKB.find({ GiangVien: giangVien.IDTaiKhoan._id, TrangThai: 'da-duyet' })
+                        .populate('MonHoc PhongHoc GiangVien LopHoc')
+                        .sort({ Thu: 1, TietBatDau: 1 });
+
+                    ketQuaTraCuu = {
+                        loai: 'giangvien',
+                        tieuDe: `Kết quả tra cứu giảng viên`,
+                        moTa: `${giangVien.IDTaiKhoan.HoVaTen} - ${giangVien.MaGV}`,
+                        dsLich: dsLichTraCuu
+                    };
+                } else {
+                    ketQuaTraCuu = {
+                        loai: 'khongtimthay',
+                        tieuDe: 'Không tìm thấy kết quả phù hợp',
+                        moTa: 'Vui lòng nhập MSSV, Mã GV hoặc tên đăng nhập hợp lệ.',
+                        dsLich: []
+                    };
+                }
+            }
+        }
+
         // 5. RENDER DỮ LIỆU SANG EJS
         res.render('index', {
             title: 'Trang chủ Edu KT',
@@ -71,6 +134,8 @@ router.get('/', async (req, res) => {
             dsTaiKhoan: dsTaiKhoan,
             dsLich: dsLich,
             user: user,
+            tuKhoaTraCuu: tuKhoaTraCuu,
+            ketQuaTraCuu: ketQuaTraCuu,
             thongKeDashboard: [
                 soLopDangHoc,
                 tongPhong - soLopDangHoc,

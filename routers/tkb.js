@@ -29,11 +29,15 @@ router.get('/', async (req, res) => {
         let query = { TrangThai: 'da-duyet' };
 
         // 2. PHÂN LUỒNG TẠI ĐÂY:
-        if (user.QuyenHan === 'SinhVien') {
-            // Nếu là Sinh viên: Chỉ tìm những lịch của đúng Lớp đó
-            // (Tâm kiểm tra xem trong DB bảng TKB có trường 'LopHoc' không nhé)
-            query.LopHoc = user.LopHoc;
-        } else if (user.QuyenHan === 'GiangVien') {
+        if (user.QuyenHan === 'SinhVien' || user.QuyenHan === 'sinhvien') {
+            // Với sinh viên, luôn lấy ID lớp từ bảng SinhVien để lọc TKB chính xác
+            const thongTinSV = await SinhVien.findOne({ IDTaiKhoan: user._id });
+            if (thongTinSV) {
+                query.LopHoc = thongTinSV.IDLop;
+            } else {
+                query._id = null;
+            }
+        } else if (user.QuyenHan === 'GiangVien' || user.QuyenHan === 'giangvien') {
             // Nếu là Giảng viên: Chỉ tìm những lịch mà ID giảng viên khớp với người đang logged in
             query.GiangVien = user._id;
         }
@@ -232,23 +236,29 @@ router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
 // Route hiển thị trang đăng ký
 router.get('/dangky', async (req, res) => {
     try {
+        const user = req.session.user;
+        if (!user) return res.redirect('/auth/dangnhap');
+        if (user.QuyenHan === 'sinhvien') {
+            req.session.error = 'Sinh viên không có quyền đăng ký lịch học.';
+            return res.redirect('/tkb');
+        }
+
         // Tâm lưu ý: Trong Database em dùng 'QuyenHan' (không dùng 'role')
         // Mình đang dùng field QuyenHan trong collection TaiKhoan
         const dsGiangVien = await TaiKhoan.find({ QuyenHan: 'giangvien' });
         const dsMon = await MonHoc.find();
         const dsPhong = await PhongHoc.find();
-        const dsCaHoc = ['Sáng', 'Chiều', 'Tối'];
 
         // Sửa lỗi ở đây: Dùng LopHoc (đã require ở dòng 7) thay vì Lop
         const dsLop = await LopHoc.find();
 
         res.render('tkb_dangky', {
             title: 'Đăng ký học phần Edu KT',
+            user,
             dsmon: dsMon,
             dsphong: dsPhong,
             dsgiangvien: dsGiangVien,
-            dslop: dsLop,
-            dscaHoc: dsCaHoc
+            dslop: dsLop
         });
     } catch (err) {
         console.error("Lỗi lọc dữ liệu Tâm ơi:", err);
@@ -258,16 +268,25 @@ router.get('/dangky', async (req, res) => {
 
 router.post('/dang-ky-luu', async (req, res) => {
     try {
+        const user = req.session.user;
+        if (!user) return res.redirect('/auth/dangnhap');
+        if (user.QuyenHan === 'sinhvien') {
+            req.session.error = 'Sinh viên không có quyền đăng ký lịch học.';
+            return res.redirect('/tkb');
+        }
+
         // Đổi tên biến lấy từ body để không trùng với tên Model (thêm chữ ID vào sau)
         const {
             MonHoc: monHocID,
-            GiangVien: giangVienID,
+            GiangVien: giangVienIdTuForm,
             LopHoc: lopHocID,
             Thu,
             TietBatDau,
             TietKetThuc,
             PhongHoc: phongHocID
         } = req.body;
+
+        const giangVienID = user.QuyenHan === 'giangvien' ? user._id : giangVienIdTuForm;
 
         const tietBD = parseInt(TietBatDau, 10);
         const tietKT = parseInt(TietKetThuc, 10);

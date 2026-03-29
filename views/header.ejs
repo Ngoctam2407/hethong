@@ -48,11 +48,7 @@
                         </ul>
                     </div>
 
-                    <% } else { %>
-                        <a href="/tkb" class="btn btn-sm btn-outline-info me-2">
-                            <i class="fas fa-calendar-alt"></i> Xem Thời khóa biểu
-                        </a>
-                        <% } %>
+                    <% } %>
 
                             <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
                                 <i class="fas fa-sign-out-alt"></i> Đăng xuất
@@ -66,6 +62,25 @@
         </div>
     </div>
 </nav>
+<% if (typeof path !== 'undefined' && path === '/') { %>
+    <section class="bg-white border-bottom py-3">
+        <div class="container">
+            <form action="/" method="GET" class="row g-2 align-items-end">
+                <div class="col-lg-10">
+                    <label class="form-label fw-semibold mb-1">Tra cứu thời khóa biểu theo MSSV, Mã GV hoặc tên đăng nhập</label>
+                    <input type="text" name="q" class="form-control"
+                        placeholder="Ví dụ: DPM001, GV001 hoặc mysunny"
+                        value="<%= typeof tuKhoaTraCuu !== 'undefined' ? tuKhoaTraCuu : '' %>">
+                </div>
+                <div class="col-lg-2 d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i> Tra cứu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+<% } %>
 <% if (typeof path !=='undefined' && (path==='/' || path==='/taikhoan' )) { %>
     <section class="hero-banner py-5">
         <div class="container text-center">

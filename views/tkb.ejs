@@ -136,7 +136,7 @@
                     <% } %>
             </div>
 
-            <% if(user.QuyenHan==='Admin' || user.QuyenHan==='admin' || user.QuyenHan==='giangvien' ) { %>
+            <% if(user.QuyenHan==='Admin' || user.QuyenHan==='admin' ) { %>
                 <div class="table-admin-wrapper">
                     <table class="table table-bordered m-0">
                         <thead class="table-light text-center">
@@ -165,10 +165,7 @@
                                             <td class="admin-cell">
                                                 <% var lich=dsTKB.find(function(i) { return i.Thu===thu &&
                                                     i.CaHoc===buoi && i.PhongHoc &&
-                                                    i.PhongHoc._id.toString()===phong._id.toString(); }); if
-                                                    (user.QuyenHan==='giangvien' && lich) { if (lich.GiangVien &&
-                                                    lich.GiangVien._id.toString() !==user._id.toString()) { lich=null;}
-                                                    } %>
+                                                    i.PhongHoc._id.toString()===phong._id.toString(); }); %>
                                                     <% if(lich) { %>
                                                         <div class="tkb-card color-<%= lich.CaHoc === 'Sáng'?'sang':(lich.CaHoc === 'Chiều'?'chieu':'toi') %> shadow-sm"
                                                             data-bs-toggle="modal"
