@@ -46,6 +46,7 @@
                         <tbody>
                             <% var stt=1; %>
                                 <% taikhoan.forEach(tk=> { %>
+                                    <% const laAdminCuoiCung = tk.QuyenHan === 'admin' && soLuongAdmin <= 1; %>
                                     <tr>
                                         <td class="ps-4 fw-bold text-muted">
                                             <%= stt++ %>
@@ -114,10 +115,19 @@
 
                                         <td class="text-center">
                                             <% if(tk.TrangThai==1) { %>
-                                                <a href="/taikhoan/trangthai/<%= tk._id %>"
-                                                    class="btn btn-sm btn-success shadow-sm" title="Đang hoạt động">
-                                                    <i class="fas fa-unlock"></i> Đang mở
-                                                </a>
+                                                <% if (laAdminCuoiCung) { %>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-secondary shadow-sm"
+                                                        title="Không thể khóa admin cuối cùng"
+                                                        disabled>
+                                                        <i class="fas fa-unlock"></i> Đang mở
+                                                    </button>
+                                                <% } else { %>
+                                                    <a href="/taikhoan/trangthai/<%= tk._id %>"
+                                                        class="btn btn-sm btn-success shadow-sm" title="Đang hoạt động">
+                                                        <i class="fas fa-unlock"></i> Đang mở
+                                                    </a>
+                                                <% } %>
                                                 <% } else { %>
                                                     <a href="/taikhoan/trangthai/<%= tk._id %>"
                                                         class="btn btn-sm btn-danger shadow-sm" title="Đã khóa">
@@ -133,12 +143,21 @@
                                                     title="Chỉnh sửa">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                <% if (laAdminCuoiCung) { %>
+                                                <button type="button"
+                                                    class="btn btn-sm btn-light rounded-circle text-secondary border shadow-sm"
+                                                    title="Khong the xoa admin cuoi cung"
+                                                    disabled>
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                                <% } else { %>
                                                 <a href="/taikhoan/xoa/<%= tk._id %>"
                                                     class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm"
                                                     onclick="return confirm('Tâm ơi, em có chắc muốn xóa không?')"
                                                     title="Xóa">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
+                                                <% } %>
                                             </div>
                                         </td>
                                     </tr>

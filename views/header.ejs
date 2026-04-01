@@ -1,97 +1,137 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold text-danger" href="/">
-            <i class="fas fa-book-reader"></i> <span>Edu KT</span>
-        </a>
-        <% if (typeof path !=='undefined' && path==='/' && !isLoggedIn ) { %>
-            <section class="bg-white border-bottom py-2">
-                <div class="container">
-                    <form action="/" method="GET" class="row g-2 justify-content-center align-items-center">
-                        <div class="col-lg-7 col-md-8">
-                            <label class="form-label fw-semibold mb-1">Tra cứu thời khóa biểu "như Mã số, Tên đăng
-                                nhập"</label>
-                            <input type="text" name="q" class="form-control form-control-sm"
-                                placeholder="Ví dụ: DPM001, GV001 hoặc mysunny"
-                                value="<%= typeof tuKhoaTraCuu !== 'undefined' ? tuKhoaTraCuu : '' %>">
-                        </div>
-                        <div class="col-lg-2 col-md-3 d-grid">
-                            <button type="submit" class="btn btn-primary btn-sm mt-md-4">
-                                <i class="fas fa-search me-1"></i> Tra cứu
-                            </button>
-                        </div>
+﻿<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm" style="position: relative; z-index: 1200;">
+    <% const duongDanHienTai=typeof path !=='undefined' ? path : '' ; %>
+        <div class="container">
+            <a class="navbar-brand fw-bold text-danger" href="/">
+                <i class="fas fa-book-reader"></i> <span>Edu KT</span>
+            </a>
+
+            <div class="ms-auto d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                <% if (typeof path !=='undefined' && path==='/' && !isLoggedIn) { %>
+                    <form action="/" method="GET" class="d-flex align-items-center gap-2 me-2">
+                        <input type="text" name="q" class="form-control form-control-sm"
+                            style="width: min(46vw, 520px);"
+                            placeholder="Tra cứu mã số hoặc tên đăng nhập bạn để xem TKB gần nhất..." autocomplete="off"
+                            value="<%= typeof tuKhoaTraCuu !== 'undefined' ? tuKhoaTraCuu : '' %>">
+                        <button type="submit" class="btn btn-primary btn-sm px-3">
+                            <i class="fas fa-search me-1"></i> Tra cứu
+                        </button>
                     </form>
-                </div>
-            </section>
-            <% } %>
+                    <% } %>
 
-                <div class="ms-auto d-flex align-items-center">
-                    <% if(isLoggedIn && user){ %>
-                        <span class="me-3 fw-bold text-primary">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <%= user.HoVaTen %>
-                                <small class="text-muted d-none d-sm-inline" style="font-size: 0.7rem;">
-                                    (
-                                    <% if(user.QuyenHan==='admin' ) { %>
-                                        Quản trị
-                                        <% } else if(user.QuyenHan==='giangvien' ) { %>
-                                            Giảng viên
-                                            <% } else { %>
-                                                Sinh viên <%= user.TenLopHienThi ? '- ' + user.TenLopHienThi : '' %>
+                        <% if (isLoggedIn && user) { %>
+                            <span class="me-3 fw-bold text-primary">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <%= user.HoVaTen %>
+                                    <small class="text-muted d-none d-sm-inline" style="font-size: 0.7rem;">
+                                        (
+                                        <% if (user.QuyenHan==='admin' ) { %>
+                                            Quản trị
+                                            <% } else if (user.QuyenHan==='giangvien' ) { %>
+                                                Giảng viên
+                                                <% } else { %>
+                                                    Sinh viên <%= user.TenLopHienThi ? '- ' + user.TenLopHienThi : '' %>
+                                                        <% } %>
+                                                            )
+                                    </small>
+                            </span>
+
+                            <% if (user.QuyenHan==='admin' ) { %>
+                                <div class="dropdown d-inline-block me-2">
+                                    <button class="btn btn-sm btn-outline-warning dropdown-toggle shadow-sm px-3"
+                                        type="button" id="adminDropdownBtn" data-bs-toggle="dropdown"
+                                        aria-expanded="false" style="border-radius: 10px;">
+                                        <i class="fas fa-cogs me-1"></i> Quản trị hệ thống
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
+                                        id="adminDropdownMenu"
+                                        style="border-radius: 18px; z-index: 1300; min-width: 360px; padding: 10px 0;">
+                                        <li class="dropdown-header fw-bold text-secondary px-4 pt-2 pb-1"
+                                            style="font-size: 0.78rem; letter-spacing: 0.08em;">QUẢN LÝ NGƯỜI DÙNG</li>
+                                        <li>
+                                            <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/taikhoan' ? 'active' : '' %>"
+                                                href="/taikhoan">
+                                                <i class="fas fa-users text-danger me-2"></i> Thành viên hệ thống
+                                                <div class="small text-muted ms-4">Tài khoản quản trị, giảng viên và
+                                                    sinh viên</div>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li class="dropdown-header fw-bold text-secondary px-4 pt-2 pb-1"
+                                            style="font-size: 0.78rem; letter-spacing: 0.08em;">QUẢN LÝ ĐÀO TẠO</li>
+                                        <li>
+                                            <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/monhoc' ? 'active' : '' %>"
+                                                href="/monhoc">
+                                                <i class="fas fa-book text-success me-2"></i> Môn học
+                                                <div class="small text-muted ms-4">Danh sách môn đang giảng dạy</div>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/lophoc' ? 'active' : '' %>"
+                                                href="/lophoc">
+                                                <i class="fas fa-chalkboard-teacher text-warning me-2"></i> Lớp học
+                                                <div class="small text-muted ms-4">Quản lý lớp và phân nhóm học viên
+                                                </div>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/phonghoc' ? 'active' : '' %>"
+                                                href="/phonghoc">
+                                                <i class="fas fa-door-open text-primary me-2"></i> Phòng học
+                                                <div class="small text-muted ms-4">Không gian học và cơ sở vật chất
+                                                </div>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li class="dropdown-header fw-bold text-secondary px-4 pt-2 pb-1"
+                                            style="font-size: 0.78rem; letter-spacing: 0.08em;">QUẢN LÝ LỊCH HỌC</li>
+                                        <li>
+                                            <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/tkb' ? 'active' : '' %>"
+                                                href="/tkb">
+                                                <i class="fas fa-calendar-alt text-success me-2"></i> Thời khóa biểu
+                                                tổng quát
+                                                <div class="small text-muted ms-4">Sắp xếp và điều chỉnh lịch học</div>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/tkb/danhsach' ? 'active' : '' %>"
+                                                href="/tkb/danhsach">
+                                                <i class="fas fa-calendar-check text-info me-2"></i> Danh sách đăng ký
+                                                TKB
+                                                <div class="small text-muted ms-4">Theo dõi và duyệt các đăng ký lịch
+                                                    học</div>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <% } %>
+                                    <% if (user.QuyenHan==='admin' ) { %>
+                                        <a href="/taikhoan/sua/<%= user._id %>" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-id-card me-1"></i> Hồ sơ cá nhân
+                                        </a>
+                                        <% } else { %>
+                                            <a href="/auth/hoso" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-id-card me-1"></i> Hồ sơ cá nhân
+                                            </a>
+                                            <% } %>
+                                                <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
+                                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                                </a>
+                                                <% } else { %>
+                                                    <a href="/auth/dangnhap" class="btn btn-danger">
+                                                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                                                    </a>
                                                     <% } %>
-                                                        )
-                                </small>
-                        </span>
-
-                        <% if(user.QuyenHan==='admin' ){ %>
-                            <div class="dropdown d-inline-block me-2">
-                                <button class="btn btn-sm btn-outline-danger dropdown-toggle shadow-sm" type="button"
-                                    data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 10px;">
-                                    <i class="fas fa-cogs me-1"></i> Quản trị hệ thống
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
-                                    style="border-radius: 15px;">
-                                    <li><a class="dropdown-item py-2" href="/taikhoan"><i
-                                                class="fas fa-users text-danger me-2"></i>Quản lý tài khoản</a></li>
-                                    <li><a class="dropdown-item py-2" href="/phonghoc"><i
-                                                class="fas fa-door-open text-primary me-2"></i>Quản lý phòng học</a>
-                                    </li>
-                                    <li><a class="dropdown-item py-2" href="/lophoc"><i
-                                                class="fas fa-chalkboard-teacher text-warning me-2"></i>Quản lý lớp
-                                            học</a></li>
-                                    <li><a class="dropdown-item py-2" href="/monhoc"><i
-                                                class="fas fa-book text-success me-2"></i>Quản lý môn học</a></li>
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li><a class="dropdown-item py-2" href="/tkb"><i
-                                                class="fas fa-calendar-alt text-success me-2"></i>Quản lý TKB tổng
-                                            quát</a></li>
-                                    <li><a class="dropdown-item py-2" href="/tkb/danhsach"><i
-                                                class="fas fa-calendar-check text-info me-2"></i>Quản lý danh sách đăng
-                                            ký
-                                            tkb</a></li>
-                                </ul>
-                            </div>
-
-                            <% } %>
-
-                                <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
-                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                                </a>
-
-                                <% } else { %>
-                                    <a href="/auth/dangnhap" class="btn btn-danger">
-                                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
-                                    </a>
-                                    <% } %>
-                </div>
-    </div>
+            </div>
+        </div>
 </nav>
 
 <% if (typeof path !=='undefined' && (path==='/' || path==='/taikhoan' )) { %>
     <section class="hero-banner py-5">
         <div class="container text-center">
-
             <% if (!user) { %>
                 <h1 class="display-3 fw-bold mb-4" style="color: #2d3436;">
                     Hệ Thống<br><span style="color: #ff758c;">EDU KT</span>
@@ -100,7 +140,6 @@
                     Chào mừng bạn đến với Trung Tâm Khai Trí. <br>
                     Vui lòng <strong>Đăng nhập</strong> để xem chi tiết thông tin của cá nhân.
                 </p>
-
                 <% } else if (user.QuyenHan==='admin' ) { %>
                     <h1 class="display-4 fw-bold mb-4" style="color: #2d3436;">
                         Chào Admin, <span style="color: #6c5ce7;">
@@ -115,7 +154,6 @@
                             </span>
                         </h1>
                         <p class="text-muted fs-5 mb-4">Chúc Thầy/Cô một ngày lên lớp tràn đầy năng lượng!</p>
-
                         <% } else if (user.QuyenHan==='sinhvien' ) { %>
                             <h1 class="display-4 fw-bold mb-4" style="color: #2d3436;">
                                 Chào Bạn, <span style="color: #00cec9;">
@@ -124,34 +162,97 @@
                             </h1>
                             <p class="text-muted fs-5 mb-4">Đã đến lúc bắt đầu bài học mới rồi. Cố lên nhé!</p>
                             <% } %>
-
         </div>
     </section>
     <% } %>
-        <% if(message){ %>
 
-            <div class="modal fade show" id="thongbaoModal" style="display:block; background:rgba(0,0,0,0.5);">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-
-                        <div class="modal-header">
-                            <h5 class="modal-title">Thông báo</h5>
-                            <button type="button" class="btn-close" onclick="dongThongBao()"></button>
+        <% if (message) { %>
+            <% const laLoi=String(message).includes('text-danger'); %>
+                <div id="toastThongBao" class="position-fixed end-0 bottom-0 p-3"
+                    style="z-index: 1090; pointer-events: none;">
+                    <div class="toast show border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true"
+                        style="min-width: 320px; max-width: 420px; border-radius: 12px; overflow: hidden; pointer-events: auto;">
+                        <div
+                            class="toast-header <%= laLoi ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success' %>">
+                            <i class="fas <%= laLoi ? 'fa-circle-exclamation' : 'fa-circle-check' %> me-2"></i>
+                            <strong class="me-auto">Thông báo</strong>
+                            <button type="button" class="btn-close" aria-label="Close"
+                                onclick="dongToastThongBao()"></button>
                         </div>
-
-                        <div class="modal-body text-center">
+                        <div class="toast-body bg-white">
                             <%- message %>
                         </div>
-
                     </div>
                 </div>
-            </div>
 
+                <script>
+                    function dongToastThongBao() {
+                        const toast = document.getElementById('toastThongBao');
+                        if (toast) {
+                            toast.style.transition = 'opacity 0.25s ease';
+                            toast.style.opacity = '0';
+                            setTimeout(() => toast.remove(), 250);
+                        }
+                    }
+                    setTimeout(dongToastThongBao, 4000);
+                </script>
+                <% } %>
 
-            <script>
-                function dongThongBao() {
-                    document.getElementById("thongbaoModal").style.display = "none";
-                }
-            </script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            var adminBtn = document.getElementById('adminDropdownBtn');
+                            var adminMenu = document.getElementById('adminDropdownMenu');
+                            if (!adminBtn || !adminMenu) return;
 
-            <% } %>
+                            var daGanFallback = false;
+
+                            function dongMenu() {
+                                adminMenu.classList.remove('show');
+                                adminBtn.classList.remove('show');
+                                adminBtn.setAttribute('aria-expanded', 'false');
+                            }
+
+                            function moMenu() {
+                                adminMenu.classList.add('show');
+                                adminBtn.classList.add('show');
+                                adminBtn.setAttribute('aria-expanded', 'true');
+                            }
+
+                            function toggleMenu() {
+                                if (adminMenu.classList.contains('show')) {
+                                    dongMenu();
+                                    return;
+                                }
+                                moMenu();
+                            }
+
+                            function ganFallbackNeuCan() {
+                                if (daGanFallback) return;
+                                daGanFallback = true;
+
+                                adminBtn.addEventListener('click', function (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    toggleMenu();
+                                });
+
+                                document.addEventListener('click', function (e) {
+                                    if (!adminMenu.classList.contains('show')) return;
+                                    if (adminBtn.contains(e.target) || adminMenu.contains(e.target)) return;
+                                    dongMenu();
+                                });
+                            }
+
+                            try {
+                                if (window.bootstrap && bootstrap.Dropdown) {
+                                    if (!bootstrap.Dropdown.getInstance(adminBtn)) {
+                                        new bootstrap.Dropdown(adminBtn);
+                                    }
+                                } else {
+                                    ganFallbackNeuCan();
+                                }
+                            } catch (err) {
+                                ganFallbackNeuCan();
+                            }
+                        });
+                    </script>

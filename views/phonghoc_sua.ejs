@@ -52,12 +52,20 @@
                                 <div class="col-md-6 mb-4">
                                     <label class="label-custom">Loại phòng</label>
                                     <select name="LoaiPhong" class="form-select form-control-custom">
-                                        <option value="lythuyet" <%=phong.LoaiPhong==='lythuyet' ? 'selected' : '' %>
+                                        <option value="LyThuyet" <%=phong.LoaiPhong==='LyThuyet' ? 'selected' : '' %>
                                             >Phòng lý thuyết</option>
-                                        <option value="thuchanh" <%=phong.LoaiPhong==='thuchanh' ? 'selected' : '' %>
+                                        <option value="ThucHanh" <%=phong.LoaiPhong==='ThucHanh' ? 'selected' : '' %>
                                             >Phòng thực hành</option>
-                                        <option value="maytinh" <%=phong.LoaiPhong==='maytinh' ? 'selected' : '' %>
+                                        <option value="MayTinh" <%=phong.LoaiPhong==='MayTinh' ? 'selected' : '' %>
                                             >Phòng máy tính</option>
+                                        <option value="TuVan" <%=phong.LoaiPhong==='TuVan' ? 'selected' : '' %>>
+                                            Phòng tư vấn</option>
+                                        <option value="NhanSu" <%=phong.LoaiPhong==='NhanSu' ? 'selected' : '' %>>
+                                            Phòng nhân sự</option>
+                                        <option value="ThietBi" <%=phong.LoaiPhong==='ThietBi' ? 'selected' : '' %>>
+                                            Phòng thiết bị</option>
+                                        <option value="GiamDoc" <%=phong.LoaiPhong==='GiamDoc' ? 'selected' : '' %>>
+                                            Phòng giám đốc</option>
                                     </select>
                                 </div>
 
@@ -76,7 +84,8 @@
                                     <select name="TrangThai" class="form-select form-control-custom">
                                         <option value="1" <%=phong.TrangThai==1 ? 'selected' : '' %>>Đang hoạt động (Sẵn
                                             sàng)</option>
-                                        <option value="0" <%=phong.TrangThai==0 ? 'selected' : '' %>>Tạm ngưng (Bảo trì)
+                                        <option value="0" <%=phong.TrangThai==0 ? 'selected' : '' %>>đang sử dụng (Đang
+                                            có lớp học)</option>
                                         </option>
                                     </select>
                                 </div>

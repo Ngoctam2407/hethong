@@ -395,7 +395,10 @@ router.post('/da-duyet/:id', async (req, res) => {
         }
 
         // 3. Nếu không trùng thì mới cho duyệt
-        await TKB.findByIdAndUpdate(req.params.id, { TrangThai: 'da-duyet' });
+        await TKB.findByIdAndUpdate(req.params.id, {
+            TrangThai: 'da-duyet',
+            NgayDuyet: new Date()
+        });
         res.json({ success: true, message: "Đã duyệt thành công!" });
 
     } catch (err) {

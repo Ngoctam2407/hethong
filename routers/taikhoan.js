@@ -44,7 +44,8 @@ router.use(requireAdmin);
 // 1. GET: Danh sách (Địa chỉ: /taikhoan)
 router.get('/', async (req, res) => {
     var tk = await TaiKhoan.find();
-    res.render('taikhoan', { title: 'Danh sách tài khoản', taikhoan: tk });
+    var soLuongAdmin = await TaiKhoan.countDocuments({ QuyenHan: 'admin' });
+    res.render('taikhoan', { title: 'Danh sách tài khoản', taikhoan: tk, soLuongAdmin: soLuongAdmin });
 });
 
 // 2. GET: Form Thêm (Địa chỉ: /taikhoan/them)
@@ -105,6 +106,10 @@ router.post('/them', async (req, res) => {
 // 4. GET: Form Sửa (Địa chỉ: /taikhoan/sua/:id)
 router.get('/sua/:id', async (req, res) => {
     var tk = await TaiKhoan.findById(req.params.id);
+    if (!tk) {
+        req.session.error = 'Khong tim thay tai khoan.';
+        return res.redirect('/taikhoan');
+    }
     var dsLop = await LopHoc.find();
     let detail = null; // Khai báo biến detail trước
 
@@ -122,10 +127,25 @@ router.get('/sua/:id', async (req, res) => {
 router.post('/sua/:id', async (req, res) => {
     try {
         const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MaGV, LinhVuc, SoDienThoai } = req.body;
+        const tkHienTai = await TaiKhoan.findById(req.params.id);
+
+        if (!tkHienTai) {
+            req.session.error = 'Khong tim thay tai khoan can cap nhat.';
+            return res.redirect('/taikhoan');
+        }
 
         if (QuyenHan === 'sinhvien') {
             if (!IDLop) {
                 req.session.error = 'Sinh viên bắt buộc phải chọn lớp học.';
+                return res.redirect('/taikhoan/sua/' + req.params.id);
+            }
+        }
+
+        // He thong phai luon con it nhat 1 admin.
+        if (tkHienTai.QuyenHan === 'admin' && QuyenHan !== 'admin') {
+            const soLuongAdmin = await TaiKhoan.countDocuments({ QuyenHan: 'admin' });
+            if (soLuongAdmin <= 1) {
+                req.session.error = 'Khong the doi quyen admin cuoi cung. Vui long tao admin khac truoc.';
                 return res.redirect('/taikhoan/sua/' + req.params.id);
             }
         }
@@ -171,8 +191,29 @@ router.post('/sua/:id', async (req, res) => {
 
 // 6. GET: Xóa (Địa chỉ: /taikhoan/xoa/:id)
 router.get('/xoa/:id', async (req, res) => {
-    await TaiKhoan.findByIdAndDelete(req.params.id);
-    res.redirect('/taikhoan');
+    try {
+        const tkCanXoa = await TaiKhoan.findById(req.params.id);
+
+        if (!tkCanXoa) {
+            req.session.error = 'Khong tim thay tai khoan can xoa.';
+            return res.redirect('/taikhoan');
+        }
+
+        if (tkCanXoa.QuyenHan === 'admin') {
+            const soLuongAdmin = await TaiKhoan.countDocuments({ QuyenHan: 'admin' });
+            if (soLuongAdmin <= 1) {
+                req.session.error = 'Khong the xoa admin cuoi cung. He thong phai co it nhat 1 admin.';
+                return res.redirect('/taikhoan');
+            }
+        }
+
+        await TaiKhoan.findByIdAndDelete(req.params.id);
+        req.session.success = 'Da xoa tai khoan ' + tkCanXoa.HoVaTen + ' thanh cong.';
+        res.redirect('/taikhoan');
+    } catch (err) {
+        req.session.error = 'Loi khi xoa tai khoan: ' + err.message;
+        res.redirect('/taikhoan');
+    }
 });
 
 // 7. GET: Chuyển đổi trạng thái khóa/mở (Địa chỉ: /taikhoan/trangthai/:id)
@@ -180,6 +221,19 @@ router.get('/trangthai/:id', async (req, res) => {
     try {
         // 1. Tìm tài khoản hiện tại
         var tk = await TaiKhoan.findById(req.params.id);
+        if (!tk) {
+            req.session.error = 'Khong tim thay tai khoan.';
+            return res.redirect('/taikhoan');
+        }
+
+        // Khong cho khoa admin cuoi cung (trang thai 1 -> 0)
+        if (tk.QuyenHan === 'admin' && tk.TrangThai == 1) {
+            var soLuongAdmin = await TaiKhoan.countDocuments({ QuyenHan: 'admin' });
+            if (soLuongAdmin <= 1) {
+                req.session.error = 'Khong the khoa admin cuoi cung. He thong phai co it nhat 1 admin dang kha dung.';
+                return res.redirect('/taikhoan');
+            }
+        }
 
         // 2. Đảo ngược trạng thái (Nếu 1 thì thành 0, nếu 0 thì thành 1)
         var trangThaiMoi = (tk.TrangThai == 1) ? 0 : 1;

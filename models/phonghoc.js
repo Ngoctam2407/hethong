@@ -9,7 +9,7 @@ var phongHocSchema = new mongoose.Schema({
 
     LoaiPhong: {
         type: String,
-        enum: ['LyThuyet', 'ThucHanh', 'MayTinh'],
+        enum: ['LyThuyet', 'ThucHanh', 'MayTinh', 'TuVan', 'NhanSu', 'ThietBi', 'GiamDoc'],
         required: true
     },
 

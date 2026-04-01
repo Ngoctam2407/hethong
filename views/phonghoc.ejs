@@ -127,12 +127,17 @@
                                                 <% } else { %>
                                                     <a href="/phonghoc/trangthai/<%= phong._id %>"
                                                         class="badge-soft bg-danger-subtle text-danger border border-danger-subtle text-decoration-none">
-                                                        <i class="fas fa-tools me-1"></i>Đang sử dụng
+                                                        <i class="fas fa-chalkboard-teacher me-1"></i>Đang sử dụng
                                                     </a>
                                                     <% } %>
                                         </td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-2">
+                                                <a href="/tkb#phong-<%= phong._id %>"
+                                                    class="btn btn-sm btn-light rounded-circle text-info border shadow-sm"
+                                                    title="Xem chi tiết">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
                                                 <a href="/phonghoc/sua/<%= phong._id %>"
                                                     class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm"
                                                     title="Chỉnh sửa">
