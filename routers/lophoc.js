@@ -5,6 +5,21 @@ var { requireAdmin } = require('./auth');
 var TaiKhoan = require('../models/taikhoan');
 var SinhVien = require('../models/sinhvien');
 var GiangVien = require('../models/giangvien');
+var { upload, readRowsFromExcel, buildWorkbook, sendWorkbook, toNumber } = require('../utils/excel');
+
+function xuLyUploadExcel(req, res, next) {
+    upload.single('excelFile')(req, res, function (err) {
+        if (err) {
+            req.session.error = err.message;
+            return res.redirect('/lophoc');
+        }
+        next();
+    });
+}
+
+function layGiaTriDong(dong, truong) {
+    return dong[truong] || dong[truong.toLowerCase()] || '';
+}
 
 // Chỉ cho phép Admin truy cập để quản lý lớp học thôi Tâm nhé
 router.use(requireAdmin);
@@ -21,6 +36,79 @@ router.get('/', async (req, res) => {
     } catch (err) {
         console.error("Lỗi rồi Tâm ơi: ", err);
         res.status(500).send("Có lỗi xảy ra khi lấy danh sách lớp học.");
+    }
+});
+
+router.post('/import', xuLyUploadExcel, async (req, res) => {
+    try {
+        if (!req.file) {
+            req.session.error = 'Ban can chon file Excel truoc khi import.';
+            return res.redirect('/lophoc');
+        }
+
+        const rows = readRowsFromExcel(req.file.buffer);
+        if (!rows.length) {
+            req.session.error = 'File Excel khong co dong du lieu nao.';
+            return res.redirect('/lophoc');
+        }
+
+        let taoMoi = 0;
+        let capNhat = 0;
+
+        for (const row of rows) {
+            const MaLop = String(layGiaTriDong(row, 'MaLop')).trim();
+            const TenLop = String(layGiaTriDong(row, 'TenLop')).trim();
+
+            if (!MaLop || !TenLop) {
+                continue;
+            }
+
+            const duLieu = {
+                MaLop,
+                TenLop,
+                NienKhoa: String(layGiaTriDong(row, 'NienKhoa')).trim(),
+                SiSo: toNumber(layGiaTriDong(row, 'SiSo'), 0),
+                TrangThai: toNumber(layGiaTriDong(row, 'TrangThai'), 1)
+            };
+
+            const lopCu = await LopHoc.findOne({ MaLop: MaLop });
+            if (lopCu) {
+                await LopHoc.findByIdAndUpdate(lopCu._id, duLieu);
+                capNhat++;
+            } else {
+                await LopHoc.create(duLieu);
+                taoMoi++;
+            }
+        }
+
+        req.session.success = `Import lop hoc thanh cong: ${taoMoi} ban ghi moi, ${capNhat} ban ghi cap nhat.`;
+        res.redirect('/lophoc');
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Loi import lop hoc: ' + err.message;
+        res.redirect('/lophoc');
+    }
+});
+
+router.get('/export', async (req, res) => {
+    try {
+        const dsLop = await LopHoc.find().sort({ MaLop: 1 }).lean();
+        const rows = dsLop.map(function (lop) {
+            return {
+                MaLop: lop.MaLop,
+                TenLop: lop.TenLop,
+                NienKhoa: lop.NienKhoa || '',
+                SiSo: lop.SiSo || 0,
+                TrangThai: lop.TrangThai
+            };
+        });
+
+        const workbook = buildWorkbook('LopHoc', rows);
+        sendWorkbook(res, workbook, 'lophoc.xlsx');
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Khong the export lop hoc: ' + err.message;
+        res.redirect('/lophoc');
     }
 });
 

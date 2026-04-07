@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var PhongHoc = require('../models/phonghoc'); // Nhớ tạo model này trước nha Tâm
 var { requireAdmin } = require('./auth');
+var SO_PHONG_CO_DINH = 14;
 
 router.use(requireAdmin);
 
@@ -30,6 +31,12 @@ router.get('/them', (req, res) => {
 router.post('/them', async (req, res) => {
     if (!req.body || !req.body.TenPhong) {
         return res.send("Tâm ơi, thiếu tên phòng mất rồi!");
+    }
+
+    var tongSoPhong = await PhongHoc.countDocuments();
+    if (tongSoPhong >= SO_PHONG_CO_DINH) {
+        req.session.error = "Hệ thống đã đủ 14 phòng cố định, không thể thêm nữa.";
+        return res.redirect('/phonghoc');
     }
 
     var data = {

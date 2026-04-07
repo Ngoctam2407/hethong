@@ -6,6 +6,7 @@ var { requireAdmin } = require('./auth');
 var LopHoc = require('../models/lophoc');
 var SinhVien = require('../models/sinhvien');
 var GiangVien = require('../models/giangvien');
+var { upload, readRowsFromExcel, buildWorkbook, sendWorkbook, toNumber } = require('../utils/excel');
 
 function taoTienToMSSV(maLop) {
     const chunks = String(maLop || '').toUpperCase().match(/[A-Z]+/g) || [];
@@ -40,12 +41,220 @@ async function taoMSSVTuDong(IDLop, boQuaSinhVienId) {
     return `${tienTo}${String(soThuTuMax + 1).padStart(3, '0')}`;
 }
 
+function xuLyUploadExcel(req, res, next) {
+    upload.single('excelFile')(req, res, function (err) {
+        if (err) {
+            req.session.error = err.message;
+            return res.redirect('/taikhoan');
+        }
+        next();
+    });
+}
+
+function layGiaTriDong(dong, truong) {
+    return dong[truong] || dong[truong.toLowerCase()] || '';
+}
+
+async function timTaiKhoanImport(Email, TenDangNhap) {
+    const tkTheoEmail = await TaiKhoan.findOne({ Email: Email });
+    const tkTheoTenDangNhap = await TaiKhoan.findOne({ TenDangNhap: TenDangNhap });
+
+    if (tkTheoEmail && tkTheoTenDangNhap && String(tkTheoEmail._id) !== String(tkTheoTenDangNhap._id)) {
+        throw new Error('Email va TenDangNhap dang trung voi 2 tai khoan khac nhau.');
+    }
+
+    return tkTheoEmail || tkTheoTenDangNhap || null;
+}
+
 router.use(requireAdmin);
 // 1. GET: Danh sách (Địa chỉ: /taikhoan)
 router.get('/', async (req, res) => {
     var tk = await TaiKhoan.find();
     var soLuongAdmin = await TaiKhoan.countDocuments({ QuyenHan: 'admin' });
     res.render('taikhoan', { title: 'Danh sách tài khoản', taikhoan: tk, soLuongAdmin: soLuongAdmin });
+});
+
+router.post('/import', xuLyUploadExcel, async (req, res) => {
+    try {
+        if (!req.file) {
+            req.session.error = 'Ban can chon file Excel truoc khi import.';
+            return res.redirect('/taikhoan');
+        }
+
+        const rows = readRowsFromExcel(req.file.buffer);
+        if (!rows.length) {
+            req.session.error = 'File Excel khong co dong du lieu nao.';
+            return res.redirect('/taikhoan');
+        }
+
+        let taoMoi = 0;
+        let capNhat = 0;
+        const dongLoi = [];
+        const dsLop = await LopHoc.find().select('_id MaLop').lean();
+        const mapMaLop = new Map(
+            dsLop.map(function (lop) {
+                return [String(lop.MaLop).trim().toUpperCase(), lop];
+            })
+        );
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+
+            try {
+                const HoVaTen = String(layGiaTriDong(row, 'HoVaTen')).trim();
+                const Email = String(layGiaTriDong(row, 'Email')).trim().toLowerCase();
+                const TenDangNhap = String(layGiaTriDong(row, 'TenDangNhap')).trim();
+                const MatKhauExcel = String(layGiaTriDong(row, 'MatKhau')).trim();
+                const QuyenHanExcel = String(layGiaTriDong(row, 'QuyenHan') || 'sinhvien').trim().toLowerCase();
+                const TrangThai = toNumber(layGiaTriDong(row, 'TrangThai'), 1);
+                const MaLop = String(layGiaTriDong(row, 'MaLop')).trim().toUpperCase();
+                const MaGV = String(layGiaTriDong(row, 'MaGV')).trim();
+                const LinhVuc = String(layGiaTriDong(row, 'LinhVuc')).trim();
+                const SoDienThoai = String(layGiaTriDong(row, 'SoDienThoai')).trim();
+
+                if (!HoVaTen || !Email || !TenDangNhap) {
+                    throw new Error('Thieu HoVaTen, Email hoac TenDangNhap.');
+                }
+
+                const QuyenHan = ['sinhvien', 'giangvien', 'admin'].includes(QuyenHanExcel) ? QuyenHanExcel : 'sinhvien';
+                const taiKhoanCu = await timTaiKhoanImport(Email, TenDangNhap);
+
+                let lopDuocGan = null;
+                if (QuyenHan === 'sinhvien') {
+                    if (!MaLop) {
+                        throw new Error('Sinh vien bat buoc phai co MaLop.');
+                    }
+
+                    lopDuocGan = mapMaLop.get(MaLop);
+                    if (!lopDuocGan) {
+                        throw new Error(`MaLop ${MaLop} khong ton tai trong he thong.`);
+                    }
+                }
+
+                const thongTinGVCu = QuyenHan === 'giangvien'
+                    ? await GiangVien.findOne({ IDTaiKhoan: taiKhoanCu ? taiKhoanCu._id : null })
+                    : null;
+
+                if (QuyenHan === 'giangvien' && !MaGV && !thongTinGVCu) {
+                    throw new Error('Giang vien moi bat buoc phai co MaGV.');
+                }
+
+                let MatKhau = taiKhoanCu ? taiKhoanCu.MatKhau : '';
+                if (MatKhauExcel) {
+                    if (MatKhauExcel.startsWith('$2')) {
+                        MatKhau = MatKhauExcel;
+                    } else {
+                        const salt = bcrypt.genSaltSync(10);
+                        MatKhau = bcrypt.hashSync(MatKhauExcel, salt);
+                    }
+                } else if (!MatKhau) {
+                    const salt = bcrypt.genSaltSync(10);
+                    MatKhau = bcrypt.hashSync('123456', salt);
+                }
+
+                const duLieu = {
+                    HoVaTen,
+                    Email,
+                    TenDangNhap,
+                    MatKhau,
+                    QuyenHan,
+                    TrangThai
+                };
+
+                let taiKhoanSauKhiLuu = taiKhoanCu;
+                if (taiKhoanCu) {
+                    await TaiKhoan.findByIdAndUpdate(taiKhoanCu._id, duLieu);
+                    taiKhoanSauKhiLuu = await TaiKhoan.findById(taiKhoanCu._id);
+                    capNhat++;
+                } else {
+                    taiKhoanSauKhiLuu = await TaiKhoan.create(duLieu);
+                    taoMoi++;
+                }
+
+                if (QuyenHan === 'sinhvien') {
+                    const thongTinSVCu = await SinhVien.findOne({ IDTaiKhoan: taiKhoanSauKhiLuu._id });
+                    const doiLop = !thongTinSVCu || String(thongTinSVCu.IDLop) !== String(lopDuocGan._id);
+                    const MSSV = doiLop
+                        ? await taoMSSVTuDong(lopDuocGan._id, thongTinSVCu ? thongTinSVCu._id : null)
+                        : thongTinSVCu.MSSV;
+
+                    await SinhVien.findOneAndUpdate(
+                        { IDTaiKhoan: taiKhoanSauKhiLuu._id },
+                        {
+                            MSSV,
+                            IDLop: lopDuocGan._id,
+                            SoDienThoai: SoDienThoai || (thongTinSVCu ? thongTinSVCu.SoDienThoai : '')
+                        },
+                        { upsert: true }
+                    );
+                } else if (QuyenHan === 'giangvien') {
+                    await GiangVien.findOneAndUpdate(
+                        { IDTaiKhoan: taiKhoanSauKhiLuu._id },
+                        {
+                            MaGV: MaGV || thongTinGVCu.MaGV,
+                            LinhVuc: LinhVuc || (thongTinGVCu ? thongTinGVCu.LinhVuc : ''),
+                            SoDienThoai: SoDienThoai || (thongTinGVCu ? thongTinGVCu.SoDienThoai : '')
+                        },
+                        { upsert: true }
+                    );
+                }
+            } catch (rowError) {
+                dongLoi.push(`Dong ${i + 2}: ${rowError.message}`);
+            }
+        }
+
+        let thongBao = `Import tai khoan thanh cong: ${taoMoi} ban ghi moi, ${capNhat} ban ghi cap nhat.`;
+        if (dongLoi.length > 0) {
+            const tomTatLoi = dongLoi.slice(0, 5).join(' | ');
+            thongBao += ` Co ${dongLoi.length} dong bi bo qua. ${tomTatLoi}`;
+        }
+
+        req.session.success = thongBao;
+        res.redirect('/taikhoan');
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Loi import tai khoan: ' + err.message;
+        res.redirect('/taikhoan');
+    }
+});
+
+router.get('/export', async (req, res) => {
+    try {
+        const dsTaiKhoan = await TaiKhoan.find().sort({ HoVaTen: 1 }).lean();
+        const dsSinhVien = await SinhVien.find().populate('IDLop', 'MaLop').lean();
+        const dsGiangVien = await GiangVien.find().lean();
+        const mapSinhVien = new Map(dsSinhVien.map(function (sv) {
+            return [String(sv.IDTaiKhoan), sv];
+        }));
+        const mapGiangVien = new Map(dsGiangVien.map(function (gv) {
+            return [String(gv.IDTaiKhoan), gv];
+        }));
+
+        const rows = dsTaiKhoan.map(function (tk) {
+            const sv = mapSinhVien.get(String(tk._id));
+            const gv = mapGiangVien.get(String(tk._id));
+            return {
+                HoVaTen: tk.HoVaTen,
+                Email: tk.Email,
+                TenDangNhap: tk.TenDangNhap,
+                MatKhau: tk.MatKhau,
+                QuyenHan: tk.QuyenHan,
+                TrangThai: tk.TrangThai,
+                MaLop: sv && sv.IDLop ? sv.IDLop.MaLop : '',
+                MSSV: sv ? sv.MSSV : '',
+                MaGV: gv ? gv.MaGV : '',
+                LinhVuc: gv ? gv.LinhVuc || '' : '',
+                SoDienThoai: gv ? gv.SoDienThoai || '' : (sv ? sv.SoDienThoai || '' : '')
+            };
+        });
+
+        const workbook = buildWorkbook('TaiKhoan', rows);
+        sendWorkbook(res, workbook, 'taikhoan.xlsx');
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Khong the export tai khoan: ' + err.message;
+        res.redirect('/taikhoan');
+    }
 });
 
 // 2. GET: Form Thêm (Địa chỉ: /taikhoan/them)

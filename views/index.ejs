@@ -132,7 +132,7 @@
                                                 style="width: 70px; height: 70px;">
                                                 <i class="fas fa-school fa-2x"></i>
                                             </div>
-                                            <h5 class="fw-bold text-dark">Lớp và Phòng</h5>
+                                            <h5 class="fw-bold text-dark">Lớp Học</h5>
                                             <p class="text-muted small">Điều chỉnh danh sách lớp và cơ sở vật chất</p>
                                         </div>
                                     </a>
@@ -141,25 +141,49 @@
                         </div>
                         <% } else { %>
                             <div class="col-lg-5 mx-auto">
-                                <h5 class="fw-bold mb-3">
-                                    <i class="fas fa-chalkboard-teacher text-danger me-2"></i>Lịch học sắp tới của bạn
-                                </h5>
-                                <div class="list-group shadow-sm border-0">
-                                    <% if (typeof dsLich !=='undefined' && dsLich.length> 0) { %>
-                                        <% const tkb=dsLich[0]; %>
+                                <% const thuMap=['Chủ Nhật', 'Thứ 2' , 'Thứ 3' , 'Thứ 4' , 'Thứ 5' , 'Thứ 6' , 'Thứ 7'
+                                    ]; const thuHienTai=thuMap[new Date().getDay()]; const
+                                    danhSachLich=Array.isArray(dsLich) ? dsLich : []; const
+                                    lichHomNay=danhSachLich.find(item=> item && item.Thu === thuHienTai);
+                                    const caHoc = lichHomNay
+                                    ? 'Tiết ' + (lichHomNay.TietBatDau ?? 'N/A') + ' - ' + (lichHomNay.TietKetThuc ??
+                                    'N/A')
+                                    : '';
+                                    %>
+                                    <h5 class="fw-bold mb-3">
+                                        <i class="fas fa-chalkboard-teacher text-danger me-2"></i>Card lịch học hôm nay
+                                    </h5>
+                                    <div class="list-group shadow-sm border-0">
+                                        <% if (lichHomNay) { %>
                                             <a href="/tkb" class="text-decoration-none">
                                                 <div class="list-group-item p-4 border-0 mb-3 add-card"
                                                     style="border-radius: 20px; background: linear-gradient(135deg, #6610f2 0%, #007bff 100%); color: white;">
-                                                    <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="d-flex justify-content-between align-items-start gap-3">
                                                         <div>
-                                                            <h4 class="fw-bold mb-1">
-                                                                <%= tkb.PhongHoc ? tkb.PhongHoc.TenPhong : 'P.Trống' %>
-                                                                    -
-                                                                    <%= tkb.MonHoc ? tkb.MonHoc.TenMonHoc : 'Môn học' %>
-                                                            </h4>
                                                             <p class="mb-2 opacity-75 small">
-                                                                Giảng viên: <%= tkb.GiangVien ? tkb.GiangVien.HoVaTen
+                                                                <i class="fas fa-calendar-day me-2"></i>
+                                                                <%= thuHienTai %>
+                                                            </p>
+                                                            <h4 class="fw-bold mb-2">
+                                                                <%= lichHomNay.PhongHoc ? lichHomNay.PhongHoc.TenPhong
+                                                                    : 'Chưa có phòng' %>
+                                                            </h4>
+                                                            <p class="mb-1">
+                                                                <i class="fas fa-book me-2"></i>
+                                                                <strong>Tên môn:</strong>
+                                                                <%= lichHomNay.MonHoc ? lichHomNay.MonHoc.TenMonHoc
                                                                     : 'Đang cập nhật' %>
+                                                            </p>
+                                                            <p class="mb-1">
+                                                                <i class="fas fa-user-tie me-2"></i>
+                                                                <strong>Giảng viên:</strong>
+                                                                <%= lichHomNay.GiangVien ? lichHomNay.GiangVien.HoVaTen
+                                                                    : 'Đang cập nhật' %>
+                                                            </p>
+                                                            <p class="mb-3">
+                                                                <i class="fas fa-clock me-2"></i>
+                                                                <strong>Ca học:</strong>
+                                                                <%= caHoc %>
                                                             </p>
                                                             <span
                                                                 class="badge bg-white text-primary rounded-pill px-3 py-2">
@@ -175,11 +199,11 @@
                                             <% } else { %>
                                                 <div class="card border-0 p-4 text-center shadow-sm"
                                                     style="border-radius: 20px;">
-                                                    <p class="text-muted italic mb-0">Hiện chưa có lịch học nào cho bạn
-                                                        nhé!</p>
+                                                    <p class="text-muted mb-0">Hôm nay <%= thuHienTai %> bạn không có
+                                                            lịch </p>
                                                 </div>
                                                 <% } %>
-                                </div>
+                                    </div>
                             </div>
                             <% } %>
                 </div>
@@ -304,7 +328,7 @@
                         <div class="col-md-4">
                             <h5 class="fw-bold text-primary mb-3"><i class="fas fa-graduation-cap me-2"></i>Edu KT
                                 Center</h5>
-                            <p class="text-muted small">Hệ thống quản lý đào tạo hiện đại, tối ưu cho dạy và học.</p>
+                            <p class="text-muted small">Hệ thống quản lý thời khóa biểu, tối ưu cho dạy và học.</p>
                             <p class="fw-bold text-dark mb-0">Chịu trách nhiệm: <%= title %>
                             </p>
                         </div>
