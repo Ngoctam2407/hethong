@@ -1,8 +1,74 @@
-﻿<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm" style="position: relative; z-index: 1200;">
+<style>
+    .brand-kt {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+    }
+
+    .brand-kt img {
+        width: 56px;
+        height: 56px;
+        object-fit: contain;
+    }
+
+    .brand-kt-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.05;
+    }
+
+    .brand-kt-title {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: #1b6fd8;
+    }
+
+    .brand-kt-title .accent {
+        color: #ff7a1a;
+    }
+
+    .brand-kt-subtitle {
+        margin: 0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #0f4c5c;
+    }
+
+    @media (max-width: 576px) {
+        .brand-kt {
+            gap: 10px;
+        }
+
+        .brand-kt img {
+            width: 46px;
+            height: 46px;
+        }
+
+        .brand-kt-title {
+            font-size: 1.1rem;
+        }
+
+        .brand-kt-subtitle {
+            font-size: 0.64rem;
+            letter-spacing: 0.12em;
+        }
+    }
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-3 shadow-sm" style="position: relative; z-index: 1200;">
     <% const duongDanHienTai=typeof path !=='undefined' ? path : '' ; %>
         <div class="container">
-            <a class="navbar-brand fw-bold text-danger" href="/">
-                <i class="fas fa-book-reader"></i> <span>Edu KT</span>
+            <a class="navbar-brand brand-kt" href="/">
+                <img src="/images/logo-kt.png" alt="Logo KT">
+                <span class="brand-kt-text">
+                    <span class="brand-kt-title">K<span class="accent">T</span></span>
+                    <span class="brand-kt-subtitle">Trung tâm KT</span>
+                </span>
             </a>
 
             <div class="ms-auto d-flex align-items-center gap-2 flex-wrap justify-content-end">
@@ -134,10 +200,10 @@
         <div class="container text-center">
             <% if (!user) { %>
                 <h1 class="display-3 fw-bold mb-4" style="color: #2d3436;">
-                    Hệ Thống<br><span style="color: #ff758c;">EDU KT</span>
+                    Hệ Thống<br><span style="color: #1b6fd8;">KT</span>
                 </h1>
                 <p class="text-muted fs-5 mb-5">
-                    Chào mừng bạn đến với Trung Tâm Khai Trí. <br>
+                    Chào mừng bạn đến với Trung Tâm KT. <br>
                     Vui lòng <strong>Đăng nhập</strong> để xem chi tiết thông tin của cá nhân.
                 </p>
                 <% } else if (user.QuyenHan==='admin' ) { %>

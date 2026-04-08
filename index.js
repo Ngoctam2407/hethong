@@ -47,6 +47,7 @@ taoAdminDauTien(); // Chạy hàm này khi server khởi động
 
 app.set('views', './views');
 app.set('view engine', 'ejs');
+app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
