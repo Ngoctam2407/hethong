@@ -7,6 +7,7 @@ var MonHoc = require('../models/monhoc');
 var GiangVien = require('../models/giangvien');
 var SinhVien = require('../models/sinhvien');
 var LopHoc = require('../models/lophoc');
+var { sendNotification } = require('../utils/push');
 var { requireAdmin } = require('./auth');
 
 
@@ -17,6 +18,113 @@ const timeOverlap = (start, end) => ({
         { TietBatDau: { $lte: end }, TietKetThuc: { $gte: start } }
     ]
 });
+
+function taoNoiDungLich(lich) {
+    const tenMon = lich.MonHoc && lich.MonHoc.TenMonHoc ? lich.MonHoc.TenMonHoc : 'Mon hoc';
+    const tenLop = lich.LopHoc && lich.LopHoc.TenLop ? lich.LopHoc.TenLop : 'Lop hoc';
+    const tenPhong = lich.PhongHoc && lich.PhongHoc.TenPhong ? lich.PhongHoc.TenPhong : 'Phong hoc';
+    const tiet = `${lich.TietBatDau}-${lich.TietKetThuc}`;
+    return `${tenMon} - ${tenLop} - ${lich.Thu} - tiet ${tiet} - phong ${tenPhong}`;
+}
+
+async function guiThongBaoChoTaiKhoan(taiKhoan, payload) {
+    if (!taiKhoan || !Array.isArray(taiKhoan.PushSubscriptions) || !taiKhoan.PushSubscriptions.length) {
+        return;
+    }
+
+    const hopLe = [];
+    for (const subscription of taiKhoan.PushSubscriptions) {
+        try {
+            await sendNotification(subscription, payload);
+            hopLe.push(subscription);
+        } catch (err) {
+            const maLoi = err && (err.statusCode || err.code);
+            if (maLoi !== 404 && maLoi !== 410) {
+                console.error(err);
+                hopLe.push(subscription);
+            }
+        }
+    }
+
+    if (hopLe.length !== taiKhoan.PushSubscriptions.length) {
+        taiKhoan.PushSubscriptions = hopLe;
+        await taiKhoan.save();
+    }
+}
+
+async function guiThongBaoLichHoc(loaiThongBao, lichId) {
+    const lich = await TKB.findById(lichId).populate('MonHoc GiangVien LopHoc PhongHoc');
+    if (!lich) return;
+
+    const giangVien = await TaiKhoan.findById(lich.GiangVien);
+    const dsSinhVien = await SinhVien.find({ IDLop: lich.LopHoc._id }).select('IDTaiKhoan');
+    const dsTaiKhoanSinhVien = await TaiKhoan.find({
+        _id: { $in: dsSinhVien.map(function (item) { return item.IDTaiKhoan; }) }
+    });
+
+    const url = '/tkb';
+    const noiDungLich = taoNoiDungLich(lich);
+
+    let payloadGV = null;
+    let payloadSV = null;
+
+    if (loaiThongBao === 'duyet-moi') {
+        payloadGV = {
+            title: 'Lich hoc da duoc duyet',
+            body: `Ban co lich day moi: ${noiDungLich}`,
+            url,
+            icon: '/images/logo-kt.png',
+            badge: '/images/logo-kt.png'
+        };
+        payloadSV = {
+            title: 'Lich hoc moi',
+            body: `Lop ban co lich hoc moi: ${noiDungLich}`,
+            url,
+            icon: '/images/logo-kt.png',
+            badge: '/images/logo-kt.png'
+        };
+    } else if (loaiThongBao === 'cap-nhat') {
+        payloadGV = {
+            title: 'Lich day da thay doi',
+            body: `Lich day cua ban vua duoc cap nhat: ${noiDungLich}`,
+            url,
+            icon: '/images/logo-kt.png',
+            badge: '/images/logo-kt.png'
+        };
+        payloadSV = {
+            title: 'Lich hoc da thay doi',
+            body: `Lich hoc cua lop ban vua duoc cap nhat: ${noiDungLich}`,
+            url,
+            icon: '/images/logo-kt.png',
+            badge: '/images/logo-kt.png'
+        };
+    } else if (loaiThongBao === 'huy-lich') {
+        payloadGV = {
+            title: 'Lich day da bi huy',
+            body: `Mot lich day cua ban da bi xoa: ${noiDungLich}`,
+            url,
+            icon: '/images/logo-kt.png',
+            badge: '/images/logo-kt.png'
+        };
+        payloadSV = {
+            title: 'Lich hoc da bi huy',
+            body: `Mot lich hoc cua lop ban da bi xoa: ${noiDungLich}`,
+            url,
+            icon: '/images/logo-kt.png',
+            badge: '/images/logo-kt.png'
+        };
+    }
+
+    if (payloadGV && giangVien) {
+        await guiThongBaoChoTaiKhoan(giangVien, payloadGV);
+    }
+
+    if (payloadSV && dsTaiKhoanSinhVien.length) {
+        for (const taiKhoan of dsTaiKhoanSinhVien) {
+            await guiThongBaoChoTaiKhoan(taiKhoan, payloadSV);
+        }
+    }
+}
 
 // GET: Hiện danh sách TKB
 router.get('/', async (req, res) => {
@@ -112,6 +220,12 @@ router.post('/them', async (req, res) => {
         await moi.save();
 
         req.session.success = "Đã xếp lịch thành công theo đúng thứ tự ưu tiên của Tâm! 🌸";
+        if (lichCu.TrangThai === 'da-duyet') {
+            await guiThongBaoLichHoc('cap-nhat', req.params.id);
+        }
+        if (lichCu && lichCu.TrangThai === 'da-duyet') {
+            await guiThongBaoLichHoc('huy-lich', id);
+        }
         res.redirect('/tkb');
 
     } catch (err) {
@@ -148,33 +262,28 @@ router.post('/sua/:id', async (req, res) => {
         const { TietBatDau, PhongHoc: phongMoiID } = req.body;
         const tietBD = parseInt(TietBatDau, 10);
 
-        // 1. Tìm lịch cũ trước khi cập nhật để lấy ID phòng cũ
         const lichCu = await TKB.findById(req.params.id);
-        if (!lichCu) return res.send("Không tìm thấy lịch này Tâm ơi! 😢");
+        if (!lichCu) return res.send("Khong tim thay lich nay.");
 
         const phongCuID = lichCu.PhongHoc.toString();
+        req.body.CaHoc = tietBD <= 5 ? 'Sang' : (tietBD <= 10 ? 'Chieu' : 'Toi');
 
-        // 2. Tự động tính lại ca học
-        req.body.CaHoc = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
-
-        // 3. Cập nhật dữ liệu TKB mới
         await TKB.findByIdAndUpdate(req.params.id, req.body);
 
-        // 4. LOGIC CẬP NHẬT PHÒNG HỌC (Đây là phần quan trọng nhất)
-        // Nếu Tâm có đổi sang phòng khác:
         if (phongCuID !== phongMoiID) {
-            // Giải phóng phòng cũ -> về trạng thái TRỐNG (1)
             await PhongHoc.findByIdAndUpdate(phongCuID, { TrangThai: 1 });
-
-            // Đánh dấu phòng mới -> về trạng thái ĐANG SỬ DỤNG (0)
             await PhongHoc.findByIdAndUpdate(phongMoiID, { TrangThai: 0 });
         }
 
-        req.session.success = "Đã cập nhật lịch học và điều chỉnh trạng thái phòng rồi nhé Tâm! ✨";
+        if (lichCu.TrangThai === 'da-duyet') {
+            await guiThongBaoLichHoc('cap-nhat', req.params.id);
+        }
+
+        req.session.success = "Da cap nhat lich hoc thanh cong.";
         res.redirect('/tkb');
     } catch (err) {
         console.error(err);
-        res.send("Lỗi cập nhật rồi: " + err.message);
+        res.send("Loi cap nhat: " + err.message);
     }
 });
 
@@ -182,13 +291,17 @@ router.post('/sua/:id', async (req, res) => {
 router.get('/xoa/:id', async (req, res) => {
     try {
         const id = req.params.id;
+        const lichCu = await TKB.findById(id);
         await TKB.findByIdAndDelete(id);
 
-        // Sau khi xóa xong, quay lại trang bảng lịch
+        if (lichCu && lichCu.TrangThai === 'da-duyet') {
+            await guiThongBaoLichHoc('huy-lich', id);
+        }
+
         res.redirect('/tkb');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lỗi xóa lịch rồi Tâm ơi!");
+        res.status(500).send("Loi xoa lich.");
     }
 });
 router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
@@ -374,14 +487,15 @@ router.get('/danhsachcho', async (req, res) => {
 });
 
 // Route xử lý duyệt lịch học
-router.post('/da-duyet/:id', async (req, res) => {
+router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
     try {
-        // 1. Tìm thông tin cái lịch đang định duyệt
         const lichSapDuyet = await TKB.findById(req.params.id);
+        if (!lichSapDuyet) {
+            return res.status(404).json({ success: false, message: 'Khong tim thay lich cho duyet.' });
+        }
 
-        // 2. Kiểm tra xem có lịch nào KHÁC đã được duyệt mà trùng Thứ, Tiết, Phòng không
         const trungLich = await TKB.findOne({
-            _id: { $ne: req.params.id }, // Không so sánh với chính nó
+            _id: { $ne: req.params.id },
             TrangThai: 'da-duyet',
             Thu: lichSapDuyet.Thu,
             PhongHoc: lichSapDuyet.PhongHoc,
@@ -391,16 +505,16 @@ router.post('/da-duyet/:id', async (req, res) => {
         });
 
         if (trungLich) {
-            return res.json({ success: false, message: "Phòng này đã có lịch học vào thời gian này rồi Tâm ơi!" });
+            return res.json({ success: false, message: 'Phong nay da co lich hoc vao thoi gian nay roi.' });
         }
 
-        // 3. Nếu không trùng thì mới cho duyệt
         await TKB.findByIdAndUpdate(req.params.id, {
             TrangThai: 'da-duyet',
             NgayDuyet: new Date()
         });
-        res.json({ success: true, message: "Đã duyệt thành công!" });
 
+        await guiThongBaoLichHoc('duyet-moi', req.params.id);
+        res.json({ success: true, message: 'Da duyet thanh cong.' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -433,3 +547,4 @@ router.get('/tkb-admin', requireAdmin, async (req, res) => {
 });
 
 module.exports = router;
+

@@ -11,6 +11,7 @@ var phonghocRouter = require('./routers/phonghoc');
 var tkbRouter = require('./routers/tkb');
 var lophocRouter = require('./routers/lophoc');
 var monhocRouter = require('./routers/monhoc');
+var { getPublicKey } = require('./utils/push');
 
 
 
@@ -47,6 +48,7 @@ taoAdminDauTien(); // Chạy hàm này khi server khởi động
 
 app.set('views', './views');
 app.set('view engine', 'ejs');
+app.locals.webPushPublicKey = getPublicKey();
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -65,6 +67,7 @@ app.use((req, res, next) => {
     res.locals.session = req.session;
     res.locals.isLoggedIn = (req.session && req.session.user) ? true : false;
     res.locals.user = req.session.user || null;
+    res.locals.webPushPublicKey = getPublicKey();
 
     // Lấy thông báo (lỗi, thành công) của trang trước đó (nếu có)
     var err = req.session.error;

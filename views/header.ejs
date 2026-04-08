@@ -39,6 +39,16 @@
         color: #0f4c5c;
     }
 
+    .push-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .push-actions .btn {
+        border-radius: 10px;
+    }
+
     @media (max-width: 576px) {
         .brand-kt {
             gap: 10px;
@@ -182,7 +192,15 @@
                                             <a href="/auth/hoso" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-id-card me-1"></i> Hồ sơ cá nhân
                                             </a>
-                                            <% } %>
+                                    <% } %>
+                                        <div id="pushActions" class="push-actions me-2 d-none">
+                                            <button type="button" id="btnPushToggle" class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-bell me-1"></i> Bật thông báo
+                                            </button>
+                                            <button type="button" id="btnPushTest" class="btn btn-sm btn-outline-secondary d-none">
+                                                <i class="fas fa-paper-plane me-1"></i> Thử
+                                            </button>
+                                        </div>
                                                 <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
                                                     <i class="fas fa-sign-out-alt"></i> Đăng xuất
                                                 </a>
@@ -263,6 +281,134 @@
                     setTimeout(dongToastThongBao, 4000);
                 </script>
                 <% } %>
+
+                    <% if (isLoggedIn && user) { %>
+                        <script>
+                            (function () {
+                                const publicKey = '<%= webPushPublicKey || "" %>';
+                                const pushBox = document.getElementById('pushActions');
+                                const toggleBtn = document.getElementById('btnPushToggle');
+                                const testBtn = document.getElementById('btnPushTest');
+
+                                if (!pushBox || !toggleBtn || !testBtn) return;
+
+                                if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+                                    return;
+                                }
+
+                                pushBox.classList.remove('d-none');
+
+                                function base64ToUint8Array(base64String) {
+                                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                                    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                                    const rawData = window.atob(base64);
+                                    const outputArray = new Uint8Array(rawData.length);
+                                    for (let i = 0; i < rawData.length; ++i) {
+                                        outputArray[i] = rawData.charCodeAt(i);
+                                    }
+                                    return outputArray;
+                                }
+
+                                function setSubscribedState(isSubscribed) {
+                                    toggleBtn.innerHTML = isSubscribed
+                                        ? '<i class="fas fa-bell-slash me-1"></i> Tắt thông báo'
+                                        : '<i class="fas fa-bell me-1"></i> Bật thông báo';
+                                    toggleBtn.classList.toggle('btn-outline-info', !isSubscribed);
+                                    toggleBtn.classList.toggle('btn-info', isSubscribed);
+                                    toggleBtn.classList.toggle('text-white', isSubscribed);
+                                    testBtn.classList.toggle('d-none', !isSubscribed);
+                                }
+
+                                async function getRegistration() {
+                                    return navigator.serviceWorker.register('/sw.js');
+                                }
+
+                                async function getSubscription() {
+                                    const registration = await getRegistration();
+                                    return registration.pushManager.getSubscription();
+                                }
+
+                                async function subscribePush() {
+                                    const permission = await Notification.requestPermission();
+                                    if (permission !== 'granted') {
+                                        alert('Bạn cần cho phép trình duyệt nhận thông báo trước.');
+                                        return;
+                                    }
+
+                                    const registration = await getRegistration();
+                                    let subscription = await registration.pushManager.getSubscription();
+                                    if (!subscription) {
+                                        subscription = await registration.pushManager.subscribe({
+                                            userVisibleOnly: true,
+                                            applicationServerKey: base64ToUint8Array(publicKey)
+                                        });
+                                    }
+
+                                    await fetch('/auth/push/subscribe', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ subscription: subscription.toJSON() })
+                                    });
+
+                                    setSubscribedState(true);
+                                }
+
+                                async function unsubscribePush() {
+                                    const subscription = await getSubscription();
+                                    if (subscription) {
+                                        await fetch('/auth/push/unsubscribe', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ endpoint: subscription.endpoint })
+                                        });
+                                        await subscription.unsubscribe();
+                                    }
+
+                                    setSubscribedState(false);
+                                }
+
+                                async function syncState() {
+                                    const subscription = await getSubscription();
+                                    setSubscribedState(!!subscription);
+                                }
+
+                                toggleBtn.addEventListener('click', async function () {
+                                    try {
+                                        const subscription = await getSubscription();
+                                        if (subscription) {
+                                            await unsubscribePush();
+                                        } else {
+                                            await subscribePush();
+                                        }
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert('Không xử lý được thông báo đẩy. Bạn thử lại giúp mình nhé.');
+                                    }
+                                });
+
+                                testBtn.addEventListener('click', async function () {
+                                    try {
+                                        const response = await fetch('/auth/push/test', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' }
+                                        });
+                                        const data = await response.json();
+                                        if (!response.ok || !data.ok) {
+                                            throw new Error(data.message || 'Gui thong bao that bai');
+                                        }
+                                        alert('Đã gửi thông báo thử. Bạn kiểm tra thông báo trình duyệt nhé.');
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert(err.message || 'Không gửi được thông báo thử.');
+                                    }
+                                });
+
+                                syncState().catch(function (err) {
+                                    console.error(err);
+                                });
+                            })();
+                        </script>
+                        <% } %>
 
                     <script>
                         document.addEventListener('DOMContentLoaded', function () {
