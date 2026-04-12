@@ -13,6 +13,7 @@ const tkbSchema = new mongoose.Schema({
     TietKetThuc: { type: Number, required: true },
     TrangThai: { type: String, enum: ['cho-duyet', 'da-duyet'], default: 'cho-duyet' },
     NgayDangKy: { type: Date, default: Date.now },
+    NgayHoc: { type: Date, required: true },
     NgayDuyet: { type: Date, default: null }
 });
 

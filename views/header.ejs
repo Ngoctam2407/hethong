@@ -192,23 +192,35 @@
                                             <a href="/auth/hoso" class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-id-card me-1"></i> Hồ sơ cá nhân
                                             </a>
-                                    <% } %>
-                                        <div id="pushActions" class="push-actions me-2 d-none">
-                                            <button type="button" id="btnPushToggle" class="btn btn-sm btn-outline-info">
-                                                <i class="fas fa-bell me-1"></i> Bật thông báo
-                                            </button>
-                                            <button type="button" id="btnPushTest" class="btn btn-sm btn-outline-secondary d-none">
-                                                <i class="fas fa-paper-plane me-1"></i> Thử
-                                            </button>
-                                        </div>
-                                                <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
-                                                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                                                </a>
-                                                <% } else { %>
-                                                    <a href="/auth/dangnhap" class="btn btn-danger">
-                                                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                                            <% } %>
+                                                <% if (user.QuyenHan==='giangvien' ) { %>
+                                                    <a href="/tkb" class="btn btn-sm btn-outline-success me-2">
+                                                        <i class="fas fa-calendar-alt me-1"></i> Lịch dạy cá nhân
                                                     </a>
-                                                    <% } %>
+                                                    <% } else if (user.QuyenHan==='sinhvien' ) { %>
+                                                        <a href="/tkb" class="btn btn-sm btn-outline-info me-2">
+                                                            <i class="fas fa-calendar-day me-1"></i> Thời khóa biểu của
+                                                            tôi
+                                                        </a>
+                                                        <% } %>
+                                                            <div id="pushActions" class="push-actions me-2 d-none">
+                                                                <button type="button" id="btnPushToggle"
+                                                                    class="btn btn-sm btn-outline-info">
+                                                                    <i class="fas fa-bell me-1"></i> Bật thông báo
+                                                                </button>
+                                                                <button type="button" id="btnPushTest"
+                                                                    class="btn btn-sm btn-outline-secondary d-none">
+                                                                    <i class="fas fa-paper-plane me-1"></i> Thử
+                                                                </button>
+                                                            </div>
+                                                            <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
+                                                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                                            </a>
+                                                            <% } else { %>
+                                                                <a href="/auth/dangnhap" class="btn btn-danger">
+                                                                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                                                                </a>
+                                                                <% } %>
             </div>
         </div>
 </nav>
@@ -410,61 +422,61 @@
                         </script>
                         <% } %>
 
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            var adminBtn = document.getElementById('adminDropdownBtn');
-                            var adminMenu = document.getElementById('adminDropdownMenu');
-                            if (!adminBtn || !adminMenu) return;
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    var adminBtn = document.getElementById('adminDropdownBtn');
+                                    var adminMenu = document.getElementById('adminDropdownMenu');
+                                    if (!adminBtn || !adminMenu) return;
 
-                            var daGanFallback = false;
+                                    var daGanFallback = false;
 
-                            function dongMenu() {
-                                adminMenu.classList.remove('show');
-                                adminBtn.classList.remove('show');
-                                adminBtn.setAttribute('aria-expanded', 'false');
-                            }
-
-                            function moMenu() {
-                                adminMenu.classList.add('show');
-                                adminBtn.classList.add('show');
-                                adminBtn.setAttribute('aria-expanded', 'true');
-                            }
-
-                            function toggleMenu() {
-                                if (adminMenu.classList.contains('show')) {
-                                    dongMenu();
-                                    return;
-                                }
-                                moMenu();
-                            }
-
-                            function ganFallbackNeuCan() {
-                                if (daGanFallback) return;
-                                daGanFallback = true;
-
-                                adminBtn.addEventListener('click', function (e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    toggleMenu();
-                                });
-
-                                document.addEventListener('click', function (e) {
-                                    if (!adminMenu.classList.contains('show')) return;
-                                    if (adminBtn.contains(e.target) || adminMenu.contains(e.target)) return;
-                                    dongMenu();
-                                });
-                            }
-
-                            try {
-                                if (window.bootstrap && bootstrap.Dropdown) {
-                                    if (!bootstrap.Dropdown.getInstance(adminBtn)) {
-                                        new bootstrap.Dropdown(adminBtn);
+                                    function dongMenu() {
+                                        adminMenu.classList.remove('show');
+                                        adminBtn.classList.remove('show');
+                                        adminBtn.setAttribute('aria-expanded', 'false');
                                     }
-                                } else {
-                                    ganFallbackNeuCan();
-                                }
-                            } catch (err) {
-                                ganFallbackNeuCan();
-                            }
-                        });
-                    </script>
+
+                                    function moMenu() {
+                                        adminMenu.classList.add('show');
+                                        adminBtn.classList.add('show');
+                                        adminBtn.setAttribute('aria-expanded', 'true');
+                                    }
+
+                                    function toggleMenu() {
+                                        if (adminMenu.classList.contains('show')) {
+                                            dongMenu();
+                                            return;
+                                        }
+                                        moMenu();
+                                    }
+
+                                    function ganFallbackNeuCan() {
+                                        if (daGanFallback) return;
+                                        daGanFallback = true;
+
+                                        adminBtn.addEventListener('click', function (e) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            toggleMenu();
+                                        });
+
+                                        document.addEventListener('click', function (e) {
+                                            if (!adminMenu.classList.contains('show')) return;
+                                            if (adminBtn.contains(e.target) || adminMenu.contains(e.target)) return;
+                                            dongMenu();
+                                        });
+                                    }
+
+                                    try {
+                                        if (window.bootstrap && bootstrap.Dropdown) {
+                                            if (!bootstrap.Dropdown.getInstance(adminBtn)) {
+                                                new bootstrap.Dropdown(adminBtn);
+                                            }
+                                        } else {
+                                            ganFallbackNeuCan();
+                                        }
+                                    } catch (err) {
+                                        ganFallbackNeuCan();
+                                    }
+                                });
+                            </script>

@@ -20,15 +20,15 @@ var uri = 'mongodb://user:user2407@ac-r9v15gv-shard-00-01.b99rhcp.mongodb.net:27
 mongoose.connect(uri).then(() => console.log('Đã kết nối thành công MongoBD rồi nha'))
     .catch(err => console.log('Hệ thống lỗi kết nối , không kết nối được', err));
 
-const TaiKhoan = require('./models/taikhoan'); // Nhớ trỏ đúng đường dẫn Model của em nhé
-const bcryptjs = require('bcryptjs'); // Nếu em có dùng mã hóa mật khẩu
+const TaiKhoan = require('./models/taikhoan');
+const bcryptjs = require('bcryptjs');
 
 async function taoAdminDauTien() {
     try {
         const check = await TaiKhoan.findOne({ TenDangNhap: 'admin' });
         if (!check) {
             const salt = await bcryptjs.genSalt(10);
-            const hashedPass = await bcryptjs.hash('123456', salt); // Mật khẩu mặc định là 123456
+            const hashedPass = await bcryptjs.hash('123456', salt);
 
             await TaiKhoan.create({
                 HoVaTen: 'Quản Trị Viên Tâm',
