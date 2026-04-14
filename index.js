@@ -11,7 +11,11 @@ var phonghocRouter = require('./routers/phonghoc');
 var tkbRouter = require('./routers/tkb');
 var lophocRouter = require('./routers/lophoc');
 var monhocRouter = require('./routers/monhoc');
+<<<<<<< HEAD
 var thongbaoRouter = require('./routers/thongbao');
+=======
+var { getPublicKey } = require('./utils/push');
+>>>>>>> 6b11349c10d2757350ac6d9a4c017c6f17ef0f24
 
 
 
@@ -20,15 +24,15 @@ var uri = 'mongodb://user:user2407@ac-r9v15gv-shard-00-01.b99rhcp.mongodb.net:27
 mongoose.connect(uri).then(() => console.log('Đã kết nối thành công MongoBD rồi nha'))
     .catch(err => console.log('Hệ thống lỗi kết nối , không kết nối được', err));
 
-const TaiKhoan = require('./models/taikhoan'); // Nhớ trỏ đúng đường dẫn Model của em nhé
-const bcryptjs = require('bcryptjs'); // Nếu em có dùng mã hóa mật khẩu
+const TaiKhoan = require('./models/taikhoan');
+const bcryptjs = require('bcryptjs');
 
 async function taoAdminDauTien() {
     try {
         const check = await TaiKhoan.findOne({ TenDangNhap: 'admin' });
         if (!check) {
             const salt = await bcryptjs.genSalt(10);
-            const hashedPass = await bcryptjs.hash('123456', salt); // Mật khẩu mặc định là 123456
+            const hashedPass = await bcryptjs.hash('123456', salt);
 
             await TaiKhoan.create({
                 HoVaTen: 'Quản Trị Viên Tâm',
@@ -48,6 +52,7 @@ taoAdminDauTien(); // Chạy hàm này khi server khởi động
 
 app.set('views', './views');
 app.set('view engine', 'ejs');
+app.locals.webPushPublicKey = getPublicKey();
 app.use(express.static('public'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -66,6 +71,7 @@ app.use((req, res, next) => {
     res.locals.session = req.session;
     res.locals.isLoggedIn = (req.session && req.session.user) ? true : false;
     res.locals.user = req.session.user || null;
+    res.locals.webPushPublicKey = getPublicKey();
 
     // Lấy thông báo (lỗi, thành công) của trang trước đó (nếu có)
     var err = req.session.error;

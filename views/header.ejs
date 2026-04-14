@@ -39,6 +39,16 @@
         color: #0f4c5c;
     }
 
+    .push-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .push-actions .btn {
+        border-radius: 10px;
+    }
+
     @media (max-width: 576px) {
         .brand-kt {
             gap: 10px;
@@ -174,6 +184,7 @@
                                     </ul>
                                 </div>
                                 <% } %>
+<<<<<<< HEAD
                                     <% if (isLoggedIn && user && user.QuyenHan !=='admin' ) { %>
                                         <div class="dropdown d-inline-block me-2">
                                             <button class="btn btn-sm btn-outline-info shadow-sm px-3 position-relative"
@@ -230,6 +241,45 @@
                                                                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
                                                             </a>
                                                             <% } %>
+=======
+                                    <% if (user.QuyenHan==='admin' ) { %>
+                                        <a href="/taikhoan/sua/<%= user._id %>" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-id-card me-1"></i> Hồ sơ cá nhân
+                                        </a>
+                                        <% } else { %>
+                                            <a href="/auth/hoso" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-id-card me-1"></i> Hồ sơ cá nhân
+                                            </a>
+                                            <% } %>
+                                                <% if (user.QuyenHan==='giangvien' ) { %>
+                                                    <a href="/tkb" class="btn btn-sm btn-outline-success me-2">
+                                                        <i class="fas fa-calendar-alt me-1"></i> Lịch dạy cá nhân
+                                                    </a>
+                                                    <% } else if (user.QuyenHan==='sinhvien' ) { %>
+                                                        <a href="/tkb" class="btn btn-sm btn-outline-info me-2">
+                                                            <i class="fas fa-calendar-day me-1"></i> Thời khóa biểu của
+                                                            tôi
+                                                        </a>
+                                                        <% } %>
+                                                            <div id="pushActions" class="push-actions me-2 d-none">
+                                                                <button type="button" id="btnPushToggle"
+                                                                    class="btn btn-sm btn-outline-info">
+                                                                    <i class="fas fa-bell me-1"></i> Bật thông báo
+                                                                </button>
+                                                                <button type="button" id="btnPushTest"
+                                                                    class="btn btn-sm btn-outline-secondary d-none">
+                                                                    <i class="fas fa-paper-plane me-1"></i> Thử
+                                                                </button>
+                                                            </div>
+                                                            <a href="/auth/dangxuat" class="btn btn-sm btn-dark">
+                                                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                                                            </a>
+                                                            <% } else { %>
+                                                                <a href="/auth/dangnhap" class="btn btn-danger">
+                                                                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                                                                </a>
+                                                                <% } %>
+>>>>>>> 6b11349c10d2757350ac6d9a4c017c6f17ef0f24
             </div>
         </div>
 </nav>
@@ -303,59 +353,33 @@
                 </script>
                 <% } %>
 
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            var adminBtn = document.getElementById('adminDropdownBtn');
-                            var adminMenu = document.getElementById('adminDropdownMenu');
-                            if (!adminBtn || !adminMenu) return;
+                    <% if (isLoggedIn && user) { %>
+                        <script>
+                            (function () {
+                                const publicKey = '<%= webPushPublicKey || "" %>';
+                                const pushBox = document.getElementById('pushActions');
+                                const toggleBtn = document.getElementById('btnPushToggle');
+                                const testBtn = document.getElementById('btnPushTest');
 
-                            var daGanFallback = false;
+                                if (!pushBox || !toggleBtn || !testBtn) return;
 
-                            function dongMenu() {
-                                adminMenu.classList.remove('show');
-                                adminBtn.classList.remove('show');
-                                adminBtn.setAttribute('aria-expanded', 'false');
-                            }
-
-                            function moMenu() {
-                                adminMenu.classList.add('show');
-                                adminBtn.classList.add('show');
-                                adminBtn.setAttribute('aria-expanded', 'true');
-                            }
-
-                            function toggleMenu() {
-                                if (adminMenu.classList.contains('show')) {
-                                    dongMenu();
+                                if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
                                     return;
                                 }
-                                moMenu();
-                            }
 
-                            function ganFallbackNeuCan() {
-                                if (daGanFallback) return;
-                                daGanFallback = true;
+                                pushBox.classList.remove('d-none');
 
-                                adminBtn.addEventListener('click', function (e) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    toggleMenu();
-                                });
-
-                                document.addEventListener('click', function (e) {
-                                    if (!adminMenu.classList.contains('show')) return;
-                                    if (adminBtn.contains(e.target) || adminMenu.contains(e.target)) return;
-                                    dongMenu();
-                                });
-                            }
-
-                            try {
-                                if (window.bootstrap && bootstrap.Dropdown) {
-                                    if (!bootstrap.Dropdown.getInstance(adminBtn)) {
-                                        new bootstrap.Dropdown(adminBtn);
+                                function base64ToUint8Array(base64String) {
+                                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                                    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                                    const rawData = window.atob(base64);
+                                    const outputArray = new Uint8Array(rawData.length);
+                                    for (let i = 0; i < rawData.length; ++i) {
+                                        outputArray[i] = rawData.charCodeAt(i);
                                     }
-                                } else {
-                                    ganFallbackNeuCan();
+                                    return outputArray;
                                 }
+<<<<<<< HEAD
                             } catch (err) {
                                 ganFallbackNeuCan();
                             }
@@ -413,3 +437,165 @@
                             cậpNhậtThôngBáo();
                         });
                     </script>
+=======
+
+                                function setSubscribedState(isSubscribed) {
+                                    toggleBtn.innerHTML = isSubscribed
+                                        ? '<i class="fas fa-bell-slash me-1"></i> Tắt thông báo'
+                                        : '<i class="fas fa-bell me-1"></i> Bật thông báo';
+                                    toggleBtn.classList.toggle('btn-outline-info', !isSubscribed);
+                                    toggleBtn.classList.toggle('btn-info', isSubscribed);
+                                    toggleBtn.classList.toggle('text-white', isSubscribed);
+                                    testBtn.classList.toggle('d-none', !isSubscribed);
+                                }
+
+                                async function getRegistration() {
+                                    return navigator.serviceWorker.register('/sw.js');
+                                }
+
+                                async function getSubscription() {
+                                    const registration = await getRegistration();
+                                    return registration.pushManager.getSubscription();
+                                }
+
+                                async function subscribePush() {
+                                    const permission = await Notification.requestPermission();
+                                    if (permission !== 'granted') {
+                                        alert('Bạn cần cho phép trình duyệt nhận thông báo trước.');
+                                        return;
+                                    }
+
+                                    const registration = await getRegistration();
+                                    let subscription = await registration.pushManager.getSubscription();
+                                    if (!subscription) {
+                                        subscription = await registration.pushManager.subscribe({
+                                            userVisibleOnly: true,
+                                            applicationServerKey: base64ToUint8Array(publicKey)
+                                        });
+                                    }
+
+                                    await fetch('/auth/push/subscribe', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ subscription: subscription.toJSON() })
+                                    });
+
+                                    setSubscribedState(true);
+                                }
+
+                                async function unsubscribePush() {
+                                    const subscription = await getSubscription();
+                                    if (subscription) {
+                                        await fetch('/auth/push/unsubscribe', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ endpoint: subscription.endpoint })
+                                        });
+                                        await subscription.unsubscribe();
+                                    }
+
+                                    setSubscribedState(false);
+                                }
+
+                                async function syncState() {
+                                    const subscription = await getSubscription();
+                                    setSubscribedState(!!subscription);
+                                }
+
+                                toggleBtn.addEventListener('click', async function () {
+                                    try {
+                                        const subscription = await getSubscription();
+                                        if (subscription) {
+                                            await unsubscribePush();
+                                        } else {
+                                            await subscribePush();
+                                        }
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert('Không xử lý được thông báo đẩy. Bạn thử lại giúp mình nhé.');
+                                    }
+                                });
+
+                                testBtn.addEventListener('click', async function () {
+                                    try {
+                                        const response = await fetch('/auth/push/test', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' }
+                                        });
+                                        const data = await response.json();
+                                        if (!response.ok || !data.ok) {
+                                            throw new Error(data.message || 'Gui thong bao that bai');
+                                        }
+                                        alert('Đã gửi thông báo thử. Bạn kiểm tra thông báo trình duyệt nhé.');
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert(err.message || 'Không gửi được thông báo thử.');
+                                    }
+                                });
+
+                                syncState().catch(function (err) {
+                                    console.error(err);
+                                });
+                            })();
+                        </script>
+                        <% } %>
+
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    var adminBtn = document.getElementById('adminDropdownBtn');
+                                    var adminMenu = document.getElementById('adminDropdownMenu');
+                                    if (!adminBtn || !adminMenu) return;
+
+                                    var daGanFallback = false;
+
+                                    function dongMenu() {
+                                        adminMenu.classList.remove('show');
+                                        adminBtn.classList.remove('show');
+                                        adminBtn.setAttribute('aria-expanded', 'false');
+                                    }
+
+                                    function moMenu() {
+                                        adminMenu.classList.add('show');
+                                        adminBtn.classList.add('show');
+                                        adminBtn.setAttribute('aria-expanded', 'true');
+                                    }
+
+                                    function toggleMenu() {
+                                        if (adminMenu.classList.contains('show')) {
+                                            dongMenu();
+                                            return;
+                                        }
+                                        moMenu();
+                                    }
+
+                                    function ganFallbackNeuCan() {
+                                        if (daGanFallback) return;
+                                        daGanFallback = true;
+
+                                        adminBtn.addEventListener('click', function (e) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            toggleMenu();
+                                        });
+
+                                        document.addEventListener('click', function (e) {
+                                            if (!adminMenu.classList.contains('show')) return;
+                                            if (adminBtn.contains(e.target) || adminMenu.contains(e.target)) return;
+                                            dongMenu();
+                                        });
+                                    }
+
+                                    try {
+                                        if (window.bootstrap && bootstrap.Dropdown) {
+                                            if (!bootstrap.Dropdown.getInstance(adminBtn)) {
+                                                new bootstrap.Dropdown(adminBtn);
+                                            }
+                                        } else {
+                                            ganFallbackNeuCan();
+                                        }
+                                    } catch (err) {
+                                        ganFallbackNeuCan();
+                                    }
+                                });
+                            </script>
+>>>>>>> 6b11349c10d2757350ac6d9a4c017c6f17ef0f24

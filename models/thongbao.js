@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const mongoose = require('mongoose');
 
 const thongBaoSchema = new mongoose.Schema({
@@ -18,3 +19,18 @@ const thongBaoSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('ThongBao', thongBaoSchema);
+=======
+
+const mongoose = require('mongoose');
+
+const thongbaoSchema = new mongoose.Schema({
+  title: String,
+  startDate: Date,
+  endDate: Date,
+  description: String,
+  notified: { type: Boolean, default: false }
+});
+
+// Dòng export - cần đổi tên model ở đây
+module.exports = mongoose.model('thongbao', thongbaoSchema); 
+>>>>>>> 6b11349c10d2757350ac6d9a4c017c6f17ef0f24

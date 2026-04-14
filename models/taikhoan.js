@@ -20,7 +20,11 @@ var taiKhoanSchema = new mongoose.Schema({
         enum: ['sinhvien', 'giangvien', 'admin'],
         default: 'sinhvien'
     },
-    TrangThai: { type: Number, default: 1 }
+    TrangThai: { type: Number, default: 1 },
+    PushSubscriptions: {
+        type: [mongoose.Schema.Types.Mixed],
+        default: []
+    }
 }, { timestamps: true });
 
 var taiKhoanModel = mongoose.model('TaiKhoan', taiKhoanSchema);
