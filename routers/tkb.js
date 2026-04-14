@@ -8,6 +8,7 @@ var GiangVien = require('../models/giangvien');
 var SinhVien = require('../models/sinhvien');
 var LopHoc = require('../models/lophoc');
 var { requireAdmin } = require('./auth');
+var ThongBao = require('../models/thongbao');
 
 
 
@@ -373,15 +374,21 @@ router.get('/danhsachcho', async (req, res) => {
     }
 });
 
-// Route xử lý duyệt lịch học
-router.post('/da-duyet/:id', async (req, res) => {
+// Route xử lý duyệt lịch học - Giữ nguyên logic cũ và thêm thông báo
+router.post('/da-duyet/:id', async function (req, res) {
     try {
         // 1. Tìm thông tin cái lịch đang định duyệt
-        const lichSapDuyet = await TKB.findById(req.params.id);
+        // Tâm lưu ý: mình thêm .populate để lấy tên Môn và Lớp cho nội dung thông báo nhé
+        var lichSapDuyet = await TKB.findById(req.params.id).populate('MonHoc LopHoc');
+
+        if (!lichSapDuyet) {
+            return res.json({ success: false, message: "Không tìm thấy lịch này." });
+        }
 
         // 2. Kiểm tra xem có lịch nào KHÁC đã được duyệt mà trùng Thứ, Tiết, Phòng không
-        const trungLich = await TKB.findOne({
-            _id: { $ne: req.params.id }, // Không so sánh với chính nó
+        // (Đây là logic gốc của Tâm, mình giữ nguyên hoàn toàn)
+        var trungLich = await TKB.findOne({
+            _id: { $ne: req.params.id },
             TrangThai: 'da-duyet',
             Thu: lichSapDuyet.Thu,
             PhongHoc: lichSapDuyet.PhongHoc,
@@ -391,18 +398,49 @@ router.post('/da-duyet/:id', async (req, res) => {
         });
 
         if (trungLich) {
-            return res.json({ success: false, message: "Phòng này đã có lịch học vào thời gian này rồi Tâm ơi!" });
+            return res.json({ success: false, message: "Phòng này đã có lịch học vào thời gian này rồi." });
         }
 
         // 3. Nếu không trùng thì mới cho duyệt
+        // (Giữ nguyên logic cập nhật của Tâm)
         await TKB.findByIdAndUpdate(req.params.id, {
             TrangThai: 'da-duyet',
             NgayDuyet: new Date()
         });
-        res.json({ success: true, message: "Đã duyệt thành công!" });
+
+        // --- BẮT ĐẦU PHẦN THÊM MỚI: GỬI THÔNG BÁO ---
+        // Phần này được thêm vào sau khi đã duyệt thành công để đảm bảo không lỗi logic cũ
+
+        // A. Gửi thông báo cho Giảng viên
+        var thongBaoGV = new ThongBao({
+            IDNguoiNhan: lichSapDuyet.GiangVien,
+            TieuDe: "Bạn có lịch mới được duyệt!",
+            NoiDung: "Môn " + lichSapDuyet.MonHoc.TenMonHoc + " lớp " + lichSapDuyet.LopHoc.TenLop + " đã sẵn sàng.",
+            LienKet: "/tkb"
+        });
+        await thongBaoGV.save();
+
+        // B. Gửi thông báo cho từng Sinh viên trong lớp
+        var dsSinhVien = await SinhVien.find({ IDLop: lichSapDuyet.LopHoc._id });
+
+        if (dsSinhVien && dsSinhVien.length > 0) {
+            for (var i = 0; i < dsSinhVien.length; i++) {
+                var thongBaoSV = new ThongBao({
+                    IDNguoiNhan: dsSinhVien[i].IDTaiKhoan,
+                    TieuDe: "Thông báo: Lịch học mới",
+                    NoiDung: "Lớp bạn vừa có lịch mới cho môn " + lichSapDuyet.MonHoc.TenMonHoc,
+                    LienKet: "/tkb"
+                });
+                await thongBaoSV.save();
+            }
+        }
+
+        // 4. Trả về kết quả (Giữ nguyên cấu trúc response của Tâm)
+        res.json({ success: true, message: "Đã duyệt thành công và gửi thông báo cho mọi người!" });
 
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error(err);
+        res.status(500).json({ success: false, message: "Lỗi : " + err.message });
     }
 });
 

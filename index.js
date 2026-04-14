@@ -11,6 +11,7 @@ var phonghocRouter = require('./routers/phonghoc');
 var tkbRouter = require('./routers/tkb');
 var lophocRouter = require('./routers/lophoc');
 var monhocRouter = require('./routers/monhoc');
+var thongbaoRouter = require('./routers/thongbao');
 
 
 
@@ -91,6 +92,7 @@ app.use('/phonghoc', phonghocRouter);
 app.use('/tkb', tkbRouter);
 app.use('/lophoc', lophocRouter);
 app.use('/monhoc', monhocRouter);
+app.use('/thongbao', thongbaoRouter);
 
 
 
