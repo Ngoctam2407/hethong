@@ -11,11 +11,8 @@ var phonghocRouter = require('./routers/phonghoc');
 var tkbRouter = require('./routers/tkb');
 var lophocRouter = require('./routers/lophoc');
 var monhocRouter = require('./routers/monhoc');
-<<<<<<< HEAD
 var thongbaoRouter = require('./routers/thongbao');
-=======
 var { getPublicKey } = require('./utils/push');
->>>>>>> 6b11349c10d2757350ac6d9a4c017c6f17ef0f24
 
 
 
