@@ -34,7 +34,7 @@
                                 <i class="fas fa-book-open fa-3x text-info"></i>
                             </div>
                             <h2 class="fw-bold">Thêm Môn Học Mới</h2>
-                            <p class="text-muted">Tâm ơi, hãy điền thông tin chi tiết của môn học vào đây nhé!</p>
+                            <p class="text-muted">Hãy điền thông tin chi tiết của môn học vào đây nhé!</p>
                         </div>
 
                         <form action="/monhoc/them" method="POST">
@@ -58,17 +58,6 @@
                                         </span>
                                         <input type="text" name="TenMonHoc" class="form-control form-control-custom"
                                             placeholder="Ví dụ: Lập trình Backend với Node.js" required>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-12 mb-4">
-                                    <label class="label-custom">Số Tín Chỉ</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom" style="color: #0dcaf0;">
-                                            <i class="fas fa-star"></i>
-                                        </span>
-                                        <input type="number" name="SoTinChi" class="form-control form-control-custom"
-                                            placeholder="Ví dụ: 3" min="0" max="5" required>
                                     </div>
                                 </div>
 
@@ -103,7 +92,6 @@
 </html>
 
 <style>
-    /* CSS đồng bộ phong cách với trang Thêm Lớp của Tâm */
     body {
         font-family: 'Quicksand', sans-serif;
         background-color: #f4f7f6;
@@ -145,7 +133,6 @@
         transition: 0.3s;
     }
 
-    /* Bo tròn cho textarea */
     textarea.form-control-custom {
         border-radius: 0 12px 12px 0 !important;
     }

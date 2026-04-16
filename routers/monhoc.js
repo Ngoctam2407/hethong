@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const MonHoc = require('../models/monhoc'); // Model mà chúng mình vừa bàn ở trên nè
 var { requireAdmin } = require('./auth');
-const { upload, readRowsFromExcel, buildWorkbook, sendWorkbook, toNumber } = require('../utils/excel');
+const { upload, readRowsFromExcel, buildWorkbook, sendWorkbook } = require('../utils/excel');
 
 function xuLyUploadExcel(req, res, next) {
     upload.single('excelFile')(req, res, function (err) {
@@ -52,7 +52,6 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
             const duLieu = {
                 MaMonHoc,
                 TenMonHoc,
-                SoTinChi: toNumber(layGiaTriDong(row, 'SoTinChi'), 3),
                 MoTa: String(layGiaTriDong(row, 'MoTa')).trim()
             };
 
@@ -82,7 +81,6 @@ router.get('/export', async (req, res) => {
             return {
                 MaMonHoc: mon.MaMonHoc,
                 TenMonHoc: mon.TenMonHoc,
-                SoTinChi: mon.SoTinChi,
                 MoTa: mon.MoTa || ''
             };
         });
@@ -104,8 +102,8 @@ router.get('/them', (req, res) => {
 // 3. Xử lý thêm môn học mới
 router.post('/them', async (req, res) => {
     try {
-        const { TenMonHoc, MaMonHoc, SoTinChi, MoTa } = req.body;
-        const monMoi = new MonHoc({ TenMonHoc, MaMonHoc, SoTinChi, MoTa });
+        const { TenMonHoc, MaMonHoc, MoTa } = req.body;
+        const monMoi = new MonHoc({ TenMonHoc, MaMonHoc, MoTa });
         await monMoi.save();
         res.redirect('/monhoc');
     } catch (err) {
@@ -129,8 +127,8 @@ router.get('/sua/:id', async (req, res) => {
 // 5. Xử lý sửa môn học
 router.post('/sua/:id', async (req, res) => {
     try {
-        const { TenMonHoc, MaMonHoc, SoTinChi, MoTa } = req.body;
-        await MonHoc.findByIdAndUpdate(req.params.id, { TenMonHoc, MaMonHoc, SoTinChi, MoTa });
+        const { TenMonHoc, MaMonHoc, MoTa } = req.body;
+        await MonHoc.findByIdAndUpdate(req.params.id, { TenMonHoc, MaMonHoc, MoTa });
         res.redirect('/monhoc');
     } catch (err) {
         res.send("Lỗi cập nhật: " + err);
