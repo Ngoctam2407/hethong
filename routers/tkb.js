@@ -170,7 +170,7 @@ router.get('/', async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lỗi hệ thống rồi Tâm ơi!");
+        res.status(500).send("Lỗi hệ thống rồi.");
     }
 });
 
@@ -190,7 +190,7 @@ router.post('/them', async (req, res) => {
         });
 
         if (gvBan) {
-            req.session.error = "Tâm ơi, Giảng viên này đã có lịch dạy vào khung giờ này rồi!";
+            req.session.error = "Đã có lịch dạy vào khung giờ này rồi";
             return res.redirect('back');
         }
 
@@ -221,7 +221,7 @@ router.post('/them', async (req, res) => {
         const moi = new TKB(req.body);
         await moi.save();
 
-        req.session.success = "Đã xếp lịch thành công theo đúng thứ tự ưu tiên của Tâm! 🌸";
+        req.session.success = "Đã xếp lịch thành công theo đúng thứ tự ưu tiên .";
 
         // Lưu ý: Các biến `lichCu` và `id` bị thiếu ở route gốc, bạn nên kiểm tra lại scope
         // nếu bạn định xoá/cập nhật ở route tạo mới này.
@@ -375,7 +375,7 @@ router.get('/dangky', async (req, res) => {
         });
     } catch (err) {
         console.error("Lỗi lọc dữ liệu Tâm ơi:", err);
-        res.status(500).send("Lỗi rồi! Tâm kiểm tra Terminal xem lỗi gì nha.");
+        res.status(500).send("Lỗi rồi. Kiểm tra Terminal xem lỗi gì nha.");
     }
 });
 
@@ -447,7 +447,7 @@ router.post('/dang-ky-luu', async (req, res) => {
 
         await lichMoi.save();
         await PhongHoc.findByIdAndUpdate(phongHocID, { TrangThai: 0 }); // Giả sử trạng thái 0 là "Đang sử dụng" 
-        req.session.success = "Lưu lịch và cập nhật trạng thái phòng thành công!";
+        req.session.success = "Đã lưu lịch rồi, chờ duyệt nhé!";
         res.redirect('/tkb');
     } catch (err) {
         console.error(err);
@@ -471,7 +471,7 @@ router.get('/danhsach', async (req, res) => {
             dstkb: dsLich // Gửi dữ liệu lịch học sang EJS
         });
     } catch (err) {
-        res.status(500).send("Lỗi rồi Tâm ơi!");
+        res.status(500).send("Lỗi rồi!");
     }
 });
 
@@ -518,9 +518,6 @@ router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
             NgayDuyet: new Date()
         });
 
-        // --- BẮT ĐẦU PHẦN GỬI THÔNG BÁO ---
-
-        // A. Gửi thông báo trong Database (in-app) cho Giảng viên
         const thongBaoGV = new ThongBao({
             IDNguoiNhan: lichSapDuyet.GiangVien,
             TieuDe: "Bạn có lịch mới được duyệt!",
@@ -550,6 +547,37 @@ router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: "Lỗi : " + err.message });
+    }
+});
+
+// Route xử lý TỪ CHỐI duyệt lịch học
+router.post('/tu-choi/:id', requireAdmin, async (req, res) => {
+    try {
+        // 1. Chỉ cập nhật trạng thái thành 'tu-choi'
+        const lichBiTuChoi = await TKB.findByIdAndUpdate(req.params.id, {
+            TrangThai: 'tu-choi'
+        });
+
+        if (!lichBiTuChoi) {
+            return res.json({ success: false, message: 'Không tìm thấy lịch này.' });
+        }
+
+        // 2. Gửi thông báo Database cho Giảng viên để họ biết và đăng ký lại
+        const thongBaoReject = new ThongBao({
+            IDNguoiNhan: lichBiTuChoi.GiangVien,
+            TieuDe: "Lịch đăng ký không được duyệt",
+            NoiDung: `Lịch đăng ký môn học của bạn đã bị từ chối. Vui lòng kiểm tra lại sơ đồ phòng học và đăng ký khung giờ khác nhé.`,
+            LienKet: "/tkb/dangky"
+        });
+        await thongBaoReject.save();
+
+        // 3. Giải phóng trạng thái phòng học về 1 (Sẵn sàng)
+        await PhongHoc.findByIdAndUpdate(lichBiTuChoi.PhongHoc, { TrangThai: 1 });
+
+        res.json({ success: true, message: "Đã từ chối và giải phóng phòng học!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Lỗi rồi: " + err.message });
     }
 });
 

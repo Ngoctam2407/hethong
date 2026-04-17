@@ -11,9 +11,9 @@ const tkbSchema = new mongoose.Schema({
     CaHoc: { type: String, required: false, default: "" }, // Tâm có thể để trống lúc tạo, sau đó tự động gán dựa vào tiết bắt đầu
     TietBatDau: { type: Number, required: true },
     TietKetThuc: { type: Number, required: true },
-    TrangThai: { type: String, enum: ['cho-duyet', 'da-duyet'], default: 'cho-duyet' },
+    TrangThai: { type: String, enum: ['cho-duyet', 'da-duyet', 'tu-choi'], default: 'cho-duyet' },
     NgayDangKy: { type: Date, default: Date.now },
-    NgayHoc: { type: Date, required: true },
+    NgayHoc: { type: Date, default: null },
     NgayDuyet: { type: Date, default: null }
 });
 

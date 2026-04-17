@@ -40,14 +40,55 @@
             border-radius: 20px;
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            overflow-x: auto;
+            overflow: hidden;
+        }
+
+        .admin-tkb-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .admin-tkb-table th,
+        .admin-tkb-table td {
+            border: 1px solid #e2e8f0 !important;
+            padding: 12px 8px !important;
+
+        }
+
+        .admin-time-col {
+            width: 96px;
+            min-width: 96px;
+        }
+
+        .room-head {
+            padding: 8px 4px !important;
+            text-align: center;
+            vertical-align: middle;
+            background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
+        }
+
+        .room-head-inner {
+            min-height: 86px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            writing-mode: horizontal-tb;
+            /* Chế độ viết chuẩn */
+            transform: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            margin: 0 auto;
         }
 
         .admin-cell {
-            height: 120px;
+            height: 94px;
             vertical-align: top;
-            padding: 8px !important;
-            min-width: 160px;
+            padding: 4px !important;
+            background: #fcfdff;
         }
 
         .phong-focus {
@@ -61,8 +102,8 @@
         }
 
         .tkb-card {
-            border-radius: 12px;
-            padding: 10px;
+            border-radius: 10px;
+            padding: 8px 7px;
             color: white;
             height: 100%;
             transition: 0.3s;
@@ -70,6 +111,65 @@
             flex-direction: column;
             justify-content: space-between;
             position: relative;
+            overflow: hidden;
+        }
+
+        .tkb-card::after {
+            content: '';
+            position: absolute;
+            right: -12px;
+            bottom: -30px;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .tkb-class {
+            font-size: 0.82rem;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 3px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .tkb-subject {
+            font-size: 0.7rem;
+            line-height: 1.2;
+            opacity: 0.96;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .tkb-teacher {
+            font-size: 0.68rem;
+            line-height: 1.15;
+            opacity: 0.9;
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tkb-meta {
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.24);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            font-size: 0.62rem;
+        }
+
+        .tkb-meta strong {
+            font-size: 0.72rem;
+            font-weight: 700;
         }
 
         .color-sang {
@@ -120,6 +220,20 @@
             .user-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
+
+            .table-admin-wrapper {
+                overflow-x: auto;
+            }
+
+            .admin-tkb-table {
+                min-width: 1080px;
+            }
+
+            .room-head-inner {
+                writing-mode: initial;
+                transform: none;
+                min-height: auto;
+            }
         }
 
         @media (max-width: 600px) {
@@ -148,13 +262,18 @@
 
             <% if(user.QuyenHan==='Admin' || user.QuyenHan==='admin' ) { %>
                 <div class="table-admin-wrapper">
-                    <table class="table table-bordered m-0">
+                    <table class="table table-bordered admin-tkb-table m-0">
                         <thead class="table-light text-center">
                             <tr>
-                                <th style="width: 120px;">Thứ / Buổi</th>
+                                <th class="admin-time-col">Thứ / Buổi</th>
                                 <% dsphong.forEach(function(phong) { %>
-                                    <th id="phong-<%= phong._id %>"><i class="fas fa-door-open me-1 text-primary"></i>
-                                        <%= phong.TenPhong %>
+                                    <th id="phong-<%= phong._id %>" class="room-head" title="<%= phong.TenPhong %>">
+                                        <div class="room-head-inner">
+                                            <i class="fas fa-door-open text-primary"></i>
+                                            <span>
+                                                <%= phong.TenPhong %>
+                                            </span>
+                                        </div>
                                     </th>
                                     <% }); %>
                             </tr>
@@ -178,22 +297,27 @@
                                                     i.PhongHoc._id.toString()===phong._id.toString(); }); %>
                                                     <% if(lich) { %>
                                                         <div class="tkb-card color-<%= lich.CaHoc === 'Sáng'?'sang':(lich.CaHoc === 'Chiều'?'chieu':'toi') %> shadow-sm"
-                                                            data-phong-card-id="<%= phong._id %>"
-                                                            data-bs-toggle="modal"
+                                                            data-phong-card-id="<%= phong._id %>" data-bs-toggle="modal"
                                                             data-bs-target="#modal<%= lich._id %>"
-                                                            style="cursor: pointer;">
-                                                            <div class="class-name text-truncate">
+                                                            style="cursor: pointer;"
+                                                            title="<%= (lich.LopHoc ? lich.LopHoc.TenLop : 'N/A') + ' | ' + (lich.MonHoc ? lich.MonHoc.TenMonHoc : 'N/A') + ' | ' + (lich.GiangVien ? lich.GiangVien.HoVaTen : 'N/A') %>">
+                                                            <div class="tkb-class">
                                                                 <%= lich.LopHoc ? lich.LopHoc.TenLop : 'N/A' %>
                                                             </div>
-                                                            <div class="sub-info text-truncate-2">
+                                                            <div class="tkb-subject">
                                                                 <%= lich.MonHoc?.TenMonHoc %>
                                                             </div>
-                                                            <div
-                                                                class="mt-2 pt-1 border-top border-white border-opacity-25 d-flex justify-content-between align-items-center">
-                                                                <span style="font-size: 0.65rem;">T:<%= lich.TietBatDau
-                                                                        %>-<%= lich.TietKetThuc %></span>
-                                                                <i class="fas fa-eye"
-                                                                    style="font-size: 0.7rem; opacity: 0.7;"></i>
+                                                            <div class="tkb-teacher">
+                                                                <i class="fas fa-user-tie me-1"></i>
+                                                                <%= lich.GiangVien?.HoVaTen || 'Chưa có GV' %>
+                                                            </div>
+                                                            <div class="tkb-meta">
+                                                                <span><strong>
+                                                                        <%= lich.CaHoc %>
+                                                                    </strong></span>
+                                                                <span>T<%= lich.TietBatDau %>-<%= lich.TietKetThuc %>
+                                                                </span>
+                                                                <i class="fas fa-eye" style="opacity: 0.7;"></i>
                                                             </div>
                                                         </div>
 
