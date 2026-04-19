@@ -8,6 +8,7 @@ const tkbSchema = new mongoose.Schema({
     PhongHoc: { type: mongoose.Schema.Types.ObjectId, ref: 'PhongHoc', required: true },
     LopHoc: { type: mongoose.Schema.Types.ObjectId, ref: 'LopHoc', required: true },
     Thu: { type: String, required: true },
+    Tuan: { type: Number, required: true, default: 1 },
     CaHoc: { type: String, required: false, default: "" }, // Tâm có thể để trống lúc tạo, sau đó tự động gán dựa vào tiết bắt đầu
     TietBatDau: { type: Number, required: true },
     TietKetThuc: { type: Number, required: true },

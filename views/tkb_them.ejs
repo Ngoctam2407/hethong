@@ -72,6 +72,17 @@
                     </div>
 
                     <div class="col-md-3 mb-4">
+                        <label class="form-label"><i class="fas fa-hashtag me-2 text-primary"></i>Tuần Học</label>
+                        <select name="Tuan" class="form-select shadow-sm" required>
+                            <% weeks.forEach(function(w) { %>
+                                <option value="<%= w.number %>" <%=currentWeek==w.number ? 'selected' : '' %>>
+                                    <%= w.label %>
+                                </option>
+                                <% }); %>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 mb-4">
                         <label class="form-label">Thứ</label>
                         <select name="Thu" class="form-select shadow-sm">
                             <% ["Thứ 2", "Thứ 3" , "Thứ 4" , "Thứ 5" , "Thứ 6" , "Thứ 7" , "Chủ Nhật" ].forEach(thu=> {

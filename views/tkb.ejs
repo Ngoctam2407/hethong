@@ -260,6 +260,27 @@
                     <% } %>
             </div>
 
+            <div class="mb-4">
+                <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <span class="fw-bold text-dark"><i class="fas fa-calendar-week me-2 text-primary"></i>Chọn
+                            Tuần:</span>
+                        <div style="min-width: 250px;">
+                            <select class="form-select shadow-sm rounded-pill"
+                                onchange="location.href='?tuan='+this.value">
+                                <% weeks.forEach(function(w) { %>
+                                    <option value="<%= w.number %>" <%=currentWeek==w.number ? 'selected' : '' %>>
+                                        <%= w.label %>
+                                            <%= realCurrentWeek==w.number ? '(Tuần hiện tại)' : '' %>
+                                    </option>
+                                    <% }); %>
+                            </select>
+                        </div>
+                        <small class="text-muted d-none d-md-block">Hệ thống tự động nhận diện tuần học thực tế.</small>
+                    </div>
+                </div>
+            </div>
+
             <% if(user.QuyenHan==='Admin' || user.QuyenHan==='admin' ) { %>
                 <div class="table-admin-wrapper">
                     <table class="table table-bordered admin-tkb-table m-0">

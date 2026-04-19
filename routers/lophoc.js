@@ -67,6 +67,7 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
                 MaLop,
                 TenLop,
                 NienKhoa: String(layGiaTriDong(row, 'NienKhoa')).trim(),
+                NgayBatDauNamHoc: layGiaTriDong(row, 'NgayBatDauNamHoc') ? new Date(layGiaTriDong(row, 'NgayBatDauNamHoc')) : new Date(),
                 SiSo: toNumber(layGiaTriDong(row, 'SiSo'), 0),
                 TrangThai: toNumber(layGiaTriDong(row, 'TrangThai'), 1)
             };
@@ -128,6 +129,7 @@ router.post('/them', async (req, res) => {
             MaLop: req.body.MaLop,
             TenLop: req.body.TenLop,
             NienKhoa: req.body.NienKhoa,
+            NgayBatDauNamHoc: req.body.NgayBatDauNamHoc || new Date(),
             SiSo: req.body.SiSo || 0,
             TrangThai: 1 // Mặc định lớp mới tạo là đang hoạt động
         };
@@ -154,12 +156,13 @@ router.get('/sua/:id', async (req, res) => {
 // 5. POST: Xử lý Cập nhật lớp học
 router.post('/sua/:id', async (req, res) => {
     try {
-        const { MaLop, TenLop, NienKhoa, SiSo, TrangThai } = req.body;
+        const { MaLop, TenLop, NienKhoa, NgayBatDauNamHoc, SiSo, TrangThai } = req.body;
 
         await LopHoc.findByIdAndUpdate(req.params.id, {
             MaLop,
             TenLop,
             NienKhoa,
+            NgayBatDauNamHoc,
             SiSo,
             TrangThai: Number(TrangThai)
         });

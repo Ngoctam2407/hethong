@@ -57,23 +57,24 @@
                                     <div class="input-group">
                                         <span class="input-group-text input-group-text-custom"><i
                                                 class="fas fa-user-tie"></i></span>
-                                        <% if (user && user.QuyenHan === 'giangvien') { %>
+                                        <% if (user && user.QuyenHan==='giangvien' ) { %>
                                             <input type="text" class="form-control form-control-custom"
                                                 value="<%= user.HoVaTen %>" readonly>
                                             <input type="hidden" name="GiangVien" value="<%= user._id %>">
-                                        <% } else { %>
-                                            <select name="GiangVien" class="form-select form-control-custom" required>
-                                                <% dsgiangvien.forEach(gv=> { %>
-                                                    <option value="<%= gv._id %>">
-                                                        <%= gv.HoVaTen %>
-                                                    </option>
-                                                    <% }) %>
-                                            </select>
-                                        <% } %>
+                                            <% } else { %>
+                                                <select name="GiangVien" class="form-select form-control-custom"
+                                                    required>
+                                                    <% dsgiangvien.forEach(gv=> { %>
+                                                        <option value="<%= gv._id %>">
+                                                            <%= gv.HoVaTen %>
+                                                        </option>
+                                                        <% }) %>
+                                                </select>
+                                                <% } %>
                                     </div>
-                                    <% if (user && user.QuyenHan === 'giangvien') { %>
+                                    <% if (user && user.QuyenHan==='giangvien' ) { %>
                                         <small class="text-muted ms-1">Bạn đang đăng ký lịch cho chính mình.</small>
-                                    <% } %>
+                                        <% } %>
                                 </div>
 
                                 <div class="col-md-6 mb-4">
@@ -88,6 +89,35 @@
                                                 </option>
                                                 <% }) %>
                                         </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-4">
+                                    <div class="d-flex gap-4 align-items-start">
+                                        <div style="flex: 0 0 60%;">
+                                            <label class="label-custom">Tuần học đăng ký</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text input-group-text-custom"><i
+                                                        class="fas fa-hashtag"></i></span>
+                                                <select name="Tuan" class="form-select form-control-custom" required>
+                                                    <% weeks.forEach(function(w) { %>
+                                                        <option value="<%= w.number %>" <%=currentWeek==w.number
+                                                            ? 'selected' : '' %>>
+                                                            <%= w.label %>
+                                                        </option>
+                                                        <% }); %>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <label class="label-custom">Ca học suy ra</label>
+                                            <input type="text" id="caHocPreview"
+                                                class="form-control form-control-custom" value="Hệ thống sẽ tự suy ra"
+                                                readonly style="border-radius: 12px !important;">
+                                            <small class="text-muted ms-1"
+                                                style="display: block; line-height: 1.2;">Tiết 1-5 là Sáng, 6-10 là
+                                                Chiều, 11-12 là Tối.</small>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -116,13 +146,6 @@
                                     <input type="number" name="TietKetThuc" id="tietKetThucInput" min="1" max="12"
                                         class="form-control form-control-custom" placeholder="Ví dụ: 9" required>
                                 </div>
-                                <div class="col-md-4 mb-4">
-                                    <label class="label-custom">Ca học suy ra</label>
-                                    <input type="text" id="caHocPreview" class="form-control form-control-custom"
-                                        value="Hệ thống sẽ tự suy ra" readonly>
-                                    <small class="text-muted ms-1">Tiết 1-5 là Sáng, 6-10 là Chiều, 11-12 là Tối.</small>
-                                </div>
-
                                 <div class="col-md-12 mb-4">
                                     <label class="label-custom">Phòng học</label>
                                     <div class="input-group">
