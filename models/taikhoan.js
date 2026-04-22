@@ -21,7 +21,7 @@ var taiKhoanSchema = new mongoose.Schema({
         default: 'sinhvien'
     },
     TrangThai: { type: Number, default: 1 },
-    PushSubscriptions: {
+    ThongBaoDay: {
         type: [mongoose.Schema.Types.Mixed],
         default: []
     }

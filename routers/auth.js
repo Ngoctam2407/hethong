@@ -189,14 +189,14 @@ router.post('/push/subscribe', requireLogin, async function (req, res) {
             return res.status(404).json({ ok: false, message: 'Khong tim thay tai khoan.' });
         }
 
-        const dsCu = Array.isArray(taiKhoan.PushSubscriptions) ? taiKhoan.PushSubscriptions : [];
+        const dsCu = Array.isArray(taiKhoan.ThongBaoDay) ? taiKhoan.ThongBaoDay : [];
         const daTonTai = dsCu.some(function (item) {
             return item && item.endpoint === subscription.endpoint;
         });
 
         if (!daTonTai) {
             dsCu.push(subscription);
-            taiKhoan.PushSubscriptions = dsCu;
+            taiKhoan.ThongBaoDay = dsCu;
             await taiKhoan.save();
         }
 
@@ -215,7 +215,7 @@ router.post('/push/unsubscribe', requireLogin, async function (req, res) {
             return res.status(404).json({ ok: false, message: 'Khong tim thay tai khoan.' });
         }
 
-        taiKhoan.PushSubscriptions = (taiKhoan.PushSubscriptions || []).filter(function (item) {
+        taiKhoan.ThongBaoDay = (taiKhoan.ThongBaoDay || []).filter(function (item) {
             return item && item.endpoint !== endpoint;
         });
         await taiKhoan.save();
@@ -234,7 +234,7 @@ router.post('/push/test', requireLogin, async function (req, res) {
             return res.status(404).json({ ok: false, message: 'Khong tim thay tai khoan.' });
         }
 
-        const subscriptions = Array.isArray(taiKhoan.PushSubscriptions) ? taiKhoan.PushSubscriptions : [];
+        const subscriptions = Array.isArray(taiKhoan.ThongBaoDay) ? taiKhoan.ThongBaoDay : [];
         if (!subscriptions.length) {
             return res.status(400).json({ ok: false, message: 'Ban chua bat thong bao day tren trinh duyet nay.' });
         }
@@ -262,7 +262,7 @@ router.post('/push/test', requireLogin, async function (req, res) {
         }
 
         if (hopLe.length !== subscriptions.length) {
-            taiKhoan.PushSubscriptions = hopLe;
+            taiKhoan.ThongBaoDay = hopLe;
             await taiKhoan.save();
         }
 

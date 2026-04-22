@@ -68,12 +68,12 @@ function taoNoiDungLich(lich) {
 }
 
 async function guiThongBaoChoTaiKhoan(taiKhoan, payload) {
-    if (!taiKhoan || !Array.isArray(taiKhoan.PushSubscriptions) || !taiKhoan.PushSubscriptions.length) {
+    if (!taiKhoan || !Array.isArray(taiKhoan.ThongBaoDay) || !taiKhoan.ThongBaoDay.length) {
         return;
     }
 
     const hopLe = [];
-    for (const subscription of taiKhoan.PushSubscriptions) {
+    for (const subscription of taiKhoan.ThongBaoDay) {
         try {
             await sendNotification(subscription, payload);
             hopLe.push(subscription);
@@ -86,8 +86,8 @@ async function guiThongBaoChoTaiKhoan(taiKhoan, payload) {
         }
     }
 
-    if (hopLe.length !== taiKhoan.PushSubscriptions.length) {
-        taiKhoan.PushSubscriptions = hopLe;
+    if (hopLe.length !== taiKhoan.ThongBaoDay.length) {
+        taiKhoan.ThongBaoDay = hopLe;
         await taiKhoan.save();
     }
 }

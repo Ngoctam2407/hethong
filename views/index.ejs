@@ -37,7 +37,6 @@
         }
 
         .hero-banner {
-            padding: 80px 0 40px 0;
             background: radial-gradient(circle at top right, #e3f2fd, #ffffff);
         }
 
@@ -270,67 +269,86 @@
                             <div class="col-lg-5 mx-auto">
                                 <% const thuMap=['Chủ Nhật', 'Thứ 2' , 'Thứ 3' , 'Thứ 4' , 'Thứ 5' , 'Thứ 6' , 'Thứ 7'
                                     ]; const thuHienTai=thuMap[new Date().getDay()]; const
-                                    danhSachLich=Array.isArray(dsLich) ? dsLich : []; const
-                                    lichHomNay=danhSachLich.find(item=> item && item.Thu === thuHienTai);
-                                    const caHoc = lichHomNay
-                                    ? 'Tiết ' + (lichHomNay.TietBatDau ?? 'N/A') + ' - ' + (lichHomNay.TietKetThuc ??
-                                    'N/A')
-                                    : '';
-                                    %>
-                                    <h5 class="fw-bold mb-3">
-                                        <i class="fas fa-chalkboard-teacher text-danger me-2"></i>Card lịch học hôm nay
-                                    </h5>
-                                    <div class="list-group shadow-sm border-0">
-                                        <% if (lichHomNay) { %>
-                                            <a href="/tkb" class="text-decoration-none">
-                                                <div class="list-group-item p-4 border-0 mb-3 add-card"
-                                                    style="border-radius: 20px; background: linear-gradient(135deg, #6610f2 0%, #007bff 100%); color: white;">
-                                                    <div class="d-flex justify-content-between align-items-start gap-3">
-                                                        <div>
-                                                            <p class="mb-2 opacity-75 small">
-                                                                <i class="fas fa-calendar-day me-2"></i>
-                                                                <%= thuHienTai %>
-                                                            </p>
-                                                            <h4 class="fw-bold mb-2">
-                                                                <%= lichHomNay.PhongHoc ? lichHomNay.PhongHoc.TenPhong
-                                                                    : 'Chưa có phòng' %>
-                                                            </h4>
-                                                            <p class="mb-1">
-                                                                <i class="fas fa-book me-2"></i>
-                                                                <strong>Tên môn:</strong>
-                                                                <%= lichHomNay.MonHoc ? lichHomNay.MonHoc.TenMonHoc
-                                                                    : 'Đang cập nhật' %>
-                                                            </p>
-                                                            <p class="mb-1">
-                                                                <i class="fas fa-user-tie me-2"></i>
-                                                                <strong>Giảng viên:</strong>
-                                                                <%= lichHomNay.GiangVien ? lichHomNay.GiangVien.HoVaTen
-                                                                    : 'Đang cập nhật' %>
-                                                            </p>
-                                                            <p class="mb-3">
-                                                                <i class="fas fa-clock me-2"></i>
-                                                                <strong>Ca học:</strong>
-                                                                <%= caHoc %>
-                                                            </p>
-                                                            <span
-                                                                class="badge bg-white text-primary rounded-pill px-3 py-2">
-                                                                <i class="fas fa-clock me-1"></i> Xem chi tiết
-                                                            </span>
+                                    danhSachLich=Array.isArray(dsLich) ? dsLich : []; const khungGioHoc=[ { tiet: 1,
+                                    batDau: "07:00" , ketThuc: "07:45" }, { tiet: 2, batDau: "07:45" , ketThuc: "08:30"
+                                    }, { tiet: 3, batDau: "08:30" , ketThuc: "09:15" }, { tiet: 4, batDau: "09:15" ,
+                                    ketThuc: "10:00" }, { tiet: 5, batDau: "10:00" , ketThuc: "10:45" }, { tiet: 6,
+                                    batDau: "13:00" , ketThuc: "13:45" }, { tiet: 7, batDau: "13:45" , ketThuc: "14:30"
+                                    }, { tiet: 8, batDau: "14:30" , ketThuc: "15:15" }, { tiet: 9, batDau: "15:15" ,
+                                    ketThuc: "16:00" }, { tiet: 10, batDau: "16:00" , ketThuc: "16:45" }, { tiet: 11,
+                                    batDau: "18:00" , ketThuc: "18:45" }, { tiet: 12, batDau: "18:45" , ketThuc: "19:30"
+                                    } ]; const gioHienTai=new Date().toLocaleTimeString('it-IT', { hour: '2-digit' ,
+                                    minute: '2-digit' }); let lichHienTai=null; let
+                                    lichHomNayDangDienRa=danhSachLich.find(item=> {
+                                    if (!item || item.Thu !== thuHienTai) return false;
+                                    const tietKetThuc = khungGioHoc.find(g => g.tiet === item.TietKetThuc);
+                                    return tietKetThuc && gioHienTai < tietKetThuc.ketThuc; }); if
+                                        (lichHomNayDangDienRa) { lichHienTai=lichHomNayDangDienRa; } else {
+                                        lichHienTai=danhSachLich.find(item=> {
+                                        if (!item) return false;
+                                        if (item.Thu === thuHienTai) {
+                                        const tietBatDau = khungGioHoc.find(g => g.tiet === item.TietBatDau);
+                                        if (tietBatDau && gioHienTai < tietBatDau.batDau) return true; } return true; })
+                                            || null; } const caHoc=lichHienTai ? 'Tiết ' + (lichHienTai.TietBatDau
+                                            ?? 'N/A' ) + ' - ' + (lichHienTai.TietKetThuc ?? 'N/A' ) : '' ; %>
+                                            <h5 class="fw-bold mb-3">
+                                                <i class="fas fa-chalkboard-teacher text-danger me-2"></i>Card lịch học
+                                                gần nhất
+                                            </h5>
+                                            <div class="list-group shadow-sm border-0">
+                                                <% if (lichHienTai) { %>
+                                                    <a href="/tkb" class="text-decoration-none">
+                                                        <div class="list-group-item p-4 border-0 mb-3 add-card"
+                                                            style="border-radius: 20px; background: linear-gradient(135deg, #6610f2 0%, #007bff 100%); color: white;">
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-start gap-3">
+                                                                <div>
+                                                                    <p class="mb-2 opacity-75 small">
+                                                                        <i class="fas fa-calendar-day me-2"></i>
+                                                                        <%= lichHienTai.Thu %>
+                                                                    </p>
+                                                                    <h4 class="fw-bold mb-2">
+                                                                        <%= lichHienTai.PhongHoc ?
+                                                                            lichHienTai.PhongHoc.TenPhong
+                                                                            : 'Chưa có phòng' %>
+                                                                    </h4>
+                                                                    <p class="mb-1">
+                                                                        <i class="fas fa-book me-2"></i>
+                                                                        <strong>Tên môn:</strong>
+                                                                        <%= lichHienTai.MonHoc ?
+                                                                            lichHienTai.MonHoc.TenMonHoc
+                                                                            : 'Đang cập nhật' %>
+                                                                    </p>
+                                                                    <p class="mb-1">
+                                                                        <i class="fas fa-user-tie me-2"></i>
+                                                                        <strong>Giảng viên:</strong>
+                                                                        <%= lichHienTai.GiangVien ?
+                                                                            lichHienTai.GiangVien.HoVaTen
+                                                                            : 'Đang cập nhật' %>
+                                                                    </p>
+                                                                    <p class="mb-3">
+                                                                        <i class="fas fa-clock me-2"></i>
+                                                                        <strong>Ca học:</strong>
+                                                                        <%= caHoc %>
+                                                                    </p>
+                                                                    <span
+                                                                        class="badge bg-white text-primary rounded-pill px-3 py-2">
+                                                                        <i class="fas fa-clock me-1"></i> Xem chi tiết
+                                                                    </span>
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    <i class="fas fa-arrow-right fa-2x opacity-50"></i>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div class="text-end">
-                                                            <i class="fas fa-arrow-right fa-2x opacity-50"></i>
+                                                    </a>
+                                                    <% } else { %>
+                                                        <div class="card border-0 p-4 text-center shadow-sm"
+                                                            style="border-radius: 20px;">
+                                                            <p class="text-muted mb-0">Bạn không có lịch nào sắp tới</p>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                            <% } else { %>
-                                                <div class="card border-0 p-4 text-center shadow-sm"
-                                                    style="border-radius: 20px;">
-                                                    <p class="text-muted mb-0">Hôm nay <%= thuHienTai %> bạn không có
-                                                            lịch </p>
-                                                </div>
-                                                <% } %>
-                                    </div>
+                                                        <% } %>
+                                            </div>
                             </div>
                             <% } %>
                 </div>
@@ -513,13 +531,6 @@
                                     <a href="https://www.google.com/maps/search/?api=1&query=223+Ung+Van+Khiem%2C+Long+Xuyen%2C+An+Giang"
                                         target="_blank" rel="noopener noreferrer">
                                         Trụ sở chính: 223 Ung Văn Khiêm, P. Long Xuyên, An Giang
-                                    </a>
-                                </li>
-                                <li>
-                                    <i class="fas fa-location-dot"></i>
-                                    <a href="https://www.google.com/maps/search/?api=1&query=460+Hoang+Dieu%2C+Chau+Doc%2C+An+Giang"
-                                        target="_blank" rel="noopener noreferrer">
-                                        VPĐD (Châu Đốc): 460 Hoàng Diệu, P. Châu Đốc, An Giang
                                     </a>
                                 </li>
                                 <li>
