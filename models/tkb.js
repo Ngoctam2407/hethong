@@ -18,4 +18,44 @@ const tkbSchema = new mongoose.Schema({
     NgayDuyet: { type: Date, default: null }
 });
 
+// ⚠️ FIX: Thêm compound unique indexes để ngăn chặn collision
+// Giảng viên không được dạy 2 lớp cùng 1 thời gian
+tkbSchema.index({
+    GiangVien: 1,
+    Thu: 1,
+    Tuan: 1,
+    TietBatDau: 1,
+    TietKetThuc: 1,
+    TrangThai: 1
+}, {
+    unique: true,
+    partialFilterExpression: { TrangThai: 'da-duyet' }
+});
+
+// Phòng học không được dùng cho 2 lớp cùng 1 thời gian
+tkbSchema.index({
+    PhongHoc: 1,
+    Thu: 1,
+    Tuan: 1,
+    TietBatDau: 1,
+    TietKetThuc: 1,
+    TrangThai: 1
+}, {
+    unique: true,
+    partialFilterExpression: { TrangThai: 'da-duyet' }
+});
+
+// Lớp học không được có 2 môn khác nhau cùng 1 thời gian
+tkbSchema.index({
+    LopHoc: 1,
+    Thu: 1,
+    Tuan: 1,
+    TietBatDau: 1,
+    TietKetThuc: 1,
+    TrangThai: 1
+}, {
+    unique: true,
+    partialFilterExpression: { TrangThai: 'da-duyet' }
+});
+
 module.exports = mongoose.model('TKB', tkbSchema);

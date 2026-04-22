@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var mongoose = require('mongoose');
 var TKB = require('../models/tkb');
 var PhongHoc = require('../models/phonghoc');
 var TaiKhoan = require('../models/taikhoan');
@@ -221,48 +222,63 @@ router.get('/', async (req, res) => {
 
 // GET: Hiện trang thêm TKB
 router.post('/them', async (req, res) => {
+    // ⚠️ FIX: Sử dụng transaction để đảm bảo atomicity
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
         const { MonHoc, GiangVien, PhongHoc: phongHocID, LopHoc: lopHocID, Thu, TietBatDau, TietKetThuc, Tuan: tuanInput } = req.body;
         const tietBD = parseInt(TietBatDau, 10);
         const tietKT = parseInt(TietKetThuc, 10);
         const Tuan = parseInt(tuanInput, 10) || 1;
 
-        const conflictQuery = { Thu, Tuan, ...timeOverlap(tietBD, tietKT) };
+        // ⚠️ FIX: Validate dữ liệu input
+        if (tietKT < tietBD) {
+            await session.abortTransaction();
+            req.session.error = "Tiết kết thúc phải >= tiết bắt đầu";
+            return res.redirect('back');
+        }
 
-        // BƯỚC 1: Kiểm tra xung đột Giảng viên, Phòng, Lớp trong cùng 1 tuần
+        const conflictQuery = { Thu, Tuan, ...timeOverlap(tietBD, tietKT), TrangThai: 'da-duyet' };
+
+        // ⚠️ FIX: Kiểm tra xung đột BẰNG đúng ID từ form
         const [gvBan, phongBan, lopBan] = await Promise.all([
-            TKB.findOne({ GiangVien, ...conflictQuery }),
-            TKB.findOne({ PhongHoc: phongHocID, ...conflictQuery }),
-            TKB.findOne({ LopHoc: lopHocID, ...conflictQuery })
+            TKB.findOne({ GiangVien, ...conflictQuery }).session(session),
+            TKB.findOne({ PhongHoc: phongHocID, ...conflictQuery }).session(session),
+            TKB.findOne({ LopHoc: lopHocID, ...conflictQuery }).session(session)
         ]);
 
         if (gvBan) {
-            req.session.error = "Đã có lịch dạy vào khung giờ này rồi";
+            await session.abortTransaction();
+            req.session.error = "Giảng viên này đã có lịch dạy vào khung giờ này rồi";
             return res.redirect('back');
         }
 
         if (lopBan) {
+            await session.abortTransaction();
             req.session.error = "Lớp học này đã bận vào khung giờ này rồi";
             return res.redirect('back');
         }
 
         if (phongBan) {
+            await session.abortTransaction();
             req.session.error = "Phòng học đã có lớp khác sử dụng vào khung giờ này rồi.";
             return res.redirect('back');
         }
 
-        // BƯỚC 2: Kiểm tra sĩ số và sức chứa
+        // ⚠️ FIX: Kiểm tra sĩ số và sức chứa BÊN TRONG transaction
         const [lop, phong] = await Promise.all([
-            LopHoc.findById(lopHocID),
-            PhongHoc.findById(phongHocID)
+            LopHoc.findById(lopHocID).session(session),
+            PhongHoc.findById(phongHocID).session(session)
         ]);
 
         if (phong && lop && phong.SucChua < lop.SiSo) {
+            await session.abortTransaction();
             req.session.error = `Phòng ${phong.TenPhong} chỉ chứa được ${phong.SucChua} bạn, mà lớp này tận ${lop.SiSo} bạn lận Tâm ạ!`;
             return res.redirect('back');
         }
 
-        // TẤT CẢ ƯU TIÊN ĐỀU KHỚP - TIẾN HÀNH LƯU
+        // ⚠️ FIX: TẤT CẢ ƯU TIÊN ĐỀU KHỚP - TIẾN HÀNH LƯU TRONG TRANSACTION
         const caHocTuDong = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
         const moi = new TKB({
             ...req.body,
@@ -270,16 +286,28 @@ router.post('/them', async (req, res) => {
             CaHoc: caHocTuDong,
             TrangThai: 'da-duyet' // Admin thêm trực tiếp thì duyệt luôn
         });
-        await moi.save();
 
+        await moi.save({ session });
+
+        // ⚠️ FIX: Cập nhật trạng thái phòng cũng trong transaction
+        await PhongHoc.findByIdAndUpdate(phongHocID, { TrangThai: 0 }, { session });
+
+        await session.commitTransaction();
         req.session.success = "Đã xếp lịch thành công theo đúng thứ tự ưu tiên .";
-
-        // Lưu ý: Các biến `lichCu` và `id` bị thiếu ở route gốc, bạn nên kiểm tra lại scope
-        // nếu bạn định xoá/cập nhật ở route tạo mới này.
         res.redirect('/tkb');
 
     } catch (err) {
-        res.status(500).send("Lỗi xử lý logic: " + err);
+        await session.abortTransaction();
+        console.error(err);
+
+        if (err.code === 11000) {
+            req.session.error = "Lịch này bị trùng! Có thể do xung đột dữ liệu.";
+        } else {
+            req.session.error = "Lỗi xử lý logic: " + err.message;
+        }
+        res.redirect('back');
+    } finally {
+        await session.endSession();
     }
 });
 
@@ -334,32 +362,124 @@ router.get('/sua/:id', async (req, res) => {
 
 // POST: Cập nhật TKB sau khi sửa
 router.post('/sua/:id', async (req, res) => {
+    // ⚠️ FIX: Sử dụng transaction để đảm bảo consistency
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        const { TietBatDau, PhongHoc: phongMoiID, Tuan } = req.body;
+        const { TietBatDau, PhongHoc: phongMoiID, Thu, Tuan, TietKetThuc } = req.body;
         const tietBD = parseInt(TietBatDau, 10);
+        const tietKT = parseInt(TietKetThuc, 10);
 
-        const lichCu = await TKB.findById(req.params.id);
-        if (!lichCu) return res.send("Khong tim thay lich nay.");
-
-        const phongCuID = lichCu.PhongHoc.toString();
-        req.body.CaHoc = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
-
-        await TKB.findByIdAndUpdate(req.params.id, req.body);
-
-        if (phongCuID !== phongMoiID) {
-            await PhongHoc.findByIdAndUpdate(phongCuID, { TrangThai: 1 });
-            await PhongHoc.findByIdAndUpdate(phongMoiID, { TrangThai: 0 });
+        // ⚠️ FIX: Validate input
+        if (tietKT < tietBD) {
+            await session.abortTransaction();
+            req.session.error = "Tiết kết thúc phải >= tiết bắt đầu";
+            return res.redirect('back');
         }
+
+        const lichCu = await TKB.findById(req.params.id).session(session);
+        if (!lichCu) {
+            await session.abortTransaction();
+            return res.send("Không tìm thấy lịch này.");
+        }
+
+        // ⚠️ FIX: Nếu thay đổi thời gian hoặc phòng, kiểm tra xung đột
+        const thuDaThayDoi = lichCu.Thu !== Thu;
+        const tietDaThayDoi = lichCu.TietBatDau !== tietBD || lichCu.TietKetThuc !== tietKT;
+        const tuanDaThayDoi = lichCu.Tuan !== parseInt(Tuan, 10);
+        const phongDaThayDoi = lichCu.PhongHoc.toString() !== phongMoiID;
+
+        if ((thuDaThayDoi || tietDaThayDoi || tuanDaThayDoi || phongDaThayDoi) && lichCu.TrangThai === 'da-duyet') {
+            const conflictQuery = {
+                Thu,
+                Tuan: parseInt(Tuan, 10),
+                ...timeOverlap(tietBD, tietKT),
+                TrangThai: 'da-duyet',
+                _id: { $ne: req.params.id } // Không kiểm tra chính nó
+            };
+
+            // Kiểm tra xung đột giảng viên
+            const gvConflict = await TKB.findOne({
+                GiangVien: lichCu.GiangVien,
+                ...conflictQuery
+            }).session(session);
+
+            if (gvConflict) {
+                await session.abortTransaction();
+                req.session.error = "Giảng viên này đã có lịch khác vào khung giờ mới này";
+                return res.redirect('back');
+            }
+
+            // Kiểm tra xung đột phòng (nếu đổi phòng)
+            if (phongDaThayDoi) {
+                const phongConflict = await TKB.findOne({
+                    PhongHoc: phongMoiID,
+                    ...conflictQuery
+                }).session(session);
+
+                if (phongConflict) {
+                    await session.abortTransaction();
+                    req.session.error = "Phòng mới này đã bận vào khung giờ mới";
+                    return res.redirect('back');
+                }
+            }
+
+            // Kiểm tra xung đột lớp
+            const lopConflict = await TKB.findOne({
+                LopHoc: lichCu.LopHoc,
+                ...conflictQuery
+            }).session(session);
+
+            if (lopConflict) {
+                await session.abortTransaction();
+                req.session.error = "Lớp này đã có môn khác vào khung giờ mới";
+                return res.redirect('back');
+            }
+        }
+
+        // ⚠️ FIX: Nếu đổi phòng, kiểm tra sức chứa
+        if (phongDaThayDoi) {
+            const phong = await PhongHoc.findById(phongMoiID).session(session);
+            const lop = await LopHoc.findById(lichCu.LopHoc).session(session);
+
+            if (phong && lop && phong.SucChua < lop.SiSo) {
+                await session.abortTransaction();
+                req.session.error = `Phòng ${phong.TenPhong} chỉ chứa ${phong.SucChua}, lớp có ${lop.SiSo} sinh viên!`;
+                return res.redirect('back');
+            }
+        }
+
+        // ⚠️ FIX: Cập nhật LƯU LỚP CA HỌC TRONG TRANSACTION
+        const caHocTuDong = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
+        await TKB.findByIdAndUpdate(
+            req.params.id,
+            { ...req.body, CaHoc: caHocTuDong },
+            { session }
+        );
+
+        // ⚠️ FIX: Nếu đổi phòng, cập nhật trạng thái cả phòng cũ và phòng mới
+        if (phongDaThayDoi) {
+            const phongCuID = lichCu.PhongHoc.toString();
+            await PhongHoc.findByIdAndUpdate(phongCuID, { TrangThai: 1 }, { session });
+            await PhongHoc.findByIdAndUpdate(phongMoiID, { TrangThai: 0 }, { session });
+        }
+
+        await session.commitTransaction();
 
         if (lichCu.TrangThai === 'da-duyet') {
             await guiThongBaoLichHoc('cap-nhat', req.params.id);
         }
 
-        req.session.success = "Da cap nhat lich hoc thanh cong.";
+        req.session.success = "Cập nhật lịch học thành công.";
         res.redirect('/tkb');
     } catch (err) {
+        await session.abortTransaction();
         console.error(err);
-        res.send("Loi cap nhat: " + err.message);
+        req.session.error = "Lỗi cập nhật: " + err.message;
+        res.redirect('back');
+    } finally {
+        await session.endSession();
     }
 });
 
@@ -469,10 +589,19 @@ router.get('/dangky', async (req, res) => {
 });
 
 router.post('/dang-ky-luu', async (req, res) => {
+    // ⚠️ FIX: Sử dụng MongoDB Session để tạo transaction
+    // Điều này giúp tránh race condition khi nhiều người đăng ký cùng lúc
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
         const user = req.session.user;
-        if (!user) return res.redirect('/auth/dangnhap');
+        if (!user) {
+            await session.abortTransaction();
+            return res.redirect('/auth/dangnhap');
+        }
         if (user.QuyenHan === 'sinhvien') {
+            await session.abortTransaction();
             req.session.error = 'Sinh viên không có quyền đăng ký lịch học.';
             return res.redirect('/tkb');
         }
@@ -496,28 +625,42 @@ router.post('/dang-ky-luu', async (req, res) => {
         const tuanInt = parseInt(Tuan, 10);
 
         if (tietKT < tietBD) {
+            await session.abortTransaction();
             req.session.error = "Tiết kết thúc phải >= tiết bắt đầu";
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
-        const conflictQuery = { Thu, Tuan: tuanInt, ...timeOverlap(tietBD, tietKT) };
+        const conflictQuery = { Thu, Tuan: tuanInt, ...timeOverlap(tietBD, tietKT), TrangThai: 'da-duyet' };
 
-        // Sử dụng đúng ID đã đổi tên để kiểm tra xung đột
+        // ⚠️ FIX: RE-CHECK xung đột BÊN TRONG transaction (lần thứ 2)
+        // Lần này sẽ lock dữ liệu, nên nó sẽ chắc chắn detect được nếu có trùng
         const [gvConflict, roomConflict, lopConflict] = await Promise.all([
-            TKB.findOne({ GiangVien: giangVienID, ...conflictQuery }),
-            TKB.findOne({ PhongHoc: phongHocID, ...conflictQuery }),
-            TKB.findOne({ LopHoc: lopHocID, ...conflictQuery })
+            TKB.findOne({ GiangVien: giangVienID, ...conflictQuery }).session(session),
+            TKB.findOne({ PhongHoc: phongHocID, ...conflictQuery }).session(session),
+            TKB.findOne({ LopHoc: lopHocID, ...conflictQuery }).session(session)
         ]);
 
-        if (gvConflict) { req.session.error = "Giảng viên đang sắp có lịch dạy giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
-        if (roomConflict) { req.session.error = "Phòng đang dùng giờ này"; return res.redirect(req.get('referer') || '/tkb/dangky'); }
-        if (lopConflict) { req.session.error = "Lớp này đã lớp khác dạy giờ này rồi , nên không được đăng ký đâu nhé."; return res.redirect(req.get('referer') || '/tkb/dangky'); }
+        if (gvConflict) {
+            await session.abortTransaction();
+            req.session.error = "Giảng viên đang sắp có lịch dạy giờ này";
+            return res.redirect(req.get('referer') || '/tkb/dangky');
+        }
+        if (roomConflict) {
+            await session.abortTransaction();
+            req.session.error = "Phòng đang dùng giờ này";
+            return res.redirect(req.get('referer') || '/tkb/dangky');
+        }
+        if (lopConflict) {
+            await session.abortTransaction();
+            req.session.error = "Lớp này đã lớp khác dạy giờ này rồi , nên không được đăng ký đâu nhé.";
+            return res.redirect(req.get('referer') || '/tkb/dangky');
+        }
 
-
-        const lop = await LopHoc.findById(lopHocID); // Dùng tên Model.findById(biến ID)
-        const phong = await PhongHoc.findById(phongHocID);
+        const lop = await LopHoc.findById(lopHocID).session(session);
+        const phong = await PhongHoc.findById(phongHocID).session(session);
 
         if (phong && lop && phong.SucChua < lop.SiSo) {
+            await session.abortTransaction();
             req.session.error = `Phòng ${phong.TenPhong} chỉ chứa ${phong.SucChua}, Lớp có tận ${lop.SiSo} sinh viên!`;
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
@@ -537,13 +680,30 @@ router.post('/dang-ky-luu', async (req, res) => {
             TrangThai: 'cho-duyet'
         });
 
-        await lichMoi.save();
-        await PhongHoc.findByIdAndUpdate(phongHocID, { TrangThai: 0 }); // Giả sử trạng thái 0 là "Đang sử dụng" 
+        // ⚠️ FIX: Lưu trong transaction (sẽ rollback nếu có lỗi)
+        await lichMoi.save({ session });
+        await PhongHoc.findByIdAndUpdate(phongHocID, { TrangThai: 0 }, { session });
+
+        // ⚠️ FIX: Commit transaction sau khi tất cả thành công
+        await session.commitTransaction();
+
         req.session.success = "Đã lưu lịch rồi, chờ duyệt nhé!";
         res.redirect('/tkb');
     } catch (err) {
+        // ⚠️ FIX: Rollback nếu có bất kỳ lỗi nào
+        await session.abortTransaction();
         console.error(err);
-        res.status(500).send("Lỗi server: " + err.message);
+
+        // Phát hiện lỗi unique constraint (duplicate)
+        if (err.code === 11000) {
+            req.session.error = "Lịch này đã bị xung đột! Có thể do nhiều người đăng ký cùng lúc. Vui lòng thử lại.";
+        } else {
+            req.session.error = "Lỗi server: " + err.message;
+        }
+        res.redirect(req.get('referer') || '/tkb/dangky');
+    } finally {
+        // ⚠️ FIX: Luôn luôn close session sau khi hoàn thành
+        await session.endSession();
     }
 });
 
@@ -587,35 +747,70 @@ router.get('/danhsachcho', async (req, res) => {
 
 // Route xử lý duyệt lịch học
 router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
+    // ⚠️ FIX: Sử dụng transaction để tránh race condition khi duyệt
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
         // 1. Tìm thông tin cái lịch đang định duyệt (populate để tạo nội dung thông báo)
-        const lichSapDuyet = await TKB.findById(req.params.id).populate('MonHoc LopHoc');
+        const lichSapDuyet = await TKB.findById(req.params.id).populate('MonHoc LopHoc').session(session);
 
         if (!lichSapDuyet) {
+            await session.abortTransaction();
             return res.status(404).json({ success: false, message: 'Không tìm thấy lịch chờ duyệt.' });
         }
 
+        // ⚠️ FIX: Nếu đã duyệt rồi, không duyệt lại
+        if (lichSapDuyet.TrangThai === 'da-duyet') {
+            await session.abortTransaction();
+            return res.json({ success: false, message: "Lịch này đã được duyệt trước đó rồi." });
+        }
+
         // 2. Kiểm tra xem có lịch nào KHÁC đã được duyệt mà trùng Thứ, Tiết, Phòng không
+        // ⚠️ FIX: Re-check xung đột BÊN TRONG transaction
         const trungLich = await TKB.findOne({
             _id: { $ne: req.params.id },
             TrangThai: 'da-duyet',
             Thu: lichSapDuyet.Thu,
-            Tuan: lichSapDuyet.Tuan, // Quan trọng: Phải kiểm tra trùng theo cả Tuần học
+            Tuan: lichSapDuyet.Tuan,
             PhongHoc: lichSapDuyet.PhongHoc,
             $or: [
                 { TietBatDau: { $lte: lichSapDuyet.TietKetThuc }, TietKetThuc: { $gte: lichSapDuyet.TietBatDau } }
             ]
-        });
+        }).session(session);
 
         if (trungLich) {
+            await session.abortTransaction();
             return res.json({ success: false, message: "Phòng này đã có lịch học vào thời gian này rồi." });
         }
 
-        // 3. Cập nhật trạng thái
+        // ⚠️ FIX: Kiểm tra giảng viên cũng không được dạy 2 lớp cùng lúc
+        const gvConflict = await TKB.findOne({
+            _id: { $ne: req.params.id },
+            TrangThai: 'da-duyet',
+            GiangVien: lichSapDuyet.GiangVien,
+            Thu: lichSapDuyet.Thu,
+            Tuan: lichSapDuyet.Tuan,
+            $or: [
+                { TietBatDau: { $lte: lichSapDuyet.TietKetThuc }, TietKetThuc: { $gte: lichSapDuyet.TietBatDau } }
+            ]
+        }).session(session);
+
+        if (gvConflict) {
+            await session.abortTransaction();
+            return res.json({ success: false, message: "Giảng viên này đã có lịch khác vào thời gian này rồi." });
+        }
+
+        // 3. Cập nhật trạng thái BÊN TRONG transaction
         await TKB.findByIdAndUpdate(req.params.id, {
             TrangThai: 'da-duyet',
             NgayDuyet: new Date()
-        });
+        }, { session });
+
+        await session.commitTransaction();
+
+        // ⚠️ NOTE: Các thao tác gửi thông báo (DB + Web Push) có thể nằm ngoài transaction
+        // vì chúng không ảnh hưởng đến tính toàn vẹn dữ liệu lịch học
 
         const thongBaoGV = new ThongBao({
             IDNguoiNhan: lichSapDuyet.GiangVien,
@@ -644,22 +839,37 @@ router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
 
         res.json({ success: true, message: "Đã duyệt thành công và gửi thông báo cho mọi người!" });
     } catch (err) {
+        await session.abortTransaction();
         console.error(err);
         res.status(500).json({ success: false, message: "Lỗi : " + err.message });
+    } finally {
+        await session.endSession();
     }
 });
 
 // Route xử lý TỪ CHỐI duyệt lịch học
 router.post('/tu-choi/:id', requireAdmin, async (req, res) => {
+    // ⚠️ FIX: Sử dụng transaction để đảm bảo consistency
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        // 1. Chỉ cập nhật trạng thái thành 'tu-choi'
+        // 1. Chỉ cập nhật trạng thái thành 'tu-choi' BÊN TRONG transaction
         const lichBiTuChoi = await TKB.findByIdAndUpdate(req.params.id, {
             TrangThai: 'tu-choi'
-        });
+        }, { session });
 
         if (!lichBiTuChoi) {
+            await session.abortTransaction();
             return res.json({ success: false, message: 'Không tìm thấy lịch này.' });
         }
+
+        // ⚠️ FIX: Giải phóng trạng thái phòng học về 1 (Sẵn sàng) cũng trong transaction
+        await PhongHoc.findByIdAndUpdate(lichBiTuChoi.PhongHoc, { TrangThai: 1 }, { session });
+
+        await session.commitTransaction();
+
+        // ⚠️ NOTE: Gửi thông báo có thể ngoài transaction vì không ảnh hưởng đến dữ liệu chính
 
         // 2. Gửi thông báo Database cho Giảng viên để họ biết và đăng ký lại
         const thongBaoReject = new ThongBao({
@@ -670,13 +880,13 @@ router.post('/tu-choi/:id', requireAdmin, async (req, res) => {
         });
         await thongBaoReject.save();
 
-        // 3. Giải phóng trạng thái phòng học về 1 (Sẵn sàng)
-        await PhongHoc.findByIdAndUpdate(lichBiTuChoi.PhongHoc, { TrangThai: 1 });
-
         res.json({ success: true, message: "Đã từ chối và giải phóng phòng học!" });
     } catch (err) {
+        await session.abortTransaction();
         console.error(err);
         res.status(500).json({ success: false, message: "Lỗi rồi: " + err.message });
+    } finally {
+        await session.endSession();
     }
 });
 
