@@ -151,6 +151,114 @@ async function taoThongBaoDatabaseKhiXoa(lich) {
     await ThongBao.insertMany(dsThongBao);
 }
 
+async function tinhSoTietDaXep(monHocId, lopHocId, giangVienId, session) {
+    const query = TKB.find({
+        MonHoc: monHocId,
+        LopHoc: lopHocId,
+        GiangVien: giangVienId,
+        TrangThai: 'da-duyet'
+    }).select('TietBatDau TietKetThuc');
+
+    if (session) {
+        query.session(session);
+    }
+
+    const dsLich = await query;
+    return dsLich.reduce(function (tong, lich) {
+        return tong + ((lich.TietKetThuc || 0) - (lich.TietBatDau || 0) + 1);
+    }, 0);
+}
+
+async function taoDanhSachBuoiHocTuDong(options) {
+    const {
+        monHocId,
+        giangVienId,
+        phongHocId,
+        lopHocId,
+        thu,
+        tuanBatDau,
+        tietBatDau,
+        tietKetThuc,
+        trangThai,
+        session
+    } = options;
+
+    const monHoc = await MonHoc.findById(monHocId).session(session);
+    if (!monHoc) {
+        throw new Error('Không tìm thấy môn học để xếp lịch.');
+    }
+
+    if (!monHoc.TongSoTiet || monHoc.TongSoTiet <= 0) {
+        throw new Error('Môn học chưa có tổng số tiết nên chưa thể tự động phân bổ.');
+    }
+
+    await kiemTraMonHocCuaLop(lopHocId, monHocId, session);
+
+    const soTietMoiBuoi = (tietKetThuc - tietBatDau) + 1;
+    if (soTietMoiBuoi <= 0) {
+        throw new Error('Khung tiết học không hợp lệ.');
+    }
+
+    const caHocTuDong = tietBatDau <= 5 ? 'Sáng' : (tietBatDau <= 10 ? 'Chiều' : 'Tối');
+    const soTietDaXep = await tinhSoTietDaXep(monHocId, lopHocId, giangVienId, session);
+    let soTietConLai = monHoc.TongSoTiet - soTietDaXep;
+
+    if (soTietConLai <= 0) {
+        throw new Error('Môn học này đã được xếp đủ số tiết cho lớp và giảng viên đã chọn.');
+    }
+
+    const dsBuoi = [];
+    for (let week = tuanBatDau; week <= 15 && soTietConLai > 0; week++) {
+        const ngayHoc = await tinhNgayHoc(week, thu, lopHocId);
+        if (laNgayDaQua(ngayHoc)) {
+            continue;
+        }
+
+        const soTietBuoiNay = Math.min(soTietMoiBuoi, soTietConLai);
+        const tietKetThucBuoi = tietBatDau + soTietBuoiNay - 1;
+        const conflictQuery = {
+            NgayHoc: ngayHoc,
+            TrangThai: 'da-duyet',
+            ...timeOverlap(tietBatDau, tietKetThucBuoi)
+        };
+
+        const [gvBan, phongBan, lopBan] = await Promise.all([
+            TKB.findOne({ GiangVien: giangVienId, ...conflictQuery }).session(session),
+            TKB.findOne({ PhongHoc: phongHocId, ...conflictQuery }).session(session),
+            TKB.findOne({ LopHoc: lopHocId, ...conflictQuery }).session(session)
+        ]);
+
+        if (gvBan || phongBan || lopBan) {
+            continue;
+        }
+
+        dsBuoi.push({
+            MonHoc: monHocId,
+            GiangVien: giangVienId,
+            LopHoc: lopHocId,
+            PhongHoc: phongHocId,
+            Thu: thu,
+            Tuan: week,
+            NgayHoc: ngayHoc,
+            TietBatDau: tietBatDau,
+            TietKetThuc: tietKetThucBuoi,
+            CaHoc: caHocTuDong,
+            TrangThai: trangThai
+        });
+
+        soTietConLai -= soTietBuoiNay;
+    }
+
+    if (soTietConLai > 0) {
+        throw new Error('Không đủ số tuần trống trong học kỳ để xếp đủ ' + monHoc.TongSoTiet + ' tiết cho môn này.');
+    }
+
+    return {
+        monHoc: monHoc,
+        dsBuoi: dsBuoi
+    };
+}
+
 
 // helpers
 const timeOverlap = (start, end) => ({
@@ -340,40 +448,6 @@ router.post('/them', async (req, res) => {
             return res.redirect('back');
         }
 
-        const { ngayHoc, query: conflictQuery } = await taoDieuKienXungDot(Thu, Tuan, tietBD, tietKT, lopHocID);
-        if (laNgayDaQua(ngayHoc)) {
-            await session.abortTransaction();
-            req.session.error = 'Chỉ được đăng ký lịch cho ngày mới, không thể thêm lịch cho tuần cũ.';
-            return res.redirect('back');
-        }
-
-        await kiemTraMonHocCuaLop(lopHocID, MonHoc, session);
-
-        // ⚠️ FIX: Kiểm tra xung đột BẰNG đúng ID từ form
-        const [gvBan, phongBan, lopBan] = await Promise.all([
-            TKB.findOne({ GiangVien, ...conflictQuery }).session(session),
-            TKB.findOne({ PhongHoc: phongHocID, ...conflictQuery }).session(session),
-            TKB.findOne({ LopHoc: lopHocID, ...conflictQuery }).session(session)
-        ]);
-
-        if (gvBan) {
-            await session.abortTransaction();
-            req.session.error = "Giảng viên này đã có lịch dạy vào khung giờ này rồi";
-            return res.redirect('back');
-        }
-
-        if (lopBan) {
-            await session.abortTransaction();
-            req.session.error = "Lớp học này đã bận vào khung giờ này rồi";
-            return res.redirect('back');
-        }
-
-        if (phongBan) {
-            await session.abortTransaction();
-            req.session.error = "Phòng học đã có lớp khác sử dụng vào khung giờ này rồi.";
-            return res.redirect('back');
-        }
-
         const [lop, phong] = await Promise.all([
             LopHoc.findById(lopHocID).session(session),
             PhongHoc.findById(phongHocID).session(session)
@@ -384,6 +458,26 @@ router.post('/them', async (req, res) => {
             req.session.error = `Phòng ${phong.TenPhong} chỉ chứa được ${phong.SucChua} bạn, mà lớp này tận ${lop.SiSo} bạn lận Tâm ạ!`;
             return res.redirect('back');
         }
+
+        const ketQuaXep = await taoDanhSachBuoiHocTuDong({
+            monHocId: MonHoc,
+            giangVienId: GiangVien,
+            phongHocId: phongHocID,
+            lopHocId: lopHocID,
+            thu: Thu,
+            tuanBatDau: Tuan,
+            tietBatDau: tietBD,
+            tietKetThuc: tietKT,
+            trangThai: 'da-duyet',
+            session: session
+        });
+
+        await TKB.insertMany(ketQuaXep.dsBuoi, { session: session });
+        await PhongHoc.findByIdAndUpdate(phongHocID, { TrangThai: 0 }, { session });
+
+        await session.commitTransaction();
+        req.session.success = "Đã tự động tạo " + ketQuaXep.dsBuoi.length + " buổi học cho môn " + ketQuaXep.monHoc.TenMonHoc + " đến khi đủ số tiết.";
+        return res.redirect('/tkb');
 
         const caHocTuDong = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
         const moi = new TKB({
@@ -839,120 +933,8 @@ router.post('/dang-ky-luu', async (req, res) => {
 router.use(requireAdmin);
 
 router.post('/xep-tu-dong', async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-        const dsChoDuyet = await TKB.find({ TrangThai: 'cho-duyet' })
-            .sort({ NgayDangKy: 1 })
-            .session(session);
-
-        if (!dsChoDuyet.length) {
-            await session.abortTransaction();
-            req.session.error = 'Không có lịch chờ duyệt để xếp tự động.';
-            return res.redirect('/tkb/danhsach');
-        }
-
-        const dsDaDuyet = await TKB.find({ TrangThai: 'da-duyet' })
-            .select('GiangVien TietBatDau TietKetThuc')
-            .session(session);
-        const mapSoTiet = new Map();
-        dsDaDuyet.forEach(function (lich) {
-            const key = String(lich.GiangVien);
-            const soTiet = ((lich.TietKetThuc || 0) - (lich.TietBatDau || 0)) + 1;
-            mapSoTiet.set(key, (mapSoTiet.get(key) || 0) + soTiet);
-        });
-
-        const dsDinhMuc = await GiangVien.find({
-            IDTaiKhoan: { $in: dsChoDuyet.map(function (lich) { return lich.GiangVien; }) }
-        }).select('IDTaiKhoan SoTietToiDa').session(session);
-        const mapDinhMuc = new Map();
-        dsDinhMuc.forEach(function (gv) {
-            mapDinhMuc.set(String(gv.IDTaiKhoan), Number(gv.SoTietToiDa) || 0);
-        });
-
-        let duyetThanhCong = 0;
-        let boQua = 0;
-        const dsDaDuyetIds = [];
-
-        for (const lich of dsChoDuyet) {
-            const ngayHoc = lich.NgayHoc || await tinhNgayHoc(lich.Tuan, lich.Thu, lich.LopHoc);
-            const soTietLich = ((lich.TietKetThuc || 0) - (lich.TietBatDau || 0)) + 1;
-            const giangVienKey = String(lich.GiangVien);
-            const soTietDangCo = mapSoTiet.get(giangVienKey) || 0;
-            const soTietToiDa = mapDinhMuc.get(giangVienKey) || 0;
-
-            if (laNgayDaQua(ngayHoc)) {
-                boQua++;
-                continue;
-            }
-
-            try {
-                await kiemTraMonHocCuaLop(lich.LopHoc, lich.MonHoc, session);
-            } catch (err) {
-                boQua++;
-                continue;
-            }
-
-            if (soTietToiDa > 0 && (soTietDangCo + soTietLich) > soTietToiDa) {
-                boQua++;
-                continue;
-            }
-
-            const trungPhong = await TKB.findOne({
-                _id: { $ne: lich._id },
-                TrangThai: 'da-duyet',
-                NgayHoc: ngayHoc,
-                PhongHoc: lich.PhongHoc,
-                ...timeOverlap(lich.TietBatDau, lich.TietKetThuc)
-            }).session(session);
-
-            const trungGV = await TKB.findOne({
-                _id: { $ne: lich._id },
-                TrangThai: 'da-duyet',
-                NgayHoc: ngayHoc,
-                GiangVien: lich.GiangVien,
-                ...timeOverlap(lich.TietBatDau, lich.TietKetThuc)
-            }).session(session);
-
-            const trungLop = await TKB.findOne({
-                _id: { $ne: lich._id },
-                TrangThai: 'da-duyet',
-                NgayHoc: ngayHoc,
-                LopHoc: lich.LopHoc,
-                ...timeOverlap(lich.TietBatDau, lich.TietKetThuc)
-            }).session(session);
-
-            if (trungPhong || trungGV || trungLop) {
-                boQua++;
-                continue;
-            }
-
-            await TKB.findByIdAndUpdate(lich._id, {
-                TrangThai: 'da-duyet',
-                NgayHoc: ngayHoc,
-                NgayDuyet: new Date()
-            }, { session });
-
-            mapSoTiet.set(giangVienKey, soTietDangCo + soTietLich);
-            dsDaDuyetIds.push(String(lich._id));
-            duyetThanhCong++;
-        }
-
-        await session.commitTransaction();
-        for (const id of dsDaDuyetIds) {
-            await guiThongBaoLichHoc('duyet-moi', id);
-        }
-        req.session.success = 'Đã xếp tự động ' + duyetThanhCong + ' lịch. Bỏ qua ' + boQua + ' lịch không hợp lệ hoặc đã đủ số tiết.';
-        res.redirect('/tkb/danhsach');
-    } catch (err) {
-        await session.abortTransaction();
-        console.error(err);
-        req.session.error = 'Lỗi xếp tự động: ' + err.message;
-        res.redirect('/tkb/danhsach');
-    } finally {
-        await session.endSession();
-    }
+    req.session.error = 'Chức năng này đã đổi sang tự động phân bổ theo tổng số tiết của môn. Bạn hãy vào trang tạo thời khóa biểu để hệ thống sinh đủ các buổi học cho môn.';
+    res.redirect('/tkb/them');
 });
 
 router.get('/danhsach', async (req, res) => {

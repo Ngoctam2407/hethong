@@ -111,7 +111,6 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
                 const MaGV = String(layGiaTriDong(row, 'MaGV')).trim();
                 const LinhVuc = String(layGiaTriDong(row, 'LinhVuc')).trim();
                 const SoDienThoai = String(layGiaTriDong(row, 'SoDienThoai')).trim();
-                const SoTietToiDa = toNumber(layGiaTriDong(row, 'SoTietToiDa'), 0);
 
                 if (!HoVaTen || !Email || !TenDangNhap) {
                     throw new Error('Thieu HoVaTen, Email hoac TenDangNhap.');
@@ -194,8 +193,7 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
                         {
                             MaGV: MaGV || thongTinGVCu.MaGV,
                             LinhVuc: LinhVuc || (thongTinGVCu ? thongTinGVCu.LinhVuc : ''),
-                            SoDienThoai: SoDienThoai || (thongTinGVCu ? thongTinGVCu.SoDienThoai : ''),
-                            SoTietToiDa: SoTietToiDa || (thongTinGVCu ? thongTinGVCu.SoTietToiDa : 0)
+                            SoDienThoai: SoDienThoai || (thongTinGVCu ? thongTinGVCu.SoDienThoai : '')
                         },
                         { upsert: true }
                     );
@@ -246,7 +244,6 @@ router.get('/export', async (req, res) => {
                 MSSV: sv ? sv.MSSV : '',
                 MaGV: gv ? gv.MaGV : '',
                 LinhVuc: gv ? gv.LinhVuc || '' : '',
-                SoTietToiDa: gv ? gv.SoTietToiDa || 0 : '',
                 SoDienThoai: gv ? gv.SoDienThoai || '' : (sv ? sv.SoDienThoai || '' : '')
             };
         });
@@ -270,7 +267,7 @@ router.get('/them', async (req, res) => {
 // 3. POST: Xử lý Thêm (Bản nâng cấp cho Tâm)
 router.post('/them', async (req, res) => {
     try {
-        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MaGV, SoTietToiDa } = req.body;
+        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MaGV } = req.body;
 
         if (QuyenHan === 'sinhvien') {
             if (!IDLop) {
@@ -303,8 +300,7 @@ router.post('/them', async (req, res) => {
         } else if (QuyenHan === 'giangvien') {
             await GiangVien.create({
                 IDTaiKhoan: tkMoi._id,
-                MaGV: MaGV || "GV000",
-                SoTietToiDa: Number(SoTietToiDa) || 0
+                MaGV: MaGV || "GV000"
             });
         }
 
@@ -339,7 +335,7 @@ router.get('/sua/:id', async (req, res) => {
 // 5. POST: Xử lý Cập nhật
 router.post('/sua/:id', async (req, res) => {
     try {
-        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MaGV, LinhVuc, SoDienThoai, SoTietToiDa } = req.body;
+        const { HoVaTen, Email, TenDangNhap, MatKhau, QuyenHan, IDLop, MaGV, LinhVuc, SoDienThoai } = req.body;
         const tkHienTai = await TaiKhoan.findById(req.params.id);
 
         if (!tkHienTai) {
@@ -390,7 +386,7 @@ router.post('/sua/:id', async (req, res) => {
         } else if (QuyenHan === 'giangvien') {
             await GiangVien.findOneAndUpdate(
                 { IDTaiKhoan: req.params.id },
-                { MaGV, LinhVuc, SoDienThoai, SoTietToiDa: Number(SoTietToiDa) || 0 },
+                { MaGV, LinhVuc, SoDienThoai },
                 { upsert: true }
             );
         }

@@ -23,15 +23,16 @@
                 <div class="row">
                     <div class="col-md-12 mb-4">
                         <label class="form-label"><i class="fas fa-book me-2 text-info"></i>Môn Học</label>
-                        <select name="MonHoc" class="form-select shadow-sm" required>
+                        <select name="MonHoc" id="monHocSelect" class="form-select shadow-sm" required>
                             <option value="" selected disabled>-- Chọn môn học từ danh sách --</option>
                             <% dsmon.forEach(mon=> { %>
-                                <option value="<%= mon._id %>">
+                                <option value="<%= mon._id %>" data-tong-so-tiet="<%= mon.TongSoTiet || 0 %>">
                                     <%= mon.TenMonHoc %>
                                 </option>
                                 <% }) %>
                         </select>
-                        <small class="text-muted ms-2">Dữ liệu được lấy từ danh mục Môn học</small>
+                        <small class="text-muted ms-2">Hệ thống sẽ tự tạo nhiều buổi học cho đến khi đủ tổng số tiết của môn.</small>
+                        <div class="small text-primary mt-2" id="tongSoTietPreview">Tổng số tiết môn học: chưa chọn</div>
                     </div>
 
                     <div class="col-md-6 mb-4">
@@ -106,7 +107,7 @@
 
                     <div class="col-12 text-center mt-4">
                         <button type="submit" class="btn main-btn px-5 shadow">
-                            <i class="fas fa-magic me-2"></i>Tạo buổi học ngay
+                            <i class="fas fa-magic me-2"></i>Tự động phân bổ đủ số tiết
                         </button>
                     </div>
                 </div>
@@ -114,6 +115,19 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            const monHocSelect = document.getElementById('monHocSelect');
+            const tongSoTietPreview = document.getElementById('tongSoTietPreview');
+            if (monHocSelect) {
+                monHocSelect.addEventListener('change', function () {
+                    const selected = monHocSelect.options[monHocSelect.selectedIndex];
+                    const tongSoTiet = selected ? selected.getAttribute('data-tong-so-tiet') : '';
+                    tongSoTietPreview.textContent = tongSoTiet
+                        ? 'Tổng số tiết môn học: ' + tongSoTiet + ' tiết'
+                        : 'Tổng số tiết môn học: chưa chọn';
+                });
+            }
+        </script>
 </body>
 
 </html>

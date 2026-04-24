@@ -36,7 +36,7 @@
                             <div class="col-md-8">
                                 <label class="form-label fw-semibold">Import file Excel môn học</label>
                                 <input type="file" name="excelFile" class="form-control" accept=".xlsx,.xls" required>
-                                <div class="form-text">Cột nên dùng: MaMonHoc, TenMonHoc, MoTa.</div>
+                                <div class="form-text">Cột nên dùng: MaMonHoc, TenMonHoc, TongSoTiet, MoTa.</div>
                             </div>
                             <div class="col-md-4">
                                 <button type="submit" class="btn btn-success w-100">
@@ -61,6 +61,7 @@
                                 <th class="ps-4 py-3" style="width: 80px;">STT</th>
                                 <th class="py-3">Mã Môn</th>
                                 <th class="py-3">Tên Môn Học</th>
+                                <th class="py-3 text-center">Tổng Số Tiết</th>
                                 <th class="py-3">Mô Tả</th>
                                 <th class="py-3 text-center">Thao tác</th>
                             </tr>
@@ -87,6 +88,11 @@
                                                     ID: <%= mon._id.toString().substring(18) %>
                                                 </div>
                                             </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                                                    <%= mon.TongSoTiet || 0 %> tiết
+                                                </span>
+                                            </td>
                                             <td>
                                                 <div class="text-truncate text-muted" style="max-width: 250px;"
                                                     title="<%= mon.MoTa %>">
@@ -112,7 +118,7 @@
                                         <% }); %>
                                             <% } else { %>
                                                 <tr>
-                                                    <td colspan="5" class="text-center py-5 text-muted">
+                                                    <td colspan="6" class="text-center py-5 text-muted">
                                                         <i class="fas fa-book-open fa-3x mb-3 opacity-20"></i>
                                                         <p>Danh sách môn học hiện đang trống.</p>
                                                     </td>

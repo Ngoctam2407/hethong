@@ -52,6 +52,7 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
             const duLieu = {
                 MaMonHoc,
                 TenMonHoc,
+                TongSoTiet: Number(layGiaTriDong(row, 'TongSoTiet')) || 0,
                 MoTa: String(layGiaTriDong(row, 'MoTa')).trim()
             };
 
@@ -81,6 +82,7 @@ router.get('/export', async (req, res) => {
             return {
                 MaMonHoc: mon.MaMonHoc,
                 TenMonHoc: mon.TenMonHoc,
+                TongSoTiet: mon.TongSoTiet || 0,
                 MoTa: mon.MoTa || ''
             };
         });
@@ -102,8 +104,8 @@ router.get('/them', (req, res) => {
 // 3. Xử lý thêm môn học mới
 router.post('/them', async (req, res) => {
     try {
-        const { TenMonHoc, MaMonHoc, MoTa } = req.body;
-        const monMoi = new MonHoc({ TenMonHoc, MaMonHoc, MoTa });
+        const { TenMonHoc, MaMonHoc, TongSoTiet, MoTa } = req.body;
+        const monMoi = new MonHoc({ TenMonHoc, MaMonHoc, TongSoTiet: Number(TongSoTiet) || 0, MoTa });
         await monMoi.save();
         res.redirect('/monhoc');
     } catch (err) {
@@ -127,8 +129,8 @@ router.get('/sua/:id', async (req, res) => {
 // 5. Xử lý sửa môn học
 router.post('/sua/:id', async (req, res) => {
     try {
-        const { TenMonHoc, MaMonHoc, MoTa } = req.body;
-        await MonHoc.findByIdAndUpdate(req.params.id, { TenMonHoc, MaMonHoc, MoTa });
+        const { TenMonHoc, MaMonHoc, TongSoTiet, MoTa } = req.body;
+        await MonHoc.findByIdAndUpdate(req.params.id, { TenMonHoc, MaMonHoc, TongSoTiet: Number(TongSoTiet) || 0, MoTa });
         res.redirect('/monhoc');
     } catch (err) {
         res.send("Lỗi cập nhật: " + err);

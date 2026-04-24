@@ -18,8 +18,7 @@ const giangVienSchema = new mongoose.Schema({
     },
     LinhVuc: { type: String },
     ChuyenNganh: { type: String },
-    SoDienThoai: { type: String },
-    SoTietToiDa: { type: Number, default: 0 }
+    SoDienThoai: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('GiangVien', giangVienSchema);
