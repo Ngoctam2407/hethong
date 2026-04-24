@@ -21,6 +21,8 @@ var taiKhoanSchema = new mongoose.Schema({
         default: 'sinhvien'
     },
     TrangThai: { type: Number, default: 1 },
+    ResetPasswordToken: { type: String, default: '' },
+    ResetPasswordExpires: { type: Date, default: null },
     ThongBaoDay: {
         type: [mongoose.Schema.Types.Mixed],
         default: []

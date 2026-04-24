@@ -6,7 +6,10 @@ const LopHocSchema = new mongoose.Schema({
     NienKhoa: String,
     NgayBatDauNamHoc: { type: Date, required: true },
     SiSo: Number,
-    // Trạng thái kích hoạt giống các model khác (1 = hoạt động, 0 = tạm đóng)
+    DanhSachMonHoc: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'MonHoc'
+    }],
     TrangThai: { type: Number, default: 1 }
 });
 

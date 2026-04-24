@@ -1,10 +1,8 @@
 var express = require('express');
 var router = express.Router();
-var LopHoc = require('../models/lophoc'); // Model này Tâm nhớ định nghĩa MaLop, TenLop, NienKhoa, SiSo nhé
+var LopHoc = require('../models/lophoc');
+var MonHoc = require('../models/monhoc');
 var { requireAdmin } = require('./auth');
-var TaiKhoan = require('../models/taikhoan');
-var SinhVien = require('../models/sinhvien');
-var GiangVien = require('../models/giangvien');
 var { upload, readRowsFromExcel, buildWorkbook, sendWorkbook, toNumber } = require('../utils/excel');
 
 function xuLyUploadExcel(req, res, next) {
@@ -21,25 +19,31 @@ function layGiaTriDong(dong, truong) {
     return dong[truong] || dong[truong.toLowerCase()] || '';
 }
 
-// Chỉ cho phép Admin truy cập để quản lý lớp học thôi Tâm nhé
+function chuanHoaDanhSachMonHoc(duLieu) {
+    if (!duLieu) return [];
+    if (Array.isArray(duLieu)) return duLieu.filter(Boolean);
+    return [duLieu].filter(Boolean);
+}
+
 router.use(requireAdmin);
 
-// 1. GET: Danh sách lớp học (Địa chỉ: /lophoc)
-router.get('/', async (req, res) => {
+router.get('/', async function (req, res) {
     try {
-        // Tìm tất cả các lớp học và sắp xếp theo mã lớp cho Tâm dễ nhìn nè
-        var dsLop = await LopHoc.find().sort({ MaLop: 1 });
+        var dsLop = await LopHoc.find()
+            .populate('DanhSachMonHoc', 'TenMonHoc')
+            .sort({ MaLop: 1 });
+
         res.render('lophoc', {
             title: 'Quản Lý Lớp Học',
-            dsLopHoc: dsLop // Truyền vào đúng tên biến dsLopHoc mà file .ejs đang dùng
+            dsLopHoc: dsLop
         });
     } catch (err) {
-        console.error("Lỗi rồi Tâm ơi: ", err);
-        res.status(500).send("Có lỗi xảy ra khi lấy danh sách lớp học.");
+        console.error(err);
+        res.status(500).send('Có lỗi xảy ra khi lấy danh sách lớp học.');
     }
 });
 
-router.post('/import', xuLyUploadExcel, async (req, res) => {
+router.post('/import', xuLyUploadExcel, async function (req, res) {
     try {
         if (!req.file) {
             req.session.error = 'Ban can chon file Excel truoc khi import.';
@@ -52,6 +56,13 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
             return res.redirect('/lophoc');
         }
 
+        const dsMon = await MonHoc.find().select('_id TenMonHoc MaMonHoc').lean();
+        const mapMon = new Map();
+        dsMon.forEach(function (mon) {
+            mapMon.set(String(mon.TenMonHoc || '').trim().toLowerCase(), mon._id);
+            mapMon.set(String(mon.MaMonHoc || '').trim().toLowerCase(), mon._id);
+        });
+
         let taoMoi = 0;
         let capNhat = 0;
 
@@ -63,12 +74,20 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
                 continue;
             }
 
+            const danhSachMonHoc = String(layGiaTriDong(row, 'DanhSachMonHoc'))
+                .split(',')
+                .map(function (item) { return String(item || '').trim().toLowerCase(); })
+                .filter(Boolean)
+                .map(function (item) { return mapMon.get(item); })
+                .filter(Boolean);
+
             const duLieu = {
-                MaLop,
-                TenLop,
+                MaLop: MaLop,
+                TenLop: TenLop,
                 NienKhoa: String(layGiaTriDong(row, 'NienKhoa')).trim(),
                 NgayBatDauNamHoc: layGiaTriDong(row, 'NgayBatDauNamHoc') ? new Date(layGiaTriDong(row, 'NgayBatDauNamHoc')) : new Date(),
                 SiSo: toNumber(layGiaTriDong(row, 'SiSo'), 0),
+                DanhSachMonHoc: danhSachMonHoc,
                 TrangThai: toNumber(layGiaTriDong(row, 'TrangThai'), 1)
             };
 
@@ -82,7 +101,7 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
             }
         }
 
-        req.session.success = `Import lop hoc thanh cong: ${taoMoi} ban ghi moi, ${capNhat} ban ghi cap nhat.`;
+        req.session.success = 'Import lop hoc thanh cong: ' + taoMoi + ' ban ghi moi, ' + capNhat + ' ban ghi cap nhat.';
         res.redirect('/lophoc');
     } catch (err) {
         console.error(err);
@@ -91,15 +110,22 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
     }
 });
 
-router.get('/export', async (req, res) => {
+router.get('/export', async function (req, res) {
     try {
-        const dsLop = await LopHoc.find().sort({ MaLop: 1 }).lean();
+        const dsLop = await LopHoc.find()
+            .populate('DanhSachMonHoc', 'TenMonHoc')
+            .sort({ MaLop: 1 })
+            .lean();
+
         const rows = dsLop.map(function (lop) {
             return {
                 MaLop: lop.MaLop,
                 TenLop: lop.TenLop,
                 NienKhoa: lop.NienKhoa || '',
                 SiSo: lop.SiSo || 0,
+                DanhSachMonHoc: Array.isArray(lop.DanhSachMonHoc) ? lop.DanhSachMonHoc.map(function (mon) {
+                    return mon.TenMonHoc;
+                }).join(', ') : '',
                 TrangThai: lop.TrangThai
             };
         });
@@ -113,16 +139,22 @@ router.get('/export', async (req, res) => {
     }
 });
 
-// 2. GET: Form Thêm lớp học (Địa chỉ: /lophoc/them)
-router.get('/them', (req, res) => {
-    res.render('lophoc_them', { title: 'Tạo Lớp Học Mới' });
+router.get('/them', async function (req, res) {
+    try {
+        const dsMonHoc = await MonHoc.find().sort({ TenMonHoc: 1 });
+        res.render('lophoc_them', {
+            title: 'Tạo Lớp Học Mới',
+            dsMonHoc: dsMonHoc
+        });
+    } catch (err) {
+        res.status(500).send('Loi tai mon hoc: ' + err.message);
+    }
 });
 
-// 3. POST: Xử lý Thêm lớp học
-router.post('/them', async (req, res) => {
+router.post('/them', async function (req, res) {
     try {
         if (!req.body || !req.body.MaLop || !req.body.TenLop) {
-            return res.send("Tâm ơi, em đừng quên nhập Mã lớp và Tên lớp nha!");
+            return res.send('Ban can nhap MaLop va TenLop.');
         }
 
         var data = {
@@ -131,66 +163,67 @@ router.post('/them', async (req, res) => {
             NienKhoa: req.body.NienKhoa,
             NgayBatDauNamHoc: req.body.NgayBatDauNamHoc || new Date(),
             SiSo: req.body.SiSo || 0,
-            TrangThai: 1 // Mặc định lớp mới tạo là đang hoạt động
+            DanhSachMonHoc: chuanHoaDanhSachMonHoc(req.body.DanhSachMonHoc),
+            TrangThai: 1
         };
 
         await LopHoc.create(data);
         res.redirect('/lophoc');
     } catch (err) {
-        res.status(500).send("Lỗi khi tạo lớp mới: " + err.message);
+        res.status(500).send('Loi khi tao lop moi: ' + err.message);
     }
 });
 
-// 4. GET: Form Sửa lớp học (Địa chỉ: /lophoc/sua/:id)
-router.get('/sua/:id', async (req, res) => {
+router.get('/sua/:id', async function (req, res) {
     try {
         var data = await LopHoc.findById(req.params.id);
         if (!data) return res.redirect('/lophoc');
 
-        res.render('lophoc_sua', { title: 'Cập nhật thông tin lớp', lop: data });
+        var dsMonHoc = await MonHoc.find().sort({ TenMonHoc: 1 });
+        res.render('lophoc_sua', {
+            title: 'Cập Nhật Thông Tin Lớp',
+            lop: data,
+            dsMonHoc: dsMonHoc
+        });
     } catch (err) {
         res.redirect('/lophoc');
     }
 });
 
-// 5. POST: Xử lý Cập nhật lớp học
-router.post('/sua/:id', async (req, res) => {
+router.post('/sua/:id', async function (req, res) {
     try {
         const { MaLop, TenLop, NienKhoa, NgayBatDauNamHoc, SiSo, TrangThai } = req.body;
 
         await LopHoc.findByIdAndUpdate(req.params.id, {
-            MaLop,
-            TenLop,
-            NienKhoa,
-            NgayBatDauNamHoc,
-            SiSo,
+            MaLop: MaLop,
+            TenLop: TenLop,
+            NienKhoa: NienKhoa,
+            NgayBatDauNamHoc: NgayBatDauNamHoc,
+            SiSo: SiSo,
+            DanhSachMonHoc: chuanHoaDanhSachMonHoc(req.body.DanhSachMonHoc),
             TrangThai: Number(TrangThai)
         });
 
         res.redirect('/lophoc');
-    } // <--- Phải có dấu đóng ngoặc của khối try ở đây
-    catch (err) { // Dòng 73 của Tâm đang nằm ở đây nè
+    } catch (err) {
         console.error(err);
-        res.status(500).send("Có lỗi rồi Tâm ơi!");
+        res.status(500).send('Có lỗi rồi.');
     }
-}); // <--- Đừng quên đóng ngoặc của router.post nữa nhé
+});
 
-// 6. GET: Xóa lớp học (Địa chỉ: /lophoc/xoa/:id)
-router.get('/xoa/:id', async (req, res) => {
+router.get('/xoa/:id', async function (req, res) {
     try {
         await LopHoc.findByIdAndDelete(req.params.id);
         res.redirect('/lophoc');
     } catch (err) {
-        res.status(500).send("Lỗi khi xóa lớp: " + err.message);
+        res.status(500).send('Lỗi khi xóa lớp: ' + err.message);
     }
 });
 
-// 7. GET: Chuyển đổi trạng thái lớp (Đang mở / Đã đóng)
-router.get('/trangthai/:id', async (req, res) => {
+router.get('/trangthai/:id', async function (req, res) {
     try {
         var lop = await LopHoc.findById(req.params.id);
-        // Nếu TrangThai là 1 thì chuyển về 0, và ngược lại
-        var trangThaiMoi = (lop.TrangThai == 1) ? 0 : 1;
+        var trangThaiMoi = lop.TrangThai == 1 ? 0 : 1;
 
         await LopHoc.findByIdAndUpdate(req.params.id, { TrangThai: trangThaiMoi });
         res.redirect('/lophoc');

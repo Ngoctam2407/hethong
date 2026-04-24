@@ -1,10 +1,12 @@
 var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
+var crypto = require('crypto');
 var TaiKhoan = require('../models/taikhoan');
 var SinhVien = require('../models/sinhvien');
 var GiangVien = require('../models/giangvien');
 var { normalizeSubscription, sendNotification } = require('../utils/push');
+var { guiEmailQuenMatKhau } = require('../utils/mail');
 
 async function taoDuLieuSession(taikhoan) {
     let userSession = taikhoan.toObject ? taikhoan.toObject() : { ...taikhoan };
@@ -80,6 +82,110 @@ router.post('/dangnhap', async (req, res) => {
         console.error(err);
         req.session.error = 'Có chút lỗi kỹ thuật, Tâm thử lại nhé!';
         res.redirect('/dangnhap');
+    }
+});
+
+router.get('/quen-mat-khau', function (req, res) {
+    res.render('quen_mat_khau', {
+        title: 'Quên mật khẩu'
+    });
+});
+
+router.post('/quen-mat-khau', async function (req, res) {
+    try {
+        const email = String(req.body.Email || '').trim().toLowerCase();
+        if (!email) {
+            req.session.error = 'Bạn cần nhập email để nhận link đặt lại mật khẩu.';
+            return res.redirect('/auth/quen-mat-khau');
+        }
+
+        const taiKhoan = await TaiKhoan.findOne({ Email: email });
+        if (!taiKhoan) {
+            req.session.error = 'Email này chưa tồn tại trong hệ thống.';
+            return res.redirect('/auth/quen-mat-khau');
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        taiKhoan.ResetPasswordToken = tokenHash;
+        taiKhoan.ResetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
+        await taiKhoan.save();
+
+        const baseUrl = process.env.APP_BASE_URL || ('http://127.0.0.1:' + (process.env.PORT || 2407));
+        const resetUrl = baseUrl + '/auth/dat-lai-mat-khau/' + token;
+        await guiEmailQuenMatKhau(taiKhoan.Email, taiKhoan.HoVaTen, resetUrl);
+
+        req.session.success = 'Đã gửi email đặt lại mật khẩu. Bạn hãy kiểm tra Gmail.';
+        res.redirect('/auth/dangnhap');
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Không gửi được email quên mật khẩu: ' + err.message;
+        res.redirect('/auth/quen-mat-khau');
+    }
+});
+
+router.get('/dat-lai-mat-khau/:token', async function (req, res) {
+    try {
+        const tokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        const taiKhoan = await TaiKhoan.findOne({
+            ResetPasswordToken: tokenHash,
+            ResetPasswordExpires: { $gt: new Date() }
+        });
+
+        if (!taiKhoan) {
+            req.session.error = 'Link đặt lại mật khẩu đã hết hạn hoặc không hợp lệ.';
+            return res.redirect('/auth/quen-mat-khau');
+        }
+
+        res.render('dat_lai_mat_khau', {
+            title: 'Đặt lại mật khẩu',
+            token: req.params.token
+        });
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Không mở được trang đặt lại mật khẩu.';
+        res.redirect('/auth/quen-mat-khau');
+    }
+});
+
+router.post('/dat-lai-mat-khau/:token', async function (req, res) {
+    try {
+        const matKhauMoi = String(req.body.MatKhau || '').trim();
+        const nhapLaiMatKhau = String(req.body.NhapLaiMatKhau || '').trim();
+
+        if (!matKhauMoi || matKhauMoi.length < 6) {
+            req.session.error = 'Mật khẩu mới phải có ít nhất 6 ký tự.';
+            return res.redirect('/auth/dat-lai-mat-khau/' + req.params.token);
+        }
+
+        if (matKhauMoi !== nhapLaiMatKhau) {
+            req.session.error = 'Hai mật khẩu nhập lại chưa khớp.';
+            return res.redirect('/auth/dat-lai-mat-khau/' + req.params.token);
+        }
+
+        const tokenHash = crypto.createHash('sha256').update(req.params.token).digest('hex');
+        const taiKhoan = await TaiKhoan.findOne({
+            ResetPasswordToken: tokenHash,
+            ResetPasswordExpires: { $gt: new Date() }
+        });
+
+        if (!taiKhoan) {
+            req.session.error = 'Link đặt lại mật khẩu đã hết hạn hoặc không hợp lệ.';
+            return res.redirect('/auth/quen-mat-khau');
+        }
+
+        const salt = bcrypt.genSaltSync(10);
+        taiKhoan.MatKhau = bcrypt.hashSync(matKhauMoi, salt);
+        taiKhoan.ResetPasswordToken = '';
+        taiKhoan.ResetPasswordExpires = null;
+        await taiKhoan.save();
+
+        req.session.success = 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập lại ngay.';
+        res.redirect('/auth/dangnhap');
+    } catch (err) {
+        console.error(err);
+        req.session.error = 'Không đặt lại được mật khẩu: ' + err.message;
+        res.redirect('/auth/quen-mat-khau');
     }
 });
 

@@ -4,113 +4,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        <%= title %>
-    </title>
+    <title><%= title %></title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <%- include('css') %>
 </head>
 
 <body>
     <%- include('header') %>
 
-        <div class="container py-5">
-            <div class="row justify-content-center">
-                <div class="col-lg-7">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="mb-4">
+                    <a href="/lophoc" class="text-decoration-none text-primary fw-600">
+                        <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách lớp
+                    </a>
+                </div>
 
-                    <div class="mb-4">
-                        <a href="/lophoc" class="text-decoration-none text-primary fw-600">
-                            <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách lớp
-                        </a>
+                <div class="add-card p-4 p-md-5 shadow-lg border-0" style="border-radius: 25px; background: #fff;">
+                    <div class="text-center mb-5">
+                        <div class="icon-circle bg-primary-subtle d-inline-block p-4 rounded-circle mb-3">
+                            <i class="fas fa-school fa-3x text-primary"></i>
+                        </div>
+                        <h2 class="fw-bold">Thêm Lớp Học</h2>
+                        <p class="text-muted">Nhập thông tin lớp và ràng buộc môn học để kiểm soát đăng ký lịch.</p>
                     </div>
 
-                    <div class="add-card p-4 p-md-5 shadow-lg border-0" style="border-radius: 25px; background: #fff;">
-                        <div class="text-center mb-5">
-                            <div class="icon-circle bg-primary-subtle d-inline-block p-4 rounded-circle mb-3">
-                                <i class="fas fa-school fa-3x text-primary"></i>
+                    <form action="/lophoc/them" method="POST">
+                        <div class="row">
+                            <div class="col-md-12 mb-4">
+                                <label class="label-custom">Mã Lớp Học</label>
+                                <div class="input-group">
+                                    <span class="input-group-text input-group-text-custom"><i class="fas fa-hashtag"></i></span>
+                                    <input type="text" name="MaLop" class="form-control form-control-custom" placeholder="Ví dụ: TH202401" required>
+                                </div>
                             </div>
-                            <h2 class="fw-bold">Thêm Lớp Học</h2>
-                            <p class="text-muted">Tâm ơi, hãy điền thông tin để khởi tạo một lớp học mới cho hệ thống
-                                nhé!</p>
+
+                            <div class="col-md-12 mb-4">
+                                <label class="label-custom">Tên Lớp Học</label>
+                                <div class="input-group">
+                                    <span class="input-group-text input-group-text-custom"><i class="fas fa-chalkboard"></i></span>
+                                    <input type="text" name="TenLop" class="form-control form-control-custom" placeholder="Ví dụ: Lập trình Node.js nâng cao" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label class="label-custom">Niên Khóa</label>
+                                <div class="input-group">
+                                    <span class="input-group-text input-group-text-custom"><i class="fas fa-calendar-alt"></i></span>
+                                    <select name="NienKhoa" class="form-select form-control-custom" required>
+                                        <option value="" selected disabled>Chọn niên khóa...</option>
+                                        <% let namBatDau = 2021; let soNamHoc = 8; for (let i = 0; i < soNamHoc; i++) { 
+                                            let range = (namBatDau + i) + " - " + (namBatDau + i + 1); %>
+                                            <option value="<%= range %>">Niên khóa <%= range %></option>
+                                        <% } %>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label class="label-custom">Sĩ Số Dự Kiến</label>
+                                <div class="input-group">
+                                    <span class="input-group-text input-group-text-custom"><i class="fas fa-users"></i></span>
+                                    <input type="number" name="SiSo" class="form-control form-control-custom" placeholder="40" min="1" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 mb-4">
+                                <label class="label-custom">Môn học được phép đăng ký cho lớp</label>
+                                <select name="DanhSachMonHoc" class="form-select form-control-custom" multiple style="border-radius: 12px !important; min-height: 220px;">
+                                    <% (dsMonHoc || []).forEach(function(mon) { %>
+                                        <option value="<%= mon._id %>"><%= mon.TenMonHoc %></option>
+                                    <% }); %>
+                                </select>
+                                <div class="form-text">Giữ `Ctrl` hoặc `Cmd` để chọn nhiều môn. Lớp chỉ được đăng ký những môn nằm trong danh sách này.</div>
+                            </div>
                         </div>
 
-                        <form action="/lophoc/them" method="POST">
-                            <div class="row">
-                                <div class="col-md-12 mb-4">
-                                    <label class="label-custom">Mã Lớp Học</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom">
-                                            <i class="fas fa-hashtag"></i>
-                                        </span>
-                                        <input type="text" name="MaLop" class="form-control form-control-custom"
-                                            placeholder="Ví dụ: TH202401" required>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-12 mb-4">
-                                    <label class="label-custom">Tên Lớp Học</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom">
-                                            <i class="fas fa-chalkboard"></i>
-                                        </span>
-                                        <input type="text" name="TenLop" class="form-control form-control-custom"
-                                            placeholder="Ví dụ: Lập trình Node.js nâng cao" required>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6 mb-4">
-                                    <label class="label-custom">Niên Khóa</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom">
-                                            <i class="fas fa-calendar-alt"></i>
-                                        </span>
-                                        <select name="NienKhoa" class="form-select form-control-custom" required>
-                                            <option value="" selected disabled>Chọn niên khóa...</option>
-                                            <% let namBatDau=2021; let soNamHoc=5; // Hiện từ 2021 đến 2026 cho đủ 4-5
-                                                năm nhé for(let i=0; i < soNamHoc; i++) { let range=(namBatDau + i)
-                                                + " - " + (namBatDau + i + 1); %>
-                                                <option value="<%= range %>">Niên khóa <%= range %>
-                                                </option>
-                                                <% } %>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6 mb-4">
-                                    <label class="label-custom">Sĩ Số Dự Kiến</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text input-group-text-custom">
-                                            <i class="fas fa-users"></i>
-                                        </span>
-                                        <input type="number" name="SiSo" class="form-control form-control-custom"
-                                            placeholder="40" min="1" required>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="d-grid gap-2 mt-3">
-                                <button type="submit" class="btn main-btn shadow">
-                                    <i class="fas fa-check-circle me-2"></i> Hoàn tất thêm mới
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn main-btn shadow">
+                                <i class="fas fa-check-circle me-2"></i>Hoàn tất thêm mới
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
+    </div>
 
-
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
 
 <style>
-    /* CSS đồng bộ hoàn hảo - Tâm cứ yên tâm sử dụng nhé! */
     body {
         font-family: 'Quicksand', sans-serif;
         background-color: #f4f7f6;
@@ -151,12 +141,6 @@
         border: 1px solid #e9ecef;
         background-color: #f8f9fa;
         transition: 0.3s;
-    }
-
-    /* Trường hợp input không có group-text (như password ở file tài khoản) */
-    input[type="number"].form-control-custom,
-    input[type="password"].form-control-custom {
-        border-radius: 12px !important;
     }
 
     .form-control-custom:focus {
