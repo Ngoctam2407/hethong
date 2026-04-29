@@ -91,7 +91,8 @@
                         </p>
                     </div>
                     <div class="d-flex gap-2">
-                        <form action="/tkb/xep-tu-dong" method="POST" onsubmit="return confirm('Chức năng này sẽ chuyển bạn sang luồng tự động phân bổ theo tổng số tiết của môn. Bạn muốn tiếp tục chứ?')">
+                        <form action="/tkb/xep-tu-dong" method="POST"
+                            onsubmit="return confirm('Chức năng này sẽ chuyển bạn sang luồng tự động phân bổ theo tổng số tiết của môn. Bạn muốn tiếp tục chứ?')">
                             <button type="submit" class="btn btn-outline-primary rounded-pill px-4 shadow-sm">
                                 <i class="fas fa-wand-magic-sparkles me-2"></i>Tự động theo môn
                             </button>
@@ -169,10 +170,23 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="small fw-semibold"><%= formatDateTimeVN(item.NgayDangKy) %></div>
+                                            <div class="small fw-semibold">
+                                                <%= formatDateTimeVN(item.NgayDangKy) %>
+                                            </div>
                                         </td>
                                         <td>
-                                            <div class="small fw-semibold"><%= formatDateTimeVN(item.NgayDuyet) %></div>
+                                            <div class="small fw-semibold">
+                                                <%= formatDateTimeVN(item.NgayDuyet) %>
+                                            </div>
+                                            <% if (item.HuyTrangThai==='cho-duyet' ) { %>
+                                                <div class="badge bg-danger-subtle text-danger mt-2">
+                                                    Yêu cầu hủy/nghỉ
+                                                </div>
+                                                <% if (item.LyDoHuy) { %>
+                                                    <div class="small text-muted mt-1">Lý do: <%= item.LyDoHuy %>
+                                                    </div>
+                                                    <% } %>
+                                                        <% } %>
                                         </td>
 
                                         <td class="text-center">
@@ -192,34 +206,48 @@
                                                         </button>
                                                         <% } %>
 
-                                                            <button type="button"
-                                                                class="btn btn-sm btn-light rounded-circle text-info border shadow-sm btn-circle"
-                                                                title="Chi tiết" data-bs-toggle="modal"
-                                                                data-bs-target="#chiTietDangKyModal"
-                                                                data-mon-hoc="<%= item.MonHoc ? item.MonHoc.TenMonHoc : 'Trống' %>"
-                                                                data-lop-hoc="<%= item.LopHoc ? item.LopHoc.TenLop : 'N/A' %>"
-                                                                data-giang-vien="<%= item.GiangVien ? item.GiangVien.HoVaTen : 'N/A' %>"
-                                                                data-phong-hoc="<%= item.PhongHoc ? item.PhongHoc.TenPhong : 'N/A' %>"
-                                                                data-thoi-gian-hoc="<%= item.Thu %> - Ca <%= item.CaHoc %> (Tiết <%= item.TietBatDau %>-<%= item.TietKetThuc %>)"
-                                                                data-ngay-dang-ky="<%= formatDateTimeVN(item.NgayDangKy) %>"
-                                                                data-ngay-duyet="<%= formatDateTimeVN(item.NgayDuyet) %>"
-                                                                data-trang-thai-text="<%= trangThaiMeta.text %>"
-                                                                data-trang-thai-class="<%= trangThaiMeta.badgeClass %>">
-                                                                <i class="fas fa-circle-info"></i>
-                                                            </button>
+                                                            <% if (item.HuyTrangThai==='cho-duyet' ) { %>
+                                                                <button onclick="duyetHuyLich('<%= item._id %>')"
+                                                                    class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm btn-circle"
+                                                                    title="Duyệt yêu cầu hủy/nghỉ">
+                                                                    <i class="fas fa-calendar-xmark"></i>
+                                                                </button>
 
-                                                            <a href="/tkb/sua/<%= item._id %>"
-                                                                class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm btn-circle"
-                                                                title="Chỉnh sửa">
-                                                                <i class="fas fa-edit"></i>
-                                                            </a>
+                                                                <button onclick="tuChoiHuyLich('<%= item._id %>')"
+                                                                    class="btn btn-sm btn-light rounded-circle text-warning border shadow-sm btn-circle"
+                                                                    title="Từ chối yêu cầu hủy/nghỉ">
+                                                                    <i class="fas fa-ban"></i>
+                                                                </button>
+                                                                <% } %>
 
-                                                            <a href="/tkb/xoa/<%= item._id %>"
-                                                                class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm btn-circle"
-                                                                onclick="return confirm('Tâm có chắc muốn xóa không?')"
-                                                                title="Xóa">
-                                                                <i class="fas fa-trash-alt"></i>
-                                                            </a>
+                                                                    <button type="button"
+                                                                        class="btn btn-sm btn-light rounded-circle text-info border shadow-sm btn-circle"
+                                                                        title="Chi tiết" data-bs-toggle="modal"
+                                                                        data-bs-target="#chiTietDangKyModal"
+                                                                        data-mon-hoc="<%= item.MonHoc ? item.MonHoc.TenMonHoc : 'Trống' %>"
+                                                                        data-lop-hoc="<%= item.LopHoc ? item.LopHoc.TenLop : 'N/A' %>"
+                                                                        data-giang-vien="<%= item.GiangVien ? item.GiangVien.HoVaTen : 'N/A' %>"
+                                                                        data-phong-hoc="<%= item.PhongHoc ? item.PhongHoc.TenPhong : 'N/A' %>"
+                                                                        data-thoi-gian-hoc="<%= item.Thu %> - Ca <%= item.CaHoc %> (Tiết <%= item.TietBatDau %>-<%= item.TietKetThuc %>)"
+                                                                        data-ngay-dang-ky="<%= formatDateTimeVN(item.NgayDangKy) %>"
+                                                                        data-ngay-duyet="<%= formatDateTimeVN(item.NgayDuyet) %>"
+                                                                        data-trang-thai-text="<%= trangThaiMeta.text %>"
+                                                                        data-trang-thai-class="<%= trangThaiMeta.badgeClass %>">
+                                                                        <i class="fas fa-circle-info"></i>
+                                                                    </button>
+
+                                                                    <a href="/tkb/sua/<%= item._id %>"
+                                                                        class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm btn-circle"
+                                                                        title="Chỉnh sửa">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+
+                                                                    <a href="/tkb/xoa/<%= item._id %>"
+                                                                        class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm btn-circle"
+                                                                        onclick="return confirm('Tâm có chắc muốn xóa không?')"
+                                                                        title="Xóa">
+                                                                        <i class="fas fa-trash-alt"></i>
+                                                                    </a>
                                                 </div>
                                         </td>
                                     </tr>
@@ -352,6 +380,53 @@
                     } catch (error) {
                         console.error("Lỗi kết nối:", error);
                         alert("Có lỗi xảy ra khi kết nối đến máy chủ.");
+                    }
+                }
+
+                async function duyetHuyLich(id) {
+                    if (!confirm("Duyệt yêu cầu hủy/nghỉ lịch này? Lịch sẽ bị xóa khỏi thời khóa biểu.")) return;
+
+                    try {
+                        const response = await fetch(`/tkb/duyet-huy/${id}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            const row = document.getElementById(`row-${id}`);
+                            row.style.transition = "all 0.5s ease";
+                            row.style.backgroundColor = "#f8d7da";
+                            row.style.opacity = "0";
+                            setTimeout(() => {
+                                row.remove();
+                                if (document.querySelectorAll('tbody tr').length === 0) location.reload();
+                            }, 500);
+                        } else {
+                            alert("Lỗi: " + (data.message || "Không thể duyệt yêu cầu hủy."));
+                        }
+                    } catch (error) {
+                        alert("Có lỗi kết nối đến máy chủ.");
+                    }
+                }
+
+                async function tuChoiHuyLich(id) {
+                    if (!confirm("Từ chối yêu cầu hủy/nghỉ lịch này?")) return;
+
+                    try {
+                        const response = await fetch(`/tkb/tu-choi-huy/${id}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const data = await response.json();
+
+                        if (response.ok && data.success) {
+                            location.reload();
+                        } else {
+                            alert("Lỗi: " + (data.message || "Không thể từ chối yêu cầu hủy."));
+                        }
+                    } catch (error) {
+                        alert("Có lỗi kết nối đến máy chủ.");
                     }
                 }
             </script>

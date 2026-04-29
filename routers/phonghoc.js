@@ -1,53 +1,93 @@
 var express = require('express');
 var router = express.Router();
 var PhongHoc = require('../models/phonghoc');
-var LopHoc = require('../models/lophoc');
 var TKB = require('../models/tkb');
 var { requireAdmin } = require('./auth');
-var { taoDuLieuTuanHoc } = require('../utils/date');
 
 router.use(requireAdmin);
 
-async function layTuanThucTeHienTai() {
-    const firstLop = await LopHoc.findOne({
-        NgayBatDauNamHoc: { $exists: true, $ne: null }
-    }).sort({ NgayBatDauNamHoc: 1 }).select('NgayBatDauNamHoc');
+const khungGioHoc = [
+    { tiet: 1, batDau: '07:00', ketThuc: '07:45' },
+    { tiet: 2, batDau: '07:45', ketThuc: '08:30' },
+    { tiet: 3, batDau: '08:30', ketThuc: '09:15' },
+    { tiet: 4, batDau: '09:15', ketThuc: '10:00' },
+    { tiet: 5, batDau: '10:00', ketThuc: '10:45' },
+    { tiet: 6, batDau: '13:00', ketThuc: '13:45' },
+    { tiet: 7, batDau: '13:45', ketThuc: '14:30' },
+    { tiet: 8, batDau: '14:30', ketThuc: '15:15' },
+    { tiet: 9, batDau: '15:15', ketThuc: '16:00' },
+    { tiet: 10, batDau: '16:00', ketThuc: '16:45' },
+    { tiet: 11, batDau: '18:00', ketThuc: '18:45' },
+    { tiet: 12, batDau: '18:45', ketThuc: '19:30' }
+];
 
-    const weekData = taoDuLieuTuanHoc(firstLop && firstLop.NgayBatDauNamHoc ? firstLop.NgayBatDauNamHoc : new Date());
-    return weekData.realCurrentWeek;
+function layTietHienTai() {
+    const gioHienTai = new Date().toTimeString().slice(0, 5);
+    const khung = khungGioHoc.find(function (item) {
+        return gioHienTai >= item.batDau && gioHienTai < item.ketThuc;
+    });
+
+    return khung ? khung.tiet : null;
+}
+
+function layKhoangNgayHomNay() {
+    const batDau = new Date();
+    batDau.setHours(0, 0, 0, 0);
+
+    const ketThuc = new Date(batDau);
+    ketThuc.setDate(ketThuc.getDate() + 1);
+
+    return { batDau, ketThuc };
 }
 
 router.get('/', async (req, res) => {
     try {
-        const currentWeek = await layTuanThucTeHienTai();
+        const tietHienTai = layTietHienTai();
+        const { batDau, ketThuc } = layKhoangNgayHomNay();
         const [ds, lichTuanNay] = await Promise.all([
             PhongHoc.find().sort({ TenPhong: 1 }).lean(),
-            TKB.find({ TrangThai: 'da-duyet', Tuan: currentWeek }).select('PhongHoc').lean()
+            tietHienTai
+                ? TKB.find({
+                    TrangThai: 'da-duyet',
+                    NgayHoc: { $gte: batDau, $lt: ketThuc },
+                    TietBatDau: { $lte: tietHienTai },
+                    TietKetThuc: { $gte: tietHienTai }
+                })
+                    .populate('MonHoc', 'TenMonHoc')
+                    .populate('LopHoc', 'TenLop')
+                    .populate('GiangVien', 'HoVaTen')
+                    .select('PhongHoc MonHoc LopHoc GiangVien TietBatDau TietKetThuc')
+                    .lean()
+                : []
         ]);
 
-        const phongDangDuocSuDung = new Set(
-            lichTuanNay
-                .filter(function (item) { return item && item.PhongHoc; })
-                .map(function (item) { return item.PhongHoc.toString(); })
-        );
+        const lichDangDungTheoPhong = new Map();
+        lichTuanNay.forEach(function (item) {
+            if (item && item.PhongHoc) {
+                lichDangDungTheoPhong.set(item.PhongHoc.toString(), item);
+            }
+        });
 
         const dsPhongHienThi = ds.map(function (phong) {
             let trangThaiHienThi = 'trong';
+            const lichDangSuDung = lichDangDungTheoPhong.get(phong._id.toString()) || null;
 
             if (phong.KhoaThuCong) {
                 trangThaiHienThi = 'bao-tri';
-            } else if (phongDangDuocSuDung.has(phong._id.toString())) {
+            } else if (lichDangSuDung) {
                 trangThaiHienThi = 'dang-su-dung';
             }
 
             return Object.assign({}, phong, {
-                TrangThaiHienThi: trangThaiHienThi
+                TrangThaiHienThi: trangThaiHienThi,
+                LichDangSuDung: lichDangSuDung
             });
         });
 
         res.render('phonghoc', {
             title: 'Danh sách phòng học',
-            dsphong: dsPhongHienThi
+            dsphong: dsPhongHienThi,
+            tietHienTai: tietHienTai
         });
     } catch (err) {
         console.error(err);

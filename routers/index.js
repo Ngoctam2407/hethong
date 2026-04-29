@@ -1,4 +1,4 @@
-var express = require('express');
+﻿var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
 var TaiKhoan = require('../models/taikhoan');
@@ -7,15 +7,18 @@ var LopHoc = require('../models/lophoc');
 var SinhVien = require('../models/sinhvien');
 var GiangVien = require('../models/giangvien');
 var TKB = require('../models/tkb');
-var { getFormattedNgayHoc } = require('../utils/date_helpers'); // Import hàm từ tiện ích mới
+var { getFormattedNgayHoc } = require('../utils/date_helpers');
 
 // GET: Trang chủ
 router.get('/', async (req, res) => {
     try {
         const user = req.session.user;
         const tuKhoaTraCuu = String(req.query.q || '').trim();
+        const homNay = new Date();
+        homNay.setHours(0, 0, 0, 0);
+        const ngayMai = new Date(homNay);
+        ngayMai.setDate(ngayMai.getDate() + 1);
 
-        // 1. ĐỊNH NGHĨA KHUNG GIỜ TRƯỚC (Để máy tính biết tiết mấy)
         const khungGioHoc = [
             { tiet: 1, batDau: "07:00", ketThuc: "07:45" },
             { tiet: 2, batDau: "07:45", ketThuc: "08:30" },
@@ -31,13 +34,20 @@ router.get('/', async (req, res) => {
             { tiet: 12, batDau: "18:45", ketThuc: "19:30" }
         ];
 
-        // 2. XÁC ĐỊNH THỜI GIAN HIỆN TẠI
         const gioHienTai = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         const tietHienTai = khungGioHoc.find(g => gioHienTai >= g.batDau && gioHienTai < g.ketThuc)?.tiet;
+        const tietMocSapToi = (khungGioHoc.find(g => gioHienTai < g.ketThuc)?.tiet) || 13;
+        const dieuKienLichSapToi = {
+            TrangThai: 'da-duyet',
+            $or: [
+                { NgayHoc: { $gte: ngayMai } },
+                { NgayHoc: { $gte: homNay, $lt: ngayMai }, TietKetThuc: { $gte: tietMocSapToi } }
+            ]
+        };
         const dsThu = ["Chủ Nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
         const thuHomNay = dsThu[new Date().getDay()];
 
-        // 3. TRUY VẤN DỮ LIỆU THỐNG KÊ (Dùng await để đợi lấy xong số liệu)
+        // 3. TRUY VẤN DỮ LIỆU THƯỜNG KÊ (DÙNG await ĐỂ ĐỢI LẤY XONG SỐ LIỆU)
         let lichDangHoc = [];
         if (tietHienTai) {
             lichDangHoc = await TKB.find({
@@ -52,12 +62,12 @@ router.get('/', async (req, res) => {
         const tongPhong = await PhongHoc.countDocuments();
         const tongGV = await TaiKhoan.countDocuments({ QuyenHan: 'giangvien' });
 
-        // 4. PHÂN LUỒNG HIỂN THỊ DỮ LIỆU
+        // 4. PHÂN LUẬN HIỂN THỊ DỮ LIỆU
         let dsLich = [];
         let dsTaiKhoan = [];
         let ketQuaTraCuu = null;
         if (user) {
-            const formatLich = async (list) => { // Đổi thành async function
+            const formatLich = async (list) => {
                 return await Promise.all(list.map(async item => {
                     const ngayHocHienThi = await getFormattedNgayHoc(item);
                     return { ...item.toObject(), NgayHocHienThi: ngayHocHienThi };
@@ -65,15 +75,15 @@ router.get('/', async (req, res) => {
             };
 
             if (user.QuyenHan === 'admin') {
-                const rawLich = await TKB.find().populate('MonHoc PhongHoc GiangVien LopHoc').sort({ _id: -1 }).limit(5); // Thêm populate LopHoc
-                dsLich = await formatLich(rawLich); // Đợi kết quả từ async map
+                const rawLich = await TKB.find(dieuKienLichSapToi).populate('MonHoc PhongHoc GiangVien LopHoc').sort({ NgayHoc: 1, TietBatDau: 1 }).limit(5); // ThÃªm populate LopHoc
+                dsLich = await formatLich(rawLich);
                 dsTaiKhoan = await TaiKhoan.find();
             } else if (user.QuyenHan === 'giangvien') {
-                const rawLich = await TKB.find({ GiangVien: user._id }).populate('MonHoc PhongHoc LopHoc').sort({ Thu: 1 }); // Thêm populate LopHoc
-                dsLich = await formatLich(rawLich); // Đợi kết quả từ async map
+                const rawLich = await TKB.find({ GiangVien: user._id, ...dieuKienLichSapToi }).populate('MonHoc PhongHoc GiangVien LopHoc').sort({ NgayHoc: 1, TietBatDau: 1 }).limit(5); // ThÃªm populate LopHoc
+                dsLich = await formatLich(rawLich);
             } else if (user.QuyenHan === 'sinhvien') {
-                const rawLich = await TKB.find({ LopHoc: user.LopHoc }).populate('MonHoc PhongHoc GiangVien LopHoc').sort({ Thu: 1 }); // Thêm populate LopHoc
-                dsLich = await formatLich(rawLich); // Đợi kết quả từ async map
+                const rawLich = await TKB.find({ LopHoc: user.LopHoc, ...dieuKienLichSapToi }).populate('MonHoc PhongHoc GiangVien LopHoc').sort({ NgayHoc: 1, TietBatDau: 1 }).limit(5); // ThÃªm populate LopHoc
+                dsLich = await formatLich(rawLich);
             }
         }
 
@@ -94,15 +104,16 @@ router.get('/', async (req, res) => {
             }
 
             if (sinhVien && sinhVien.IDLop) {
-                const dsLichTraCuu = await TKB.find({ LopHoc: sinhVien.IDLop._id, TrangThai: 'da-duyet' })
+                const dsLichTraCuu = await TKB.find({ LopHoc: sinhVien.IDLop._id, ...dieuKienLichSapToi })
                     .populate('MonHoc PhongHoc GiangVien LopHoc')
-                    .sort({ Thu: 1, TietBatDau: 1 });
+                    .sort({ NgayHoc: 1, TietBatDau: 1 })
+                    .limit(10);
 
                 ketQuaTraCuu = {
                     loai: 'sinhvien',
                     tieuDe: `Kết quả tra cứu sinh viên`,
                     moTa: `${sinhVien.IDTaiKhoan?.HoVaTen || 'Sinh viên'} - ${sinhVien.MSSV} - ${sinhVien.IDLop.TenLop}`,
-                    dsLich: await Promise.all(dsLichTraCuu.map(async item => { // Đợi kết quả từ async map
+                    dsLich: await Promise.all(dsLichTraCuu.map(async item => { // Đổi kết quả từ async map
                         const ngayHocHienThi = await getFormattedNgayHoc(item);
                         return { ...item.toObject(), NgayHocHienThi: ngayHocHienThi };
                     }))
@@ -120,15 +131,16 @@ router.get('/', async (req, res) => {
                 }
 
                 if (giangVien && giangVien.IDTaiKhoan) {
-                    const dsLichTraCuu = await TKB.find({ GiangVien: giangVien.IDTaiKhoan._id, TrangThai: 'da-duyet' })
+                    const dsLichTraCuu = await TKB.find({ GiangVien: giangVien.IDTaiKhoan._id, ...dieuKienLichSapToi })
                         .populate('MonHoc PhongHoc GiangVien LopHoc')
-                        .sort({ Thu: 1, TietBatDau: 1 });
+                        .sort({ NgayHoc: 1, TietBatDau: 1 })
+                        .limit(10);
 
                     ketQuaTraCuu = {
                         loai: 'giangvien',
                         tieuDe: `Kết quả tra cứu giảng viên`,
                         moTa: `${giangVien.IDTaiKhoan.HoVaTen} - ${giangVien.MaGV}`,
-                        dsLich: await Promise.all(dsLichTraCuu.map(async item => { // Đợi kết quả từ async map
+                        dsLich: await Promise.all(dsLichTraCuu.map(async item => { // Đổi kết quả từ async map
                             const ngayHocHienThi = await getFormattedNgayHoc(item);
                             return { ...item.toObject(), NgayHocHienThi: ngayHocHienThi };
                         }))
@@ -144,7 +156,6 @@ router.get('/', async (req, res) => {
             }
         }
 
-        // 5. RENDER DỮ LIỆU SANG EJS
         res.render('index', {
             title: 'Trang chủ Edu KT',
             path: '/',
@@ -163,11 +174,11 @@ router.get('/', async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lỗi phân luồng dữ liệu rồi! Kiểm tra Terminal nhé.");
+        res.status(500).send("Lỗi rồi kiểm tra terminal.");
     }
 });
 
-// GET: Lỗi
+// GET: Lá»—i
 router.get('/error', async (req, res) => {
     res.render('error', {
         title: 'Lỗi'
@@ -180,7 +191,7 @@ router.get('/success', async (req, res) => {
     });
 });
 
-// GET: Hiện trang đăng nhập
+// GET: Hiá»‡n trang Ä‘Äƒng nháº­p
 router.get('/dangnhap', async (req, res) => {
     res.render('dangnhap', {
         title: 'Đăng nhập'
@@ -191,7 +202,7 @@ router.get('/dangnhap', async (req, res) => {
 router.post('/dangnhap', async (req, res) => {
     try {
         if (req.session.user) {
-            req.session.error = 'Bạn đang ở trong hệ thống rồi mà!';
+            req.session.error = 'Bạn đang ở trong hệ thống rồi!';
             return res.redirect('/');
         }
 
@@ -205,30 +216,26 @@ router.post('/dangnhap', async (req, res) => {
                     return res.redirect('/dangnhap');
                 } else {
 
-                    // --- ĐOẠN NÀY LÀ LINH HỒN CỦA "CÁ NHÂN HÓA" NÈ TÂM ---
                     let userSession = taikhoan.toObject(); // Biến tài khoản thành vật thể để thêm đồ vào
 
                     if (taikhoan.QuyenHan === 'sinhvien') {
                         // Tìm xem sinh viên này học lớp nào ở bảng SinhVien
                         const sv = await SinhVien.findOne({ IDTaiKhoan: taikhoan._id });
                         if (sv) {
-                            userSession.LopHoc = sv.IDLop; // Gắn ID lớp vào để qua bên kia lọc TKB
+                            userSession.LopHoc = sv.IDLop;
                         }
                     } else if (taikhoan.QuyenHan === 'giangvien') {
-                        // Giảng viên thì đã có _id sẵn rồi
                         userSession.GiangVien = taikhoan._id;
                     }
 
-                    // LƯU SESSION ĐÃ CÓ ĐỦ ĐỒ CHƠI
                     req.session.user = userSession;
                     // ---------------------------------------------------
 
-                    // PHÂN LUỒNG TÁC NHÂN (Giữ nguyên xi của Tâm nè)
                     if (taikhoan.QuyenHan === 'admin') {
                         req.session.success = 'Chào mừng Admin ! ';
                         return res.redirect('/taikhoan');
                     } else if (taikhoan.QuyenHan === 'giangvien') {
-                        req.session.success = 'Chào Giảng viên! Chúc thầy/cô có buổi dạy tốt.';
+                        req.session.success = 'Chào giảng viên! Chúc thầy/cô có buổi dạy tốt.';
                         return res.redirect('/');
                     } else {
                         req.session.success = 'Chào bạn sinh viên! Cố gắng học tập nhé.';
@@ -236,7 +243,7 @@ router.post('/dangnhap', async (req, res) => {
                     }
                 }
             } else {
-                req.session.error = 'Mật khẩu hổng đúng, kiểm tra lại nha.';
+                req.session.error = 'Mật khẩu không đúng, kiểm tra lại.';
                 return res.redirect('/dangnhap');
             }
         } else {
@@ -260,3 +267,4 @@ router.get('/dangxuat', (req, res) => {
 
 
 module.exports = router;
+

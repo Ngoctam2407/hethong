@@ -63,7 +63,9 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold text-dark mb-1">Danh sách phòng học</h2>
-                    <p class="text-muted mb-0">Trạng thái được tính theo tuần hiện tại, không lấy lịch của tuần sau.</p>
+                    <p class="text-muted mb-0">
+                        Trạng thái được tính theo ngày hôm nay và tiết đang diễn ra<%= tietHienTai ? ' (tiết ' + tietHienTai + ')' : '' %>.
+                    </p>
                 </div>
                 <a href="/phonghoc/them" class="btn main-btn shadow-sm">
                     <i class="fas fa-plus-circle me-2"></i>Thêm phòng học (<%= dsphong.length %>)
@@ -121,6 +123,12 @@
                                                         class="badge-soft bg-danger-subtle text-danger border border-danger-subtle">
                                                         <i class="fas fa-chalkboard-teacher me-1"></i>Đang sử dụng
                                                     </span>
+                                                    <% if (phong.LichDangSuDung) { %>
+                                                        <div class="small text-muted mt-2">
+                                                            <div><%= phong.LichDangSuDung.LopHoc ? phong.LichDangSuDung.LopHoc.TenLop : 'Lớp học' %> - <%= phong.LichDangSuDung.MonHoc ? phong.LichDangSuDung.MonHoc.TenMonHoc : 'Môn học' %></div>
+                                                            <div><%= phong.LichDangSuDung.GiangVien ? phong.LichDangSuDung.GiangVien.HoVaTen : 'Giảng viên' %>, tiết <%= phong.LichDangSuDung.TietBatDau %>-<%= phong.LichDangSuDung.TietKetThuc %></div>
+                                                        </div>
+                                                    <% } %>
                                                     <% } else { %>
                                                         <span
                                                             class="badge-soft bg-success-subtle text-success border border-success-subtle">

@@ -41,7 +41,7 @@
                                     <select name="LopHoc" id="lopHocSelect" class="form-select form-control-custom" required>
                                         <option value="" selected disabled>-- Chọn lớp học --</option>
                                         <% dslop.forEach(function(lop) { %>
-                                            <option value="<%= lop._id %>" data-allowed-subjects="<%= (lop.DanhSachMonHoc || []).map(function(mon) { return mon._id.toString(); }).join(',') %>">
+                                            <option value="<%= lop._id %>" data-si-so="<%= lop.SiSo || 0 %>" data-allowed-subjects="<%= (lop.DanhSachMonHoc || []).map(function(mon) { return mon._id.toString(); }).join(',') %>">
                                                 <%= lop.TenLop %>
                                             </option>
                                         <% }) %>
@@ -85,12 +85,14 @@
                                 <label class="label-custom">Phòng học</label>
                                 <div class="input-group">
                                     <span class="input-group-text input-group-text-custom"><i class="fas fa-map-marker-alt"></i></span>
-                                    <select name="PhongHoc" class="form-select form-control-custom" required>
+                                    <select name="PhongHoc" id="phongHocSelect" class="form-select form-control-custom" required>
+                                        <option value="" selected disabled>-- Chọn lớp, tuần, thứ và tiết để tìm phòng --</option>
                                         <% dsphong.forEach(function(p) { %>
-                                            <option value="<%= p._id %>"><%= p.TenPhong %> - <%= p.LoaiPhong %></option>
+                                            <option value="<%= p._id %>" data-original-label="<%= p.TenPhong %> - <%= p.LoaiPhong %> - Sức chứa: <%= p.SucChua || 0 %>"><%= p.TenPhong %> - <%= p.LoaiPhong %> - Sức chứa: <%= p.SucChua || 0 %></option>
                                         <% }) %>
                                     </select>
                                 </div>
+                                <div class="form-text" id="phongHocHint">Hệ thống sẽ tự đánh dấu phòng trống/bận theo thời gian và sĩ số lớp.</div>
                             </div>
 
                             <div class="col-md-12 mb-4">
@@ -121,7 +123,7 @@
 
                             <div class="col-md-4 mb-4">
                                 <label class="label-custom">Ngày trong tuần</label>
-                                <select name="Thu" class="form-select form-control-custom" required>
+                                <select name="Thu" id="thuSelect" class="form-select form-control-custom" required>
                                     <% ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"].forEach(function(thu) { %>
                                         <option value="<%= thu %>"><%= thu %></option>
                                     <% }) %>
@@ -209,10 +211,150 @@
                 : 'Lớp này chưa cấu hình ràng buộc môn, nên đang hiển thị toàn bộ môn.';
         }
 
+        function resetPhongHocHint(message) {
+            const phongHocSelect = document.getElementById('phongHocSelect');
+            const phongHocHint = document.getElementById('phongHocHint');
+
+            Array.from(phongHocSelect.options).forEach(function (option, index) {
+                if (index === 0) {
+                    option.textContent = '-- Chọn lớp, tuần, thứ và tiết để tìm phòng --';
+                    option.disabled = true;
+                    option.selected = true;
+                    return;
+                }
+
+                option.disabled = false;
+                option.textContent = option.getAttribute('data-original-label') || option.textContent;
+                option.className = '';
+                option.title = '';
+            });
+
+            phongHocHint.textContent = message || 'Hệ thống sẽ tự đánh dấu phòng trống/bận theo thời gian và sĩ số lớp.';
+        }
+
+        async function capNhatPhongHocThongMinh() {
+            const lopHocSelect = document.getElementById('lopHocSelect');
+            const tuanSelect = document.getElementById('tuanSelect');
+            const thuSelect = document.getElementById('thuSelect');
+            const tietBatDauInput = document.getElementById('tietBatDauInput');
+            const tietKetThucInput = document.getElementById('tietKetThucInput');
+            const phongHocSelect = document.getElementById('phongHocSelect');
+            const phongHocHint = document.getElementById('phongHocHint');
+
+            const lopHocID = lopHocSelect.value;
+            const tuan = tuanSelect.value;
+            const thu = thuSelect.value;
+            const tietBD = parseInt(tietBatDauInput.value, 10);
+            const tietKT = parseInt(tietKetThucInput.value, 10);
+
+            if (!lopHocID || !tuan || !thu || !tietBD || !tietKT) {
+                resetPhongHocHint('Chọn đủ lớp, tuần, thứ, tiết bắt đầu và tiết kết thúc để hệ thống tìm phòng trống.');
+                return;
+            }
+
+            if (tietKT < tietBD) {
+                resetPhongHocHint('Tiết kết thúc phải lớn hơn hoặc bằng tiết bắt đầu.');
+                return;
+            }
+
+            phongHocHint.textContent = 'Đang kiểm tra phòng trống theo thời gian và sĩ số lớp...';
+
+            try {
+                const params = new URLSearchParams({ tuan, thu, tietBD, tietKT, lopHocID });
+                const response = await fetch('/tkb/api/room-status?' + params.toString());
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Không kiểm tra được phòng.');
+                }
+
+                const roomMap = new Map((data.rooms || []).map(function (room) {
+                    return [String(room._id), room];
+                }));
+                let firstAvailable = '';
+
+                Array.from(phongHocSelect.options).forEach(function (option, index) {
+                    if (index === 0) {
+                        option.textContent = '-- Chọn phòng phù hợp --';
+                        option.disabled = true;
+                        return;
+                    }
+
+                    const room = roomMap.get(option.value);
+                    const baseLabel = option.getAttribute('data-original-label') || option.textContent;
+                    if (!room) {
+                        option.disabled = true;
+                        option.textContent = baseLabel + ' - Không có dữ liệu';
+                        option.title = 'Không có dữ liệu kiểm tra phòng';
+                        return;
+                    }
+
+                    option.disabled = !room.available;
+                    option.textContent = baseLabel + (room.available ? ' - Trống' : ' - Không trống: ' + room.reason);
+                    option.title = room.reason;
+                    option.className = room.available ? 'text-success' : 'text-muted';
+
+                    if (room.available && !firstAvailable) {
+                        firstAvailable = option.value;
+                    }
+                });
+
+                if (!firstAvailable) {
+                    phongHocSelect.value = '';
+                    phongHocHint.textContent = data.isPast
+                        ? 'Ngày học ' + data.ngayHocHienThi + ' đã qua, không thể đăng ký.'
+                        : 'Không có phòng trống đủ sức chứa cho khung ' + thu + ', tiết ' + tietBD + '-' + tietKT + ', tuần ' + tuan + '.';
+                } else {
+                    const selectedOption = phongHocSelect.options[phongHocSelect.selectedIndex];
+                    if (!phongHocSelect.value || (selectedOption && selectedOption.disabled)) {
+                        phongHocSelect.value = firstAvailable;
+                    }
+                    phongHocHint.textContent = 'Tìm thấy ' + data.availableRooms.length + ' phòng trống cho ngày ' + data.ngayHocHienThi + ', sĩ số lớp: ' + data.siSo + '.';
+                }
+            } catch (err) {
+                resetPhongHocHint('Không kiểm tra được trạng thái phòng: ' + err.message);
+            }
+        }
+
+        function capNhatThuTheoTuan() {
+            const tuanSelect = document.getElementById('tuanSelect');
+            const thuSelect = document.getElementById('thuSelect');
+            const realCurrentWeek = <%= realCurrentWeek || 1 %>;
+            const selectedWeek = parseInt(tuanSelect.value, 10);
+            const today = new Date();
+            const jsDay = today.getDay();
+            const todayOffset = jsDay === 0 ? 6 : jsDay - 1;
+
+            Array.from(thuSelect.options).forEach(function (option, index) {
+                const daQua = selectedWeek === realCurrentWeek && index < todayOffset;
+                option.disabled = daQua;
+                option.textContent = option.value + (daQua ? ' - đã qua' : '');
+            });
+
+            if (thuSelect.options[thuSelect.selectedIndex] && thuSelect.options[thuSelect.selectedIndex].disabled) {
+                const optionHopLe = Array.from(thuSelect.options).find(function (option) {
+                    return !option.disabled;
+                });
+                if (optionHopLe) thuSelect.value = optionHopLe.value;
+            }
+        }
+
         document.getElementById('tietBatDauInput').addEventListener('input', suyRaCaHoc);
         document.getElementById('tietKetThucInput').addEventListener('input', suyRaCaHoc);
-        document.getElementById('lopHocSelect').addEventListener('change', capNhatMonHocTheoLop);
+        document.getElementById('lopHocSelect').addEventListener('change', function () {
+            capNhatMonHocTheoLop();
+            capNhatPhongHocThongMinh();
+        });
+        document.getElementById('tuanSelect').addEventListener('change', function () {
+            capNhatThuTheoTuan();
+            capNhatPhongHocThongMinh();
+        });
+        document.getElementById('thuSelect').addEventListener('change', capNhatPhongHocThongMinh);
+        document.getElementById('tietBatDauInput').addEventListener('input', capNhatPhongHocThongMinh);
+        document.getElementById('tietKetThucInput').addEventListener('input', capNhatPhongHocThongMinh);
         capNhatMonHocTheoLop();
+        capNhatThuTheoTuan();
+        resetPhongHocHint();
     </script>
 </body>
 

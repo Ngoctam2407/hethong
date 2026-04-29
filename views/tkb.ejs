@@ -398,6 +398,18 @@
                                                         style="font-size: 0.7rem;">
                                                         GV: <%= item.GiangVien?.HoVaTen %>
                                                     </div>
+                                                    <% if (user.QuyenHan === 'giangvien') { %>
+                                                        <% if (item.HuyTrangThai === 'cho-duyet') { %>
+                                                            <div class="badge bg-warning-subtle text-warning mt-2">Đang chờ duyệt hủy/nghỉ</div>
+                                                        <% } else if (item.HuyTrangThai !== 'da-duyet') { %>
+                                                            <form action="/tkb/yeu-cau-huy/<%= item._id %>" method="POST" class="mt-2" onsubmit="return ganLyDoHuy(this)">
+                                                                <input type="hidden" name="LyDoHuy">
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill w-100">
+                                                                    <i class="fas fa-calendar-xmark me-1"></i>Yêu cầu hủy/nghỉ
+                                                                </button>
+                                                            </form>
+                                                        <% } %>
+                                                    <% } %>
                                                 </div>
                                                 <% }); } else { %>
                                                     <div class="text-center mt-5 text-muted opacity-25 small">Trống
@@ -410,6 +422,13 @@
                             <% } %>
         </div>
         <script>
+            function ganLyDoHuy(form) {
+                const lyDo = prompt('Nhập lý do hủy/nghỉ lịch:');
+                if (lyDo === null) return false;
+                form.querySelector('input[name="LyDoHuy"]').value = lyDo.trim();
+                return confirm('Gửi yêu cầu hủy/nghỉ lịch này cho admin duyệt?');
+            }
+
             document.addEventListener('DOMContentLoaded', function () {
                 const phongId = window.location.hash ? window.location.hash.replace('#phong-', '') : '';
                 if (!phongId) return;

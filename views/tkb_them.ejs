@@ -49,11 +49,11 @@
 
                     <div class="col-md-6 mb-4">
                         <label class="form-label"><i class="fas fa-users me-2 text-warning"></i>Lớp Học</label>
-                        <select name="LopHoc" class="form-select shadow-sm" required>
+                        <select name="LopHoc" id="lopHocSelect" class="form-select shadow-sm" required>
                             <option value="" selected disabled>-- Chọn lớp học --</option>
                             <% dslop.forEach(lop=> { %>
-                                <option value="<%= lop._id %>">
-                                    <%= lop.TenLop %>
+                                <option value="<%= lop._id %>" data-si-so="<%= lop.SiSo || 0 %>">
+                                    <%= lop.TenLop %> - Sĩ số: <%= lop.SiSo || 0 %>
                                 </option>
                                 <% }) %>
                         </select>
@@ -62,21 +62,22 @@
                     <div class="col-md-6 mb-4">
                         <label class="form-label"><i class="fas fa-map-marker-alt me-2 text-danger"></i>Phòng
                             Học</label>
-                        <select name="PhongHoc" class="form-control shadow-sm" required>
+                        <select name="PhongHoc" id="phongHocSelect" class="form-control shadow-sm" required>
                             <option value="" selected disabled>-- Chọn phòng --</option>
                             <% dsphong.forEach(p=> { %>
-                                <option value="<%= p._id %>">
+                                <option value="<%= p._id %>" data-original-label="<%= p.TenPhong %> (<%= p.LoaiPhong %> - Sức chứa: <%= p.SucChua %>)">
                                     <%= p.TenPhong %> (<%= p.LoaiPhong %> - Sức chứa: <%= p.SucChua %>)
                                 </option>
                                 <% }) %>
                         </select>
+                        <small class="text-muted ms-2" id="phongHocHint">Hệ thống sẽ tự đánh dấu phòng trống/bận theo thời gian và sĩ số lớp.</small>
                     </div>
 
                     <div class="col-md-3 mb-4">
                         <label class="form-label"><i class="fas fa-hashtag me-2 text-primary"></i>Tuần Học</label>
-                        <select name="Tuan" class="form-select shadow-sm" required>
+                        <select name="Tuan" id="tuanSelect" class="form-select shadow-sm" required>
                             <% weeks.forEach(function(w) { %>
-                                <option value="<%= w.number %>" <%=currentWeek==w.number ? 'selected' : '' %>>
+                                <option value="<%= w.number %>" <%=currentWeek==w.number ? 'selected' : '' %> <%= typeof realCurrentWeek !== 'undefined' && w.number < realCurrentWeek ? 'disabled' : '' %>>
                                     <%= w.label %>
                                 </option>
                                 <% }); %>
@@ -85,7 +86,7 @@
 
                     <div class="col-md-3 mb-4">
                         <label class="form-label">Thứ</label>
-                        <select name="Thu" class="form-select shadow-sm">
+                        <select name="Thu" id="thuSelect" class="form-select shadow-sm">
                             <% ["Thứ 2", "Thứ 3" , "Thứ 4" , "Thứ 5" , "Thứ 6" , "Thứ 7" , "Chủ Nhật" ].forEach(thu=> {
                                 %>
                                 <option value="<%= thu %>">
@@ -97,12 +98,12 @@
 
                     <div class="col-md-3 mb-4">
                         <label class="form-label">Tiết Bắt Đầu</label>
-                        <input type="number" name="TietBatDau" min="1" max="12" class="form-control" required>
+                        <input type="number" name="TietBatDau" id="tietBatDauInput" min="1" max="12" class="form-control" required>
                     </div>
 
                     <div class="col-md-3 mb-4">
                         <label class="form-label">Tiết Kết Thúc</label>
-                        <input type="number" name="TietKetThuc" min="1" max="12" class="form-control" required>
+                        <input type="number" name="TietKetThuc" id="tietKetThucInput" min="1" max="12" class="form-control" required>
                     </div>
 
                     <div class="col-12 text-center mt-4">
@@ -127,6 +128,145 @@
                         : 'Tổng số tiết môn học: chưa chọn';
                 });
             }
+
+            function resetPhongHocHint(message) {
+                const phongHocSelect = document.getElementById('phongHocSelect');
+                const phongHocHint = document.getElementById('phongHocHint');
+
+                Array.from(phongHocSelect.options).forEach(function (option, index) {
+                    if (index === 0) {
+                        option.textContent = '-- Chọn lớp, tuần, thứ và tiết để tìm phòng --';
+                        option.disabled = true;
+                        option.selected = true;
+                        return;
+                    }
+
+                    option.disabled = false;
+                    option.textContent = option.getAttribute('data-original-label') || option.textContent;
+                    option.className = '';
+                    option.title = '';
+                });
+
+                phongHocHint.textContent = message || 'Hệ thống sẽ tự đánh dấu phòng trống/bận theo thời gian và sĩ số lớp.';
+            }
+
+            async function capNhatPhongHocThongMinh() {
+                const lopHocSelect = document.getElementById('lopHocSelect');
+                const tuanSelect = document.getElementById('tuanSelect');
+                const thuSelect = document.getElementById('thuSelect');
+                const tietBatDauInput = document.getElementById('tietBatDauInput');
+                const tietKetThucInput = document.getElementById('tietKetThucInput');
+                const phongHocSelect = document.getElementById('phongHocSelect');
+                const phongHocHint = document.getElementById('phongHocHint');
+
+                const lopHocID = lopHocSelect.value;
+                const tuan = tuanSelect.value;
+                const thu = thuSelect.value;
+                const tietBD = parseInt(tietBatDauInput.value, 10);
+                const tietKT = parseInt(tietKetThucInput.value, 10);
+
+                if (!lopHocID || !tuan || !thu || !tietBD || !tietKT) {
+                    resetPhongHocHint('Chọn đủ lớp, tuần, thứ, tiết bắt đầu và tiết kết thúc để hệ thống tìm phòng trống.');
+                    return;
+                }
+
+                if (tietKT < tietBD) {
+                    resetPhongHocHint('Tiết kết thúc phải lớn hơn hoặc bằng tiết bắt đầu.');
+                    return;
+                }
+
+                phongHocHint.textContent = 'Đang kiểm tra phòng trống theo thời gian và sĩ số lớp...';
+
+                try {
+                    const params = new URLSearchParams({ tuan, thu, tietBD, tietKT, lopHocID });
+                    const response = await fetch('/tkb/api/room-status?' + params.toString());
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Không kiểm tra được phòng.');
+                    }
+
+                    const roomMap = new Map((data.rooms || []).map(function (room) {
+                        return [String(room._id), room];
+                    }));
+                    let firstAvailable = '';
+
+                    Array.from(phongHocSelect.options).forEach(function (option, index) {
+                        if (index === 0) {
+                            option.textContent = '-- Chọn phòng phù hợp --';
+                            option.disabled = true;
+                            return;
+                        }
+
+                        const room = roomMap.get(option.value);
+                        const baseLabel = option.getAttribute('data-original-label') || option.textContent;
+                        if (!room) {
+                            option.disabled = true;
+                            option.textContent = baseLabel + ' - Không có dữ liệu';
+                            option.title = 'Không có dữ liệu kiểm tra phòng';
+                            return;
+                        }
+
+                        option.disabled = !room.available;
+                        option.textContent = baseLabel + (room.available ? ' - Trống' : ' - Không trống: ' + room.reason);
+                        option.title = room.reason;
+                        option.className = room.available ? 'text-success' : 'text-muted';
+
+                        if (room.available && !firstAvailable) {
+                            firstAvailable = option.value;
+                        }
+                    });
+
+                    if (!firstAvailable) {
+                        phongHocSelect.value = '';
+                        phongHocHint.textContent = data.isPast
+                            ? 'Ngày học ' + data.ngayHocHienThi + ' đã qua, không thể tạo lịch.'
+                            : 'Không có phòng trống đủ sức chứa cho khung ' + thu + ', tiết ' + tietBD + '-' + tietKT + ', tuần ' + tuan + '.';
+                    } else {
+                        const selectedOption = phongHocSelect.options[phongHocSelect.selectedIndex];
+                        if (!phongHocSelect.value || (selectedOption && selectedOption.disabled)) {
+                            phongHocSelect.value = firstAvailable;
+                        }
+                        phongHocHint.textContent = 'Tìm thấy ' + data.availableRooms.length + ' phòng trống cho ngày ' + data.ngayHocHienThi + ', sĩ số lớp: ' + data.siSo + '.';
+                    }
+                } catch (err) {
+                    resetPhongHocHint('Không kiểm tra được trạng thái phòng: ' + err.message);
+                }
+            }
+
+            function capNhatThuTheoTuan() {
+                const tuanSelect = document.getElementById('tuanSelect');
+                const thuSelect = document.getElementById('thuSelect');
+                const realCurrentWeek = <%= realCurrentWeek || 1 %>;
+                const selectedWeek = parseInt(tuanSelect.value, 10);
+                const today = new Date();
+                const jsDay = today.getDay();
+                const todayOffset = jsDay === 0 ? 6 : jsDay - 1;
+
+                Array.from(thuSelect.options).forEach(function (option, index) {
+                    const daQua = selectedWeek === realCurrentWeek && index < todayOffset;
+                    option.disabled = daQua;
+                    option.textContent = option.value + (daQua ? ' - đã qua' : '');
+                });
+
+                if (thuSelect.options[thuSelect.selectedIndex] && thuSelect.options[thuSelect.selectedIndex].disabled) {
+                    const optionHopLe = Array.from(thuSelect.options).find(function (option) {
+                        return !option.disabled;
+                    });
+                    if (optionHopLe) thuSelect.value = optionHopLe.value;
+                }
+            }
+
+            document.getElementById('lopHocSelect').addEventListener('change', capNhatPhongHocThongMinh);
+            document.getElementById('tuanSelect').addEventListener('change', function () {
+                capNhatThuTheoTuan();
+                capNhatPhongHocThongMinh();
+            });
+            document.getElementById('thuSelect').addEventListener('change', capNhatPhongHocThongMinh);
+            document.getElementById('tietBatDauInput').addEventListener('input', capNhatPhongHocThongMinh);
+            document.getElementById('tietKetThucInput').addEventListener('input', capNhatPhongHocThongMinh);
+            capNhatThuTheoTuan();
+            resetPhongHocHint();
         </script>
 </body>
 
