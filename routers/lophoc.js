@@ -86,6 +86,7 @@ router.post('/import', xuLyUploadExcel, async function (req, res) {
                 TenLop: TenLop,
                 NienKhoa: String(layGiaTriDong(row, 'NienKhoa')).trim(),
                 NgayBatDauNamHoc: layGiaTriDong(row, 'NgayBatDauNamHoc') ? new Date(layGiaTriDong(row, 'NgayBatDauNamHoc')) : new Date(),
+                NgayKetThucNamHoc: layGiaTriDong(row, 'NgayKetThucNamHoc') ? new Date(layGiaTriDong(row, 'NgayKetThucNamHoc')) : null,
                 SiSo: toNumber(layGiaTriDong(row, 'SiSo'), 0),
                 DanhSachMonHoc: danhSachMonHoc,
                 TrangThai: toNumber(layGiaTriDong(row, 'TrangThai'), 1)
@@ -122,6 +123,7 @@ router.get('/export', async function (req, res) {
                 MaLop: lop.MaLop,
                 TenLop: lop.TenLop,
                 NienKhoa: lop.NienKhoa || '',
+                NgayBatDau: lop.NgayBatDauNamHoc ? new Date(lop.NgayBatDauNamHoc).toLocaleDateString('vi-VN') : '',
                 SiSo: lop.SiSo || 0,
                 DanhSachMonHoc: Array.isArray(lop.DanhSachMonHoc) ? lop.DanhSachMonHoc.map(function (mon) {
                     return mon.TenMonHoc;
@@ -162,6 +164,7 @@ router.post('/them', async function (req, res) {
             TenLop: req.body.TenLop,
             NienKhoa: req.body.NienKhoa,
             NgayBatDauNamHoc: req.body.NgayBatDauNamHoc || new Date(),
+            NgayKetThucNamHoc: req.body.NgayKetThucNamHoc || null,
             SiSo: req.body.SiSo || 0,
             DanhSachMonHoc: chuanHoaDanhSachMonHoc(req.body.DanhSachMonHoc),
             TrangThai: 1
@@ -192,13 +195,14 @@ router.get('/sua/:id', async function (req, res) {
 
 router.post('/sua/:id', async function (req, res) {
     try {
-        const { MaLop, TenLop, NienKhoa, NgayBatDauNamHoc, SiSo, TrangThai } = req.body;
+        const { MaLop, TenLop, NienKhoa, NgayBatDauNamHoc, NgayKetThucNamHoc, SiSo, TrangThai } = req.body;
 
         await LopHoc.findByIdAndUpdate(req.params.id, {
             MaLop: MaLop,
             TenLop: TenLop,
             NienKhoa: NienKhoa,
             NgayBatDauNamHoc: NgayBatDauNamHoc,
+            NgayKetThucNamHoc: NgayKetThucNamHoc,
             SiSo: SiSo,
             DanhSachMonHoc: chuanHoaDanhSachMonHoc(req.body.DanhSachMonHoc),
             TrangThai: Number(TrangThai)
@@ -208,6 +212,18 @@ router.post('/sua/:id', async function (req, res) {
     } catch (err) {
         console.error(err);
         res.status(500).send('Có lỗi rồi.');
+    }
+});
+
+// API: Lấy chi tiết lớp học kèm danh sách môn học đã ràng buộc
+router.get('/api/:id', async (req, res) => {
+    try {
+        const lop = await LopHoc.findById(req.params.id).populate('DanhSachMonHoc');
+        if (!lop) return res.status(404).json({ message: 'Không tìm thấy lớp học.' });
+        res.json(lop);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Lỗi máy chủ khi lấy dữ liệu lớp học.' });
     }
 });
 

@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
@@ -16,129 +18,158 @@
 <body>
     <%- include('header') %>
 
-    <div class="container mt-5 mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="fw-bold text-dark mb-1">Quản Lý Lớp Học</h2>
-                <p class="text-muted mb-0">Điều hành lớp học và ràng buộc môn học được phép đăng ký.</p>
-            </div>
-            <a href="/lophoc/them" class="btn main-btn shadow-sm">
-                <i class="fas fa-plus-circle me-2"></i>Thêm lớp học mới
-            </a>
-        </div>
-
-        <div class="table-card p-3 mb-4">
-            <div class="row g-3 align-items-end">
-                <div class="col-lg-9">
-                    <form action="/lophoc/import" method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
-                        <div class="col-md-8">
-                            <label class="form-label fw-semibold">Import file Excel lớp học</label>
-                            <input type="file" name="excelFile" class="form-control" accept=".xlsx,.xls" required>
-                            <div class="form-text">Cột nên dùng: `MaLop`, `TenLop`, `NienKhoa`, `SiSo`, `DanhSachMonHoc`, `TrangThai`.</div>
-                        </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-success w-100">
-                                <i class="fas fa-file-import me-2"></i>Import Excel
-                            </button>
-                        </div>
-                    </form>
+        <div class="container mt-5 mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Quản Lý Lớp Học</h2>
+                    <p class="text-muted mb-0">Điều hành lớp học và ràng buộc môn học được phép đăng ký.</p>
                 </div>
-                <div class="col-lg-3">
-                    <a href="/lophoc/export" class="btn btn-outline-primary w-100">
-                        <i class="fas fa-file-export me-2"></i>Export Excel
-                    </a>
+                <a href="/lophoc/them" class="btn main-btn shadow-sm">
+                    <i class="fas fa-plus-circle me-2"></i>Thêm lớp học mới
+                </a>
+            </div>
+
+            <div class="table-card p-3 mb-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-9">
+                        <form action="/lophoc/import" method="post" enctype="multipart/form-data"
+                            class="row g-2 align-items-end">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">Import file Excel lớp học</label>
+                                <input type="file" name="excelFile" class="form-control" accept=".xlsx,.xls" required>
+                                <div class="form-text">Cột nên dùng: `MaLop`, `TenLop`, `NienKhoa`, `SiSo`,
+                                    `DanhSachMonHoc`, `TrangThai`.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-file-import me-2"></i>Import Excel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-lg-3">
+                        <a href="/lophoc/export" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-file-export me-2"></i>Export Excel
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="table-card shadow-sm border-0" style="border-radius: 15px; overflow: hidden; background: #fff;">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead style="background-color: #f8f9fa;">
-                        <tr class="text-secondary">
-                            <th class="ps-4 py-3" style="width: 80px;">STT</th>
-                            <th class="py-3">Mã Lớp</th>
-                            <th class="py-3">Tên Lớp Học</th>
-                            <th class="py-3">Niên Khóa</th>
-                            <th class="py-3 text-center">Sĩ Số</th>
-                            <th class="py-3">Môn Học Ràng Buộc</th>
-                            <th class="py-3 text-center">Trạng Thái</th>
-                            <th class="py-3 text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% if (dsLopHoc && dsLopHoc.length > 0) { %>
-                            <% var stt = 1; %>
-                            <% dsLopHoc.forEach(function(lop) { %>
-                                <tr>
-                                    <td class="ps-4 fw-bold text-muted"><%= stt++ %></td>
-                                    <td>
-                                        <span class="px-2 py-1 bg-light rounded text-primary fw-600" style="font-size: 0.85em; border: 1px solid #e9ecef;">
-                                            <%= lop.MaLop %>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold text-dark"><%= lop.TenLop %></div>
-                                        <div class="small text-muted" style="font-size: 0.75rem;">ID: <%= lop._id.toString().substring(18) %></div>
-                                    </td>
-                                    <td>
-                                        <div class="small text-muted">
-                                            <i class="far fa-calendar-alt me-1"></i>
-                                            <%= lop.NienKhoa || '2024 - 2025' %>
-                                        </div>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="badge rounded-pill bg-info-subtle text-info px-3"><%= lop.SiSo || 0 %> học viên</span>
-                                    </td>
-                                    <td>
-                                        <% if (lop.DanhSachMonHoc && lop.DanhSachMonHoc.length) { %>
-                                            <div class="d-flex flex-wrap gap-1">
-                                                <% lop.DanhSachMonHoc.forEach(function(mon) { %>
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle"><%= mon.TenMonHoc %></span>
-                                                <% }); %>
-                                            </div>
-                                        <% } else { %>
-                                            <span class="text-muted small">Chưa ràng buộc môn nào</span>
-                                        <% } %>
-                                    </td>
-                                    <td class="text-center">
-                                        <% if (lop.TrangThai == 1) { %>
-                                            <a href="/lophoc/trangthai/<%= lop._id %>" class="badge badge-soft bg-success-subtle text-success border border-success-subtle text-decoration-none">
-                                                <i class="fas fa-check-circle me-1"></i>Hoạt động
-                                            </a>
-                                        <% } else { %>
-                                            <a href="/lophoc/trangthai/<%= lop._id %>" class="badge badge-soft bg-danger-subtle text-danger border border-danger-subtle text-decoration-none">
-                                                <i class="fas fa-ban me-1"></i>Đóng
-                                            </a>
-                                        <% } %>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="d-flex justify-content-center gap-2">
-                                            <a href="/lophoc/sua/<%= lop._id %>" class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm btn-action-hover" title="Chỉnh sửa thông tin">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="/lophoc/xoa/<%= lop._id %>" class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm btn-action-hover" onclick="return confirm('Bạn có chắc muốn xóa lớp học này không?')" title="Xóa lớp">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <% }); %>
-                        <% } else { %>
-                            <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
-                                    <i class="fas fa-folder-open fa-3x mb-3 opacity-20"></i>
-                                    <p>Chưa có dữ liệu lớp học nào.</p>
-                                </td>
+            <div class="table-card shadow-sm border-0" style="border-radius: 15px; overflow: hidden; background: #fff;">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead style="background-color: #f8f9fa;">
+                            <tr class="text-secondary">
+                                <th class="ps-4 py-3" style="width: 80px;">STT</th>
+                                <th class="py-3">Mã Lớp</th>
+                                <th class="py-3">Tên Lớp Học</th>
+                                <th class="py-3">Ngày Bắt Đầu</th>
+                                <th class="py-3">Niên Khóa</th>
+                                <th class="py-3 text-center">Sĩ Số</th>
+                                <th class="py-3">Môn Học Ràng Buộc</th>
+                                <th class="py-3 text-center">Trạng Thái</th>
+                                <th class="py-3 text-center">Thao tác</th>
                             </tr>
-                        <% } %>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <% if (dsLopHoc && dsLopHoc.length> 0) { %>
+                                <% var stt=1; %>
+                                    <% dsLopHoc.forEach(function(lop) { %>
+                                        <tr>
+                                            <td class="ps-4 fw-bold text-muted">
+                                                <%= stt++ %>
+                                            </td>
+                                            <td>
+                                                <span class="px-2 py-1 bg-light rounded text-primary fw-600"
+                                                    style="font-size: 0.85em; border: 1px solid #e9ecef;">
+                                                    <%= lop.MaLop %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold text-dark">
+                                                    <%= lop.TenLop %>
+                                                </div>
+                                                <div class="small text-muted" style="font-size: 0.75rem;">ID: <%=
+                                                        lop._id.toString().substring(18) %>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="small fw-bold text-primary">
+                                                    <%= lop.NgayBatDauNamHoc ? new
+                                                        Date(lop.NgayBatDauNamHoc).toLocaleDateString('vi-VN') : 'N/A'
+                                                        %>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="small text-muted">
+                                                    <i class="far fa-calendar-alt me-1"></i>
+                                                    <%= lop.NienKhoa || '2024 - 2025' %>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge rounded-pill bg-info-subtle text-info px-3">
+                                                    <%= lop.SiSo || 0 %> học viên
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% if (lop.DanhSachMonHoc && lop.DanhSachMonHoc.length) { %>
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        <% lop.DanhSachMonHoc.forEach(function(mon) { %>
+                                                            <span
+                                                                class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                                                <%= mon.TenMonHoc %>
+                                                            </span>
+                                                            <% }); %>
+                                                    </div>
+                                                    <% } else { %>
+                                                        <span class="text-muted small">Chưa ràng buộc môn nào</span>
+                                                        <% } %>
+                                            </td>
+                                            <td class="text-center">
+                                                <% if (lop.TrangThai==1) { %>
+                                                    <a href="/lophoc/trangthai/<%= lop._id %>"
+                                                        class="badge badge-soft bg-success-subtle text-success border border-success-subtle text-decoration-none">
+                                                        <i class="fas fa-check-circle me-1"></i>Hoạt động
+                                                    </a>
+                                                    <% } else { %>
+                                                        <a href="/lophoc/trangthai/<%= lop._id %>"
+                                                            class="badge badge-soft bg-danger-subtle text-danger border border-danger-subtle text-decoration-none">
+                                                            <i class="fas fa-ban me-1"></i>Đóng
+                                                        </a>
+                                                        <% } %>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="d-flex justify-content-center gap-2">
+                                                    <a href="/lophoc/sua/<%= lop._id %>"
+                                                        class="btn btn-sm btn-light rounded-circle text-primary border shadow-sm btn-action-hover"
+                                                        title="Chỉnh sửa thông tin">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="/lophoc/xoa/<%= lop._id %>"
+                                                        class="btn btn-sm btn-light rounded-circle text-danger border shadow-sm btn-action-hover"
+                                                        onclick="return confirm('Bạn có chắc muốn xóa lớp học này không?')"
+                                                        title="Xóa lớp">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="8" class="text-center py-5 text-muted">
+                                                        <i class="fas fa-folder-open fa-3x mb-3 opacity-20"></i>
+                                                        <p>Chưa có dữ liệu lớp học nào.</p>
+                                                    </td>
+                                                </tr>
+                                                <% } %>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

@@ -20,6 +20,11 @@ var phongHocSchema = new mongoose.Schema({
 
     GhiChu: String,
 
+    KhoaThuCong: {
+        type: Boolean,
+        default: false
+    },
+
     TrangThai: {
         type: Number,
         default: 1

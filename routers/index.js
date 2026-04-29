@@ -7,6 +7,7 @@ var LopHoc = require('../models/lophoc');
 var SinhVien = require('../models/sinhvien');
 var GiangVien = require('../models/giangvien');
 var TKB = require('../models/tkb');
+var { getFormattedNgayHoc } = require('../utils/date_helpers'); // Import hàm từ tiện ích mới
 
 // GET: Trang chủ
 router.get('/', async (req, res) => {
@@ -56,13 +57,23 @@ router.get('/', async (req, res) => {
         let dsTaiKhoan = [];
         let ketQuaTraCuu = null;
         if (user) {
+            const formatLich = async (list) => { // Đổi thành async function
+                return await Promise.all(list.map(async item => {
+                    const ngayHocHienThi = await getFormattedNgayHoc(item);
+                    return { ...item.toObject(), NgayHocHienThi: ngayHocHienThi };
+                }));
+            };
+
             if (user.QuyenHan === 'admin') {
-                dsLich = await TKB.find().populate('MonHoc PhongHoc GiangVien').sort({ _id: -1 }).limit(5);
+                const rawLich = await TKB.find().populate('MonHoc PhongHoc GiangVien LopHoc').sort({ _id: -1 }).limit(5); // Thêm populate LopHoc
+                dsLich = await formatLich(rawLich); // Đợi kết quả từ async map
                 dsTaiKhoan = await TaiKhoan.find();
             } else if (user.QuyenHan === 'giangvien') {
-                dsLich = await TKB.find({ GiangVien: user._id }).populate('MonHoc PhongHoc').sort({ Thu: 1 });
+                const rawLich = await TKB.find({ GiangVien: user._id }).populate('MonHoc PhongHoc LopHoc').sort({ Thu: 1 }); // Thêm populate LopHoc
+                dsLich = await formatLich(rawLich); // Đợi kết quả từ async map
             } else if (user.QuyenHan === 'sinhvien') {
-                dsLich = await TKB.find({ LopHoc: user.LopHoc }).populate('MonHoc PhongHoc GiangVien').sort({ Thu: 1 });
+                const rawLich = await TKB.find({ LopHoc: user.LopHoc }).populate('MonHoc PhongHoc GiangVien LopHoc').sort({ Thu: 1 }); // Thêm populate LopHoc
+                dsLich = await formatLich(rawLich); // Đợi kết quả từ async map
             }
         }
 
@@ -91,7 +102,10 @@ router.get('/', async (req, res) => {
                     loai: 'sinhvien',
                     tieuDe: `Kết quả tra cứu sinh viên`,
                     moTa: `${sinhVien.IDTaiKhoan?.HoVaTen || 'Sinh viên'} - ${sinhVien.MSSV} - ${sinhVien.IDLop.TenLop}`,
-                    dsLich: dsLichTraCuu
+                    dsLich: await Promise.all(dsLichTraCuu.map(async item => { // Đợi kết quả từ async map
+                        const ngayHocHienThi = await getFormattedNgayHoc(item);
+                        return { ...item.toObject(), NgayHocHienThi: ngayHocHienThi };
+                    }))
                 };
             } else {
                 let giangVien = await GiangVien.findOne({ MaGV: tuKhoaRegex })
@@ -114,7 +128,10 @@ router.get('/', async (req, res) => {
                         loai: 'giangvien',
                         tieuDe: `Kết quả tra cứu giảng viên`,
                         moTa: `${giangVien.IDTaiKhoan.HoVaTen} - ${giangVien.MaGV}`,
-                        dsLich: dsLichTraCuu
+                        dsLich: await Promise.all(dsLichTraCuu.map(async item => { // Đợi kết quả từ async map
+                            const ngayHocHienThi = await getFormattedNgayHoc(item);
+                            return { ...item.toObject(), NgayHocHienThi: ngayHocHienThi };
+                        }))
                     };
                 } else {
                     ketQuaTraCuu = {

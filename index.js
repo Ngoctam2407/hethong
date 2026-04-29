@@ -3,7 +3,6 @@ var express = require('express');
 var app = express();
 var mongoose = require('mongoose');
 var session = require('express-session');
-
 var indexRouter = require('./routers/index');
 var taikhoanRouter = require('./routers/taikhoan');
 var authRouter = require('./routers/auth');
@@ -13,7 +12,6 @@ var lophocRouter = require('./routers/lophoc');
 var monhocRouter = require('./routers/monhoc');
 var thongbaoRouter = require('./routers/thongbao');
 var { getPublicKey } = require('./utils/push');
-
 
 
 

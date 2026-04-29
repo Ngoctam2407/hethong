@@ -5,6 +5,7 @@ const LopHocSchema = new mongoose.Schema({
     TenLop: { type: String, required: true },
     NienKhoa: String,
     NgayBatDauNamHoc: { type: Date, required: true },
+    NgayKetThucNamHoc: { type: Date },
     SiSo: Number,
     DanhSachMonHoc: [{
         type: mongoose.Schema.Types.ObjectId,

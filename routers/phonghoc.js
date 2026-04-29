@@ -1,94 +1,117 @@
 var express = require('express');
 var router = express.Router();
-var PhongHoc = require('../models/phonghoc'); // Nhớ tạo model này trước nha Tâm
+var PhongHoc = require('../models/phonghoc');
+var LopHoc = require('../models/lophoc');
+var TKB = require('../models/tkb');
 var { requireAdmin } = require('./auth');
-var SO_PHONG_CO_DINH = 14;
+var { taoDuLieuTuanHoc } = require('../utils/date');
 
 router.use(requireAdmin);
 
-// 1. GET: Danh sách phòng học (Địa chỉ: /phonghoc)
+async function layTuanThucTeHienTai() {
+    const firstLop = await LopHoc.findOne({
+        NgayBatDauNamHoc: { $exists: true, $ne: null }
+    }).sort({ NgayBatDauNamHoc: 1 }).select('NgayBatDauNamHoc');
+
+    const weekData = taoDuLieuTuanHoc(firstLop && firstLop.NgayBatDauNamHoc ? firstLop.NgayBatDauNamHoc : new Date());
+    return weekData.realCurrentWeek;
+}
+
 router.get('/', async (req, res) => {
     try {
-        var ds = await PhongHoc.find().sort({ TenPhong: 1 });
+        const currentWeek = await layTuanThucTeHienTai();
+        const [ds, lichTuanNay] = await Promise.all([
+            PhongHoc.find().sort({ TenPhong: 1 }).lean(),
+            TKB.find({ TrangThai: 'da-duyet', Tuan: currentWeek }).select('PhongHoc').lean()
+        ]);
 
-        // Sau đó truyền biến ds này vào trang ejs như bình thường
+        const phongDangDuocSuDung = new Set(
+            lichTuanNay
+                .filter(function (item) { return item && item.PhongHoc; })
+                .map(function (item) { return item.PhongHoc.toString(); })
+        );
+
+        const dsPhongHienThi = ds.map(function (phong) {
+            let trangThaiHienThi = 'trong';
+
+            if (phong.KhoaThuCong) {
+                trangThaiHienThi = 'bao-tri';
+            } else if (phongDangDuocSuDung.has(phong._id.toString())) {
+                trangThaiHienThi = 'dang-su-dung';
+            }
+
+            return Object.assign({}, phong, {
+                TrangThaiHienThi: trangThaiHienThi
+            });
+        });
+
         res.render('phonghoc', {
             title: 'Danh sách phòng học',
-            dsphong: ds // Nhớ kiểm tra tên biến này khớp với file EJS của em nhé
+            dsphong: dsPhongHienThi
         });
     } catch (err) {
         console.error(err);
-        res.send("Có lỗi khi lấy danh sách phòng");
+        res.send('Có lỗi khi lấy danh sách phòng');
     }
 });
 
-// 2. GET: Form Thêm phòng (Địa chỉ: /phonghoc/them)
-router.get('/them', (req, res) => {
+router.get('/them', function (req, res) {
     res.render('phonghoc_them', { title: 'Thêm phòng học mới' });
 });
 
-// 3. POST: Xử lý Thêm phòng
-router.post('/them', async (req, res) => {
+router.post('/them', async function (req, res) {
     if (!req.body || !req.body.TenPhong) {
-        return res.send("Tâm ơi, thiếu tên phòng mất rồi!");
+        return res.send('Thiếu tên phòng.');
     }
 
-    var tongSoPhong = await PhongHoc.countDocuments();
-    if (tongSoPhong >= SO_PHONG_CO_DINH) {
-        req.session.error = "Hệ thống đã đủ 14 phòng cố định, không thể thêm nữa.";
-        return res.redirect('/phonghoc');
-    }
-
-    var data = {
-        TenPhong: req.body.TenPhong,
-        LoaiPhong: req.body.LoaiPhong, // Lý thuyết / Thực hành
-        SucChua: req.body.SucChua,
-        GhiChu: req.body.GhiChu,
-        TrangThai: 1 // Mặc định phòng mới tạo là sẵn sàng dùng
-    };
-
-    await PhongHoc.create(data);
-    res.redirect('/phonghoc');
-});
-
-// 4. GET: Form Sửa phòng (Địa chỉ: /phonghoc/sua/:id)
-router.get('/sua/:id', async (req, res) => {
-    var data = await PhongHoc.findById(req.params.id);
-    res.render('phonghoc_sua', { title: 'Cập nhật phòng học', phong: data });
-});
-
-// 5. POST: Xử lý Cập nhật phòng
-router.post('/sua/:id', async (req, res) => {
-    var data = {
+    await PhongHoc.create({
         TenPhong: req.body.TenPhong,
         LoaiPhong: req.body.LoaiPhong,
         SucChua: req.body.SucChua,
         GhiChu: req.body.GhiChu,
-        TrangThai: req.body.TrangThai
-    };
+        KhoaThuCong: false,
+        TrangThai: 1
+    });
 
-    await PhongHoc.findByIdAndUpdate(req.params.id, data);
     res.redirect('/phonghoc');
 });
 
-// 6. GET: Xóa phòng (Địa chỉ: /phonghoc/xoa/:id)
-router.get('/xoa/:id', async (req, res) => {
+router.get('/sua/:id', async function (req, res) {
+    var data = await PhongHoc.findById(req.params.id);
+    res.render('phonghoc_sua', { title: 'Cập nhật phòng học', phong: data });
+});
+
+router.post('/sua/:id', async function (req, res) {
+    await PhongHoc.findByIdAndUpdate(req.params.id, {
+        TenPhong: req.body.TenPhong,
+        LoaiPhong: req.body.LoaiPhong,
+        SucChua: req.body.SucChua,
+        GhiChu: req.body.GhiChu,
+        KhoaThuCong: req.body.KhoaThuCong === '1'
+    });
+
+    res.redirect('/phonghoc');
+});
+
+router.get('/xoa/:id', async function (req, res) {
     await PhongHoc.findByIdAndDelete(req.params.id);
     res.redirect('/phonghoc');
 });
 
-// 7. GET: Chuyển đổi trạng thái (Đang dùng / Bảo trì)
-router.get('/trangthai/:id', async (req, res) => {
+router.get('/trangthai/:id', async function (req, res) {
     try {
         var phong = await PhongHoc.findById(req.params.id);
-        var trangThaiMoi = (phong.TrangThai == 1) ? 0 : 1;
+        var khoaThuCongMoi = !phong.KhoaThuCong;
 
-        await PhongHoc.findByIdAndUpdate(req.params.id, { TrangThai: trangThaiMoi });
+        await PhongHoc.findByIdAndUpdate(req.params.id, { KhoaThuCong: khoaThuCongMoi });
 
-        req.session.success = "Đã cập nhật trạng thái phòng " + phong.TenPhong + " thành công!";
+        req.session.success = khoaThuCongMoi
+            ? 'Đã chuyển phòng ' + phong.TenPhong + ' sang trạng thái bảo trì.'
+            : 'Đã mở lại phòng ' + phong.TenPhong + ' để sẵn sàng sử dụng.';
+
         res.redirect('/phonghoc');
     } catch (err) {
-        req.session.error = "Lỗi khi đổi trạng thái phòng: " + err.message;
+        req.session.error = ' lỗi khi đổi trạng thái phòng: ' + err.message;
         res.redirect('/phonghoc');
     }
 });

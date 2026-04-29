@@ -303,10 +303,16 @@
                                                             <div
                                                                 class="d-flex justify-content-between align-items-start gap-3">
                                                                 <div>
-                                                                    <p class="mb-2 opacity-75 small">
-                                                                        <i class="fas fa-calendar-day me-2"></i>
-                                                                        <%= lichHienTai.Thu %>
-                                                                    </p>
+                                                                    <div class="mb-2 d-flex gap-3">
+                                                                        <span class="opacity-75 small"><i
+                                                                                class="fas fa-calendar-day me-1"></i>
+                                                                            <%= lichHienTai.Thu %>
+                                                                        </span>
+                                                                        <span class="fw-bold small"><i
+                                                                                class="fas fa-calendar-alt me-1"></i>
+                                                                            <%= lichHienTai.NgayHocHienThi %>
+                                                                        </span>
+                                                                    </div>
                                                                     <h4 class="fw-bold mb-2">
                                                                         <%= lichHienTai.PhongHoc ?
                                                                             lichHienTai.PhongHoc.TenPhong
@@ -422,6 +428,7 @@
                                                     <thead class="table-light">
                                                         <tr>
                                                             <th>Thứ</th>
+                                                            <th>Ngày</th>
                                                             <th>Môn học</th>
                                                             <th>Lớp</th>
                                                             <th>Phòng</th>
@@ -434,6 +441,9 @@
                                                             <tr>
                                                                 <td>
                                                                     <%= item.Thu %>
+                                                                </td>
+                                                                <td class="fw-bold text-primary">
+                                                                    <%= item.NgayHocHienThi %>
                                                                 </td>
                                                                 <td>
                                                                     <%= item.MonHoc?.TenMonHoc || 'N/A' %>
