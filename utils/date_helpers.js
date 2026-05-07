@@ -1,5 +1,6 @@
 var LopHoc = require('../models/lophoc');
 
+// Quy đổi tên thứ sang số ngày cộng thêm từ mốc Thứ 2 của tuần.
 function thuToOffset(thu) {
     const map = {
         'Thứ 2': 0,
@@ -13,6 +14,7 @@ function thuToOffset(thu) {
     return typeof map[thu] === 'number' ? map[thu] : 0;
 }
 
+// Tính ngày học thật dựa trên tuần, thứ và ngày bắt đầu năm học của lớp.
 async function tinhNgayHoc(tuan, thu, lopHocId) {
     const lop = await LopHoc.findById(lopHocId).select('NgayBatDauNamHoc');
     let moc = lop && lop.NgayBatDauNamHoc ? new Date(lop.NgayBatDauNamHoc) : new Date();
@@ -28,19 +30,20 @@ async function tinhNgayHoc(tuan, thu, lopHocId) {
     return moc;
 }
 
+// Lấy ngày học để hiển thị; nếu dữ liệu cũ chưa có NgayHoc thì tự tính lại.
 async function getFormattedNgayHoc(item) {
     if (item.NgayHoc) {
         return new Date(item.NgayHoc).toLocaleDateString('vi-VN');
     }
-    // Nếu NgayHoc bị thiếu, tính toán lại dựa trên tuần, thứ và lớp học
+    // Nếu NgayHoc bị thiếu, tính toán lại dựa trên tuần, thứ và lớp học.
     if (item.Tuan && item.Thu && item.LopHoc) {
-        const lopHocId = item.LopHoc._id || item.LopHoc; // Đảm bảo lấy được ID lớp học
+        const lopHocId = item.LopHoc._id || item.LopHoc; // Đảm bảo lấy được ID lớp học.
         if (lopHocId) {
             const calculatedNgayHoc = await tinhNgayHoc(item.Tuan, item.Thu, lopHocId);
             return new Date(calculatedNgayHoc).toLocaleDateString('vi-VN');
         }
     }
-    return 'N/A'; // Trường hợp không đủ dữ liệu để tính toán
+    return 'N/A'; // Trường hợp không đủ dữ liệu để tính toán.
 }
 
 module.exports = {

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Schema sinh viên: liên kết tài khoản đăng nhập với lớp học và thông tin cá nhân.
 const sinhVienSchema = new mongoose.Schema({
     IDTaiKhoan: {
         type: mongoose.Schema.Types.ObjectId,
@@ -7,7 +8,7 @@ const sinhVienSchema = new mongoose.Schema({
         required: true
     },
     MSSV: { type: String, required: true, unique: true },
-    // Kết nối Sinh viên với Lớp học bằng ID tự động (_id) của bảng LopHoc
+    // Kết nối sinh viên với lớp học bằng _id của bảng LopHoc.
     IDLop: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'LopHoc',

@@ -284,6 +284,7 @@
                                                                 i.PhongHoc._id.toString()===phong._id.toString(); });
                                                                 var statusClass=lich ? 'is-busy' : (phong.KhoaThuCong
                                                                 ? 'is-maintenance' : null); if (statusClass) { %>
+                                                                ? 'is-maintenance' : 'is-free'); %>
 
                                                                 <div class="room-box <%= statusClass %>"
                                                                     id="room-<%= phong._id %>-<%= thu %>-<%= buoi %>"
@@ -291,20 +292,25 @@
                                                                     data-bs-toggle="modal" data-bs-target="#modal<%=
                                                                         lich._id %>
                                                                         "
-                                                                        title="Đang bận: <%= lich.LopHoc?.TenLop %>"
+                                                                        title="Có lịch: <%= lich.LopHoc?.TenLop %>"
                                                                             <% } else { %>
                                                                                 title="Đang bảo trì"
                                                                                 <% } %>>
+                                                                                title="<%= phong.KhoaThuCong ? 'Đang bảo trì' : 'Phòng trống' %>"
+                                                                                <% if(!phong.KhoaThuCong) { %>
+                                                                                    href="/tkb/dangky?phong=<%= phong._id %>&thu=<%= thu %>&ca=<%= buoi %>&tuan=<%= currentWeek %>"
+                                                                                <% } %>
+                                                                            <% } %>>
                                                                                     <span class="room-name">
                                                                                         <%= phong.TenPhong %>
                                                                                     </span>
                                                                                     <span class="room-status-text">
                                                                                         <%= lich ? 'BẬN' : 'BẢO TRÌ' %>
+                                                                                        <%= lich ? 'BẬN' : (phong.KhoaThuCong ? 'BẢO TRÌ' : 'TRỐNG') %>
                                                                                     </span>
                                                                 </div>
 
                                                                 <% if(lich) { %>
-                                                                    <!-- Modal chi tiết lịch (Giữ nguyên logic cũ của bạn) -->
                                                                     <div class="modal fade" id="modal<%= lich._id %>"
                                                                         tabindex="-1" aria-hidden="true">
                                                                         <div class="modal-dialog modal-dialog-centered">
@@ -398,18 +404,23 @@
                                                         style="font-size: 0.7rem;">
                                                         GV: <%= item.GiangVien?.HoVaTen %>
                                                     </div>
-                                                    <% if (user.QuyenHan === 'giangvien') { %>
-                                                        <% if (item.HuyTrangThai === 'cho-duyet') { %>
-                                                            <div class="badge bg-warning-subtle text-warning mt-2">Đang chờ duyệt hủy/nghỉ</div>
-                                                        <% } else if (item.HuyTrangThai !== 'da-duyet') { %>
-                                                            <form action="/tkb/yeu-cau-huy/<%= item._id %>" method="POST" class="mt-2" onsubmit="return ganLyDoHuy(this)">
-                                                                <input type="hidden" name="LyDoHuy">
-                                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill w-100">
-                                                                    <i class="fas fa-calendar-xmark me-1"></i>Yêu cầu hủy/nghỉ
-                                                                </button>
-                                                            </form>
-                                                        <% } %>
-                                                    <% } %>
+                                                    <% if (user.QuyenHan==='giangvien' ) { %>
+                                                        <% if (item.HuyTrangThai==='cho-duyet' ) { %>
+                                                            <div class="badge bg-warning-subtle text-warning mt-2">Đang
+                                                                chờ duyệt hủy/nghỉ</div>
+                                                            <% } else if (item.HuyTrangThai !=='da-duyet' ) { %>
+                                                                <form action="/tkb/yeu-cau-huy/<%= item._id %>"
+                                                                    method="POST" class="mt-2"
+                                                                    onsubmit="return ganLyDoHuy(this)">
+                                                                    <input type="hidden" name="LyDoHuy">
+                                                                    <button type="submit"
+                                                                        class="btn btn-sm btn-outline-danger rounded-pill w-100">
+                                                                        <i class="fas fa-calendar-xmark me-1"></i>Yêu
+                                                                        cầu hủy/nghỉ
+                                                                    </button>
+                                                                </form>
+                                                                <% } %>
+                                                                    <% } %>
                                                 </div>
                                                 <% }); } else { %>
                                                     <div class="text-center mt-5 text-muted opacity-25 small">Trống
@@ -420,28 +431,28 @@
                                     <% }); %>
                             </div>
                             <% } %>
-        </div>
-        <script>
-            function ganLyDoHuy(form) {
-                const lyDo = prompt('Nhập lý do hủy/nghỉ lịch:');
-                if (lyDo === null) return false;
-                form.querySelector('input[name="LyDoHuy"]').value = lyDo.trim();
-                return confirm('Gửi yêu cầu hủy/nghỉ lịch này cho admin duyệt?');
-            }
+                                <script>
+                                    function ganLyDoHuy(form) {
+                                        const lyDo = prompt('Nhập lý do hủy/nghỉ lịch:');
+                                        if (lyDo === null) return false;
+                                        form.querySelector('input[name="LyDoHuy"]').value = lyDo.trim();
+                                        return confirm('Gửi yêu cầu hủy/nghỉ lịch này cho admin duyệt?');
+                                    }
 
-            document.addEventListener('DOMContentLoaded', function () {
-                const phongId = window.location.hash ? window.location.hash.replace('#phong-', '') : '';
-                if (!phongId) return;
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        const phongId = window.location.hash ? window.location.hash.replace('#phong-', '') : '';
+                                        if (!phongId) return;
 
-                const targets = document.querySelectorAll(`[data-phong-id="${phongId}"]`);
-                targets.forEach(t => t.classList.add('phong-focus'));
+                                        const targets = document.querySelectorAll(`[data-phong-id="${phongId}"]`);
+                                        targets.forEach(t => t.classList.add('phong-focus'));
 
-                if (targets.length > 0) {
-                    targets[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            });
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+                                        if (targets.length > 0) {
+                                            targets[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }
+                                    });
+                                </script>
+                                <script
+                                    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

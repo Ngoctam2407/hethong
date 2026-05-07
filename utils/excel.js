@@ -2,6 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const XLSX = require('xlsx');
 
+// Cấu hình upload Excel: đọc file vào RAM và giới hạn 5MB để tránh file quá lớn.
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
@@ -10,7 +11,7 @@ const upload = multer({
     fileFilter: function (req, file, cb) {
         const ext = path.extname(file.originalname || '').toLowerCase();
         if (ext !== '.xlsx' && ext !== '.xls') {
-            return cb(new Error('Chi chap nhan file Excel .xlsx hoac .xls.'));
+            return cb(new Error('Chỉ chấp nhận file Excel .xlsx hoặc .xls.'));
         }
         cb(null, true);
     }
@@ -21,7 +22,7 @@ function readRowsFromExcel(fileBuffer) {
     const firstSheetName = workbook.SheetNames[0];
 
     if (!firstSheetName) {
-        throw new Error('File Excel khong co sheet du lieu.');
+        throw new Error('File Excel không có sheet dữ liệu.');
     }
 
     const sheet = workbook.Sheets[firstSheetName];
@@ -31,6 +32,7 @@ function readRowsFromExcel(fileBuffer) {
     });
 }
 
+// Tạo workbook Excel từ mảng object, mỗi object là một dòng dữ liệu.
 function buildWorkbook(sheetName, rows) {
     const workbook = XLSX.utils.book_new();
     const sheet = XLSX.utils.json_to_sheet(rows);
@@ -38,6 +40,7 @@ function buildWorkbook(sheetName, rows) {
     return workbook;
 }
 
+// Gửi workbook về trình duyệt dưới dạng file tải xuống.
 function sendWorkbook(res, workbook, fileName) {
     const buffer = XLSX.write(workbook, {
         type: 'buffer',
@@ -55,6 +58,7 @@ function sendWorkbook(res, workbook, fileName) {
     res.send(buffer);
 }
 
+// Chuyển dữ liệu từ Excel/form sang số, nếu không hợp lệ thì dùng giá trị mặc định.
 function toNumber(value, defaultValue) {
     if (value === '' || value === null || typeof value === 'undefined') {
         return defaultValue;

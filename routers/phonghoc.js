@@ -6,6 +6,7 @@ var { requireAdmin } = require('./auth');
 
 router.use(requireAdmin);
 
+// Khung giờ chuẩn dùng để xác định phòng nào đang được sử dụng tại thời điểm hiện tại.
 const khungGioHoc = [
     { tiet: 1, batDau: '07:00', ketThuc: '07:45' },
     { tiet: 2, batDau: '07:45', ketThuc: '08:30' },
@@ -30,6 +31,7 @@ function layTietHienTai() {
     return khung ? khung.tiet : null;
 }
 
+// Trả về khoảng thời gian từ 00:00 hôm nay đến 00:00 ngày mai để lọc lịch trong ngày.
 function layKhoangNgayHomNay() {
     const batDau = new Date();
     batDau.setHours(0, 0, 0, 0);
@@ -40,6 +42,7 @@ function layKhoangNgayHomNay() {
     return { batDau, ketThuc };
 }
 
+// GET: Danh sách phòng học, kèm trạng thái đang trống, đang sử dụng hoặc bảo trì.
 router.get('/', async (req, res) => {
     try {
         const tietHienTai = layTietHienTai();
@@ -95,10 +98,12 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET: Form thêm phòng học mới.
 router.get('/them', function (req, res) {
     res.render('phonghoc_them', { title: 'Thêm phòng học mới' });
 });
 
+// POST: Lưu phòng học mới vào cơ sở dữ liệu.
 router.post('/them', async function (req, res) {
     if (!req.body || !req.body.TenPhong) {
         return res.send('Thiếu tên phòng.');
@@ -116,11 +121,13 @@ router.post('/them', async function (req, res) {
     res.redirect('/phonghoc');
 });
 
+// GET: Form chỉnh sửa thông tin phòng học.
 router.get('/sua/:id', async function (req, res) {
     var data = await PhongHoc.findById(req.params.id);
     res.render('phonghoc_sua', { title: 'Cập nhật phòng học', phong: data });
 });
 
+// POST: Cập nhật thông tin phòng và trạng thái khóa thủ công.
 router.post('/sua/:id', async function (req, res) {
     await PhongHoc.findByIdAndUpdate(req.params.id, {
         TenPhong: req.body.TenPhong,
@@ -133,11 +140,13 @@ router.post('/sua/:id', async function (req, res) {
     res.redirect('/phonghoc');
 });
 
+// GET: Xóa phòng học theo ID.
 router.get('/xoa/:id', async function (req, res) {
     await PhongHoc.findByIdAndDelete(req.params.id);
     res.redirect('/phonghoc');
 });
 
+// GET: Đảo trạng thái bảo trì/sẵn sàng của phòng học.
 router.get('/trangthai/:id', async function (req, res) {
     try {
         var phong = await PhongHoc.findById(req.params.id);

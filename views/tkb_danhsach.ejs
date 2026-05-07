@@ -305,7 +305,7 @@
 
             <script>
                 async function duyetLich(id) {
-                    // 1. Hỏi ý kiến Tâm một lần nữa cho chắc
+                    // 1. Xác nhận trước khi gửi yêu cầu phê duyệt lịch học.
                     if (!confirm("Tâm có chắc chắn muốn phê duyệt lịch học này không?")) return;
 
                     try {
@@ -320,7 +320,7 @@
                         const data = await response.json();
 
                         if (response.ok && data.success) {
-                            // 4. Hiệu ứng làm mờ và xóa dòng (Professional hơn)
+                            // 4. Làm mờ và xóa dòng đã xử lý khỏi bảng.
                             const row = document.getElementById(`row-${id}`);
                             row.style.transition = "all 0.5s ease";
                             row.style.backgroundColor = "#d4edda"; // Tô màu xanh báo hiệu thành công
@@ -349,7 +349,7 @@
             </script>
             <script>
                 async function tuChoiLich(id) {
-                    // Hỏi ý kiến cho chắc chắn
+                    // Xác nhận trước khi gửi yêu cầu từ chối lịch học.
                     if (!confirm("Tâm có chắc chắn muốn từ chối lịch học này không?")) return;
 
                     try {

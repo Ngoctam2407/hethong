@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <%- include('css') %>
+
+    <style>
+        .admin-dashboard {
+            color: #1f2937;
+        }
+
+        .dashboard-title {
+            font-size: clamp(1.55rem, 3vw, 2rem);
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .metric-card,
+        .dashboard-panel {
+            background: #ffffff;
+            border: 1px solid #e7edf5;
+            border-radius: 8px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+        }
+
+        .metric-card {
+            min-height: 128px;
+            padding: 18px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .metric-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            line-height: 1;
+            font-weight: 800;
+        }
+
+        .metric-label {
+            font-size: 0.92rem;
+            color: #667085;
+            margin-bottom: 8px;
+        }
+
+        .metric-note {
+            color: #778294;
+            font-size: 0.82rem;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 310px;
+        }
+
+        .report-table th {
+            color: #526070;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .report-table td {
+            vertical-align: middle;
+        }
+
+        .report-table tbody tr:hover {
+            background: #f7fafc;
+        }
+
+        .table-toolbar {
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) minmax(150px, 220px) auto;
+            gap: 10px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .status-ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-warn {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-info {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        .status-muted {
+            background: #eef2f7;
+            color: #475467;
+        }
+
+        @media (max-width: 767.98px) {
+            .metric-card {
+                min-height: auto;
+            }
+
+            .table-toolbar {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrap {
+                height: 260px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('header') %>
+
+        <main class="admin-dashboard container-fluid px-3 px-lg-4 py-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+                <div>
+                    <h1 class="dashboard-title mb-2">Báo cáo hệ thống</h1>
+                    <div class="text-muted">
+                        <i class="fas fa-clock me-1 text-primary"></i>
+                        <span id="capNhatLuc">Cập nhật: <%= baoCao.capNhatLuc %></span>
+                        <span class="mx-2">•</span>
+                        <span id="tietHienTai"><%= baoCao.tietHienTai %></span>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" id="btnLamMoi" class="btn btn-outline-primary">
+                        <i class="fas fa-rotate me-1"></i>Làm mới
+                    </button>
+                    <a href="/admin/bao-cao-he-thong/export" class="btn btn-success">
+                        <i class="fas fa-file-excel me-1"></i>Xuất Excel
+                    </a>
+                </div>
+            </div>
+
+            <section class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card">
+                        <div class="metric-icon bg-primary-subtle text-primary">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <div>
+                            <div class="metric-label">Lớp đang hoạt động</div>
+                            <div class="metric-value" id="metricLopHoatDong"><%= baoCao.thongKe.lopHoatDong %></div>
+                            <div class="metric-note"><span id="metricTongLop"><%= baoCao.thongKe.tongLop %></span> lớp trong hệ thống</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card">
+                        <div class="metric-icon bg-success-subtle text-success">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <div>
+                            <div class="metric-label">Tỷ lệ sử dụng phòng</div>
+                            <div class="metric-value" id="metricTiLePhong"><%= baoCao.thongKe.tiLeSuDungPhong %>%</div>
+                            <div class="metric-note"><span id="metricPhongDangDung"><%= baoCao.thongKe.phongDangDung %></span>/<span id="metricPhongHoatDong"><%= baoCao.thongKe.phongHoatDong %></span> phòng đang dùng</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card">
+                        <div class="metric-icon bg-warning-subtle text-warning">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div>
+                            <div class="metric-label">Lịch học hôm nay</div>
+                            <div class="metric-value" id="metricLichHomNay"><%= baoCao.thongKe.lichHomNay %></div>
+                            <div class="metric-note"><span id="metricChoDuyet"><%= baoCao.thongKe.lichChoDuyet %></span> lịch chờ duyệt</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="metric-card">
+                        <div class="metric-icon bg-danger-subtle text-danger">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div>
+                            <div class="metric-label">Học viên</div>
+                            <div class="metric-value" id="metricSinhVien"><%= baoCao.thongKe.tongSinhVien %></div>
+                            <div class="metric-note"><span id="metricGiangVien"><%= baoCao.thongKe.tongGiangVien %></span> giảng viên phụ trách</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="row g-3 mb-4">
+                <div class="col-xl-7">
+                    <div class="dashboard-panel p-3 p-lg-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="panel-title">Lịch sử sử dụng phòng 7 ngày</h2>
+                            <span class="badge text-bg-light border">Biểu đồ cột</span>
+                        </div>
+                        <div class="chart-wrap">
+                            <canvas id="chartLichTheoNgay"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-5">
+                    <div class="dashboard-panel p-3 p-lg-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="panel-title">Tình trạng phòng học hiện tại</h2>
+                            <span class="badge text-bg-light border">Biểu đồ tròn</span>
+                        </div>
+                        <div class="chart-wrap">
+                            <canvas id="chartTinhTrangPhong"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="dashboard-panel p-3 p-lg-4 mb-4">
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                    <h2 class="panel-title">Lịch sử sử dụng phòng</h2>
+                    <div class="table-toolbar">
+                        <input type="search" id="searchLich" class="form-control" placeholder="Tìm phòng, lớp, môn, giảng viên">
+                        <select id="filterTrangThaiLich" class="form-select">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="Đã qua">Đã qua</option>
+                            <option value="Hôm nay">Hôm nay</option>
+                            <option value="Sắp tới">Sắp tới</option>
+                        </select>
+                        <button type="button" id="exportLich" class="btn btn-outline-success">
+                            <i class="fas fa-download me-1"></i>CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table report-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-table="lich" data-sort="ngayHoc">Ngày</th>
+                                <th data-table="lich" data-sort="phong">Phòng</th>
+                                <th data-table="lich" data-sort="lop">Lớp</th>
+                                <th data-table="lich" data-sort="monHoc">Môn học</th>
+                                <th data-table="lich" data-sort="giangVien">Giảng viên</th>
+                                <th data-table="lich" data-sort="tiet">Tiết</th>
+                                <th data-table="lich" data-sort="trangThai">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyLich"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="dashboard-panel p-3 p-lg-4 mb-4">
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                    <h2 class="panel-title">Danh sách học viên theo lớp</h2>
+                    <div class="table-toolbar">
+                        <input type="search" id="searchHocVien" class="form-control" placeholder="Tìm MSSV, họ tên, email">
+                        <select id="filterLopHocVien" class="form-select">
+                            <option value="">Tất cả lớp</option>
+                            <% baoCao.danhSachLop.forEach(function(lop) { %>
+                                <option value="<%= lop %>"><%= lop %></option>
+                            <% }); %>
+                        </select>
+                        <button type="button" id="exportHocVien" class="btn btn-outline-success">
+                            <i class="fas fa-download me-1"></i>CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table report-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th data-table="hocvien" data-sort="mssv">MSSV</th>
+                                <th data-table="hocvien" data-sort="hoVaTen">Họ tên</th>
+                                <th data-table="hocvien" data-sort="tenLop">Lớp</th>
+                                <th data-table="hocvien" data-sort="email">Email</th>
+                                <th data-table="hocvien" data-sort="soDienThoai">Điện thoại</th>
+                                <th data-table="hocvien" data-sort="trangThai">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyHocVien"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script>
+            var baoCao = <%- JSON.stringify(baoCao).replace(/</g, '\\u003c') %>;
+            var chartLichTheoNgay = null;
+            var chartTinhTrangPhong = null;
+            var sortState = {
+                lich: { key: 'ngayHoc', dir: 'desc' },
+                hocvien: { key: 'tenLop', dir: 'asc' }
+            };
+            var filteredLich = [];
+            var filteredHocVien = [];
+
+            function escapeHtml(value) {
+                return String(value ?? '').replace(/[&<>"']/g, function (char) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char];
+                });
+            }
+
+            function statusClass(value) {
+                if (value === 'Đang học' || value === 'Hôm nay') return 'status-ok';
+                if (value === 'Sắp tới') return 'status-info';
+                if (value === 'Tạm khóa') return 'status-warn';
+                return 'status-muted';
+            }
+
+            function normalizeText(value) {
+                return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+
+            function compareRows(a, b, key, dir) {
+                var left = normalizeText(a[key]);
+                var right = normalizeText(b[key]);
+                if (!Number.isNaN(Number(a[key])) && !Number.isNaN(Number(b[key]))) {
+                    left = Number(a[key]);
+                    right = Number(b[key]);
+                }
+                if (left < right) return dir === 'asc' ? -1 : 1;
+                if (left > right) return dir === 'asc' ? 1 : -1;
+                return 0;
+            }
+
+            function updateMetrics() {
+                document.getElementById('capNhatLuc').textContent = 'Cập nhật: ' + baoCao.capNhatLuc;
+                document.getElementById('tietHienTai').textContent = baoCao.tietHienTai;
+                document.getElementById('metricLopHoatDong').textContent = baoCao.thongKe.lopHoatDong;
+                document.getElementById('metricTongLop').textContent = baoCao.thongKe.tongLop;
+                document.getElementById('metricTiLePhong').textContent = baoCao.thongKe.tiLeSuDungPhong + '%';
+                document.getElementById('metricPhongDangDung').textContent = baoCao.thongKe.phongDangDung;
+                document.getElementById('metricPhongHoatDong').textContent = baoCao.thongKe.phongHoatDong;
+                document.getElementById('metricLichHomNay').textContent = baoCao.thongKe.lichHomNay;
+                document.getElementById('metricChoDuyet').textContent = baoCao.thongKe.lichChoDuyet;
+                document.getElementById('metricSinhVien').textContent = baoCao.thongKe.tongSinhVien;
+                document.getElementById('metricGiangVien').textContent = baoCao.thongKe.tongGiangVien;
+            }
+
+            function drawCharts() {
+                var barData = baoCao.bieuDo.lichTheoNgay || [];
+                var pieData = baoCao.bieuDo.phong || [];
+
+                if (chartLichTheoNgay) chartLichTheoNgay.destroy();
+                chartLichTheoNgay = new Chart(document.getElementById('chartLichTheoNgay'), {
+                    type: 'bar',
+                    data: {
+                        labels: barData.map(function (item) { return item.label; }),
+                        datasets: [{
+                            label: 'Số lịch sử dụng phòng',
+                            data: barData.map(function (item) { return item.soLich; }),
+                            backgroundColor: '#2563eb',
+                            borderRadius: 6,
+                            maxBarThickness: 52
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'bottom' },
+                            tooltip: { callbacks: { label: function (ctx) { return ctx.parsed.y + ' lịch'; } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+
+                if (chartTinhTrangPhong) chartTinhTrangPhong.destroy();
+                chartTinhTrangPhong = new Chart(document.getElementById('chartTinhTrangPhong'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: pieData.map(function (item) { return item.label; }),
+                        datasets: [{
+                            data: pieData.map(function (item) { return item.value; }),
+                            backgroundColor: ['#16a34a', '#0ea5e9', '#f59e0b'],
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '58%',
+                        plugins: {
+                            legend: { display: true, position: 'bottom' },
+                            tooltip: { callbacks: { label: function (ctx) { return ctx.label + ': ' + ctx.parsed + ' phòng'; } } }
+                        }
+                    }
+                });
+            }
+
+            function renderLichTable() {
+                var keyword = normalizeText(document.getElementById('searchLich').value);
+                var trangThai = document.getElementById('filterTrangThaiLich').value;
+                filteredLich = (baoCao.lichSuSuDungPhong || []).filter(function (item) {
+                    var haystack = normalizeText([item.ngayHoc, item.phong, item.lop, item.monHoc, item.giangVien, item.tiet, item.trangThai].join(' '));
+                    return (!keyword || haystack.includes(keyword)) && (!trangThai || item.trangThai === trangThai);
+                }).sort(function (a, b) {
+                    return compareRows(a, b, sortState.lich.key, sortState.lich.dir);
+                });
+
+                document.getElementById('tbodyLich').innerHTML = filteredLich.map(function (item) {
+                    return '<tr>' +
+                        '<td class="fw-semibold">' + escapeHtml(item.ngayHoc) + '<div class="small text-muted">' + escapeHtml(item.thu) + '</div></td>' +
+                        '<td>' + escapeHtml(item.phong) + '</td>' +
+                        '<td>' + escapeHtml(item.lop) + '</td>' +
+                        '<td>' + escapeHtml(item.monHoc) + '</td>' +
+                        '<td>' + escapeHtml(item.giangVien) + '</td>' +
+                        '<td>Tiết ' + escapeHtml(item.tiet) + '</td>' +
+                        '<td><span class="status-pill ' + statusClass(item.trangThai) + '">' + escapeHtml(item.trangThai) + '</span></td>' +
+                        '</tr>';
+                }).join('') || '<tr><td colspan="7" class="text-center text-muted py-4">Không có dữ liệu phù hợp</td></tr>';
+            }
+
+            function renderHocVienTable() {
+                var keyword = normalizeText(document.getElementById('searchHocVien').value);
+                var lop = document.getElementById('filterLopHocVien').value;
+                filteredHocVien = (baoCao.hocVienTheoLop || []).filter(function (item) {
+                    var haystack = normalizeText([item.mssv, item.hoVaTen, item.email, item.tenLop, item.soDienThoai, item.trangThai].join(' '));
+                    return (!keyword || haystack.includes(keyword)) && (!lop || item.tenLop === lop);
+                }).sort(function (a, b) {
+                    return compareRows(a, b, sortState.hocvien.key, sortState.hocvien.dir);
+                });
+
+                document.getElementById('tbodyHocVien').innerHTML = filteredHocVien.map(function (item) {
+                    return '<tr>' +
+                        '<td class="fw-semibold text-primary">' + escapeHtml(item.mssv) + '</td>' +
+                        '<td>' + escapeHtml(item.hoVaTen) + '</td>' +
+                        '<td><span class="fw-semibold">' + escapeHtml(item.tenLop) + '</span><div class="small text-muted">' + escapeHtml(item.maLop) + '</div></td>' +
+                        '<td>' + escapeHtml(item.email) + '</td>' +
+                        '<td>' + escapeHtml(item.soDienThoai || '-') + '</td>' +
+                        '<td><span class="status-pill ' + statusClass(item.trangThai) + '">' + escapeHtml(item.trangThai) + '</span></td>' +
+                        '</tr>';
+                }).join('') || '<tr><td colspan="6" class="text-center text-muted py-4">Không có dữ liệu phù hợp</td></tr>';
+            }
+
+            function updateLopFilter() {
+                var select = document.getElementById('filterLopHocVien');
+                var current = select.value;
+                var options = (baoCao.danhSachLop || []).map(function (lop) {
+                    return '<option value="' + escapeHtml(lop) + '">' + escapeHtml(lop) + '</option>';
+                }).join('');
+                select.innerHTML = '<option value="">Tất cả lớp</option>' + options;
+                select.value = current;
+            }
+
+            function toCsv(rows, columns) {
+                var header = columns.map(function (col) { return col.label; }).join(',');
+                var body = rows.map(function (row) {
+                    return columns.map(function (col) {
+                        return '"' + String(row[col.key] || '').replace(/"/g, '""') + '"';
+                    }).join(',');
+                }).join('\n');
+                return '\ufeff' + header + '\n' + body;
+            }
+
+            function downloadCsv(fileName, content) {
+                var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.click();
+                URL.revokeObjectURL(url);
+            }
+
+            function refreshTables() {
+                updateLopFilter();
+                renderLichTable();
+                renderHocVienTable();
+            }
+
+            function applyData(nextData) {
+                baoCao = nextData;
+                updateMetrics();
+                drawCharts();
+                refreshTables();
+            }
+
+            async function fetchBaoCao() {
+                var button = document.getElementById('btnLamMoi');
+                button.disabled = true;
+                try {
+                    var res = await fetch('/admin/bao-cao-he-thong/data', { headers: { 'Accept': 'application/json' } });
+                    var payload = await res.json();
+                    if (payload.ok && payload.baoCao) {
+                        applyData(payload.baoCao);
+                    }
+                } catch (err) {
+                    console.error('Không cập nhật được báo cáo:', err);
+                } finally {
+                    button.disabled = false;
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                updateMetrics();
+                drawCharts();
+                refreshTables();
+
+                document.getElementById('searchLich').addEventListener('input', renderLichTable);
+                document.getElementById('filterTrangThaiLich').addEventListener('change', renderLichTable);
+                document.getElementById('searchHocVien').addEventListener('input', renderHocVienTable);
+                document.getElementById('filterLopHocVien').addEventListener('change', renderHocVienTable);
+                document.getElementById('btnLamMoi').addEventListener('click', fetchBaoCao);
+
+                document.querySelectorAll('th[data-sort]').forEach(function (th) {
+                    th.addEventListener('click', function () {
+                        var table = th.getAttribute('data-table');
+                        var key = th.getAttribute('data-sort');
+                        sortState[table].dir = sortState[table].key === key && sortState[table].dir === 'asc' ? 'desc' : 'asc';
+                        sortState[table].key = key;
+                        if (table === 'lich') renderLichTable();
+                        if (table === 'hocvien') renderHocVienTable();
+                    });
+                });
+
+                document.getElementById('exportLich').addEventListener('click', function () {
+                    downloadCsv('lich-su-su-dung-phong.csv', toCsv(filteredLich, [
+                        { key: 'ngayHoc', label: 'Ngày' },
+                        { key: 'thu', label: 'Thứ' },
+                        { key: 'phong', label: 'Phòng' },
+                        { key: 'lop', label: 'Lớp' },
+                        { key: 'monHoc', label: 'Môn học' },
+                        { key: 'giangVien', label: 'Giảng viên' },
+                        { key: 'tiet', label: 'Tiết' },
+                        { key: 'trangThai', label: 'Trạng thái' }
+                    ]));
+                });
+
+                document.getElementById('exportHocVien').addEventListener('click', function () {
+                    downloadCsv('hoc-vien-theo-lop.csv', toCsv(filteredHocVien, [
+                        { key: 'mssv', label: 'MSSV' },
+                        { key: 'hoVaTen', label: 'Họ tên' },
+                        { key: 'maLop', label: 'Mã lớp' },
+                        { key: 'tenLop', label: 'Lớp' },
+                        { key: 'email', label: 'Email' },
+                        { key: 'soDienThoai', label: 'Điện thoại' },
+                        { key: 'trangThai', label: 'Trạng thái' }
+                    ]));
+                });
+
+                setInterval(fetchBaoCao, 45000);
+            });
+        </script>
+</body>
+
+</html>

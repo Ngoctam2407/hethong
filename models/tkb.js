@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Schema thời khóa biểu: lưu lịch đăng ký, trạng thái duyệt và thông tin yêu cầu hủy.
 const tkbSchema = new mongoose.Schema({
     MonHoc: { type: mongoose.Schema.Types.ObjectId, ref: 'MonHoc', required: true },
     GiangVien: { type: mongoose.Schema.Types.ObjectId, ref: 'TaiKhoan', required: true },
@@ -20,6 +21,7 @@ const tkbSchema = new mongoose.Schema({
     NgayDuyetHuy: { type: Date, default: null }
 });
 
+// Chặn giảng viên bị xếp 2 lịch đã duyệt trùng thời gian.
 tkbSchema.index({
     GiangVien: 1,
     Thu: 1,
@@ -32,6 +34,7 @@ tkbSchema.index({
     partialFilterExpression: { TrangThai: 'da-duyet' }
 });
 
+// Chặn một phòng có 2 lịch đã duyệt trùng cùng tuần/thứ/tiết.
 tkbSchema.index({
     PhongHoc: 1,
     Thu: 1,
@@ -44,6 +47,7 @@ tkbSchema.index({
     partialFilterExpression: { TrangThai: 'da-duyet' }
 });
 
+// Chặn trùng phòng theo ngày học thật, dùng cho các lịch đã có NgayHoc.
 tkbSchema.index({
     NgayHoc: 1,
     PhongHoc: 1,
@@ -55,6 +59,7 @@ tkbSchema.index({
     partialFilterExpression: { TrangThai: 'da-duyet', NgayHoc: { $type: 'date' } }
 });
 
+// Chặn một lớp học 2 môn đã duyệt cùng lúc.
 tkbSchema.index({
     LopHoc: 1,
     Thu: 1,

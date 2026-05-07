@@ -6,6 +6,8 @@ var SinhVien = require('../models/sinhvien');
 var GiangVien = require('../models/giangvien');
 var { normalizeSubscription, sendNotification } = require('../utils/push');
 
+// Tạo dữ liệu lưu trong session sau đăng nhập.
+// Sinh viên cần thêm lớp học, giảng viên cần ID tài khoản để lọc lịch dạy.
 async function taoDuLieuSession(taikhoan) {
     let userSession = taikhoan.toObject ? taikhoan.toObject() : { ...taikhoan };
 
@@ -24,14 +26,14 @@ async function taoDuLieuSession(taikhoan) {
 
 
 
-// GET: Hiện trang đăng nhập
+// GET: Hiện trang đăng nhập.
 router.get('/dangnhap', async (req, res) => {
     res.render('dangnhap', {
         title: 'Đăng nhập'
     });
 });
 
-// POST: Xử lý Đăng nhập
+// POST: Xử lý đăng nhập, kiểm tra mật khẩu và phân luồng theo quyền hạn.
 router.post('/dangnhap', async (req, res) => {
     try {
         // Kiểm tra xem đã đăng nhập chưa
@@ -56,7 +58,7 @@ router.post('/dangnhap', async (req, res) => {
                     // --- PHÂN LUỒNG TÁC NHÂN CHO ADMIN TÂM ---
                     if (taikhoan.QuyenHan === 'admin') {
                         req.session.success = 'Chào mừng Admin ! ';
-                        return res.redirect('/');
+                        return res.redirect('/admin');
 
                     } else if (taikhoan.QuyenHan === 'giangvien') {
                         req.session.success = 'Chào Giảng viên! Chúc thầy/cô có buổi dạy tốt.';
@@ -73,7 +75,7 @@ router.post('/dangnhap', async (req, res) => {
                 return res.redirect('/dangnhap');
             }
         } else {
-            req.session.error = 'Tên đăng nhập này không tồn tại trong máy .';
+            req.session.error = 'Tên đăng nhập này không tồn tại trong hệ thống.';
             return res.redirect('/dangnhap');
         }
     } catch (err) {
@@ -89,6 +91,7 @@ router.get('/dangxuat', (req, res) => {
     });
 });
 
+// GET: Hồ sơ cá nhân cho sinh viên/giảng viên đang đăng nhập.
 router.get('/hoso', requireLogin, async (req, res) => {
     try {
         const tk = await TaiKhoan.findById(req.session.user._id);
@@ -121,6 +124,7 @@ router.get('/hoso', requireLogin, async (req, res) => {
     }
 });
 
+// POST: Cập nhật thông tin tài khoản chính và bảng phụ theo từng vai trò.
 router.post('/hoso', requireLogin, async (req, res) => {
     try {
         const tk = await TaiKhoan.findById(req.session.user._id);
@@ -169,6 +173,7 @@ router.post('/hoso', requireLogin, async (req, res) => {
     }
 });
 
+// API: Trả public key để trình duyệt đăng ký nhận thông báo đẩy.
 router.get('/push/config', requireLogin, async function (req, res) {
     res.json({
         ok: true,
@@ -176,16 +181,17 @@ router.get('/push/config', requireLogin, async function (req, res) {
     });
 });
 
+// API: Lưu endpoint thông báo đẩy của trình duyệt vào tài khoản người dùng.
 router.post('/push/subscribe', requireLogin, async function (req, res) {
     try {
         const subscription = normalizeSubscription(req.body.subscription);
         if (!subscription) {
-            return res.status(400).json({ ok: false, message: 'Subscription khong hop le.' });
+            return res.status(400).json({ ok: false, message: 'Đăng ký thông báo không hợp lệ.' });
         }
 
         const taiKhoan = await TaiKhoan.findById(req.session.user._id);
         if (!taiKhoan) {
-            return res.status(404).json({ ok: false, message: 'Khong tim thay tai khoan.' });
+            return res.status(404).json({ ok: false, message: 'Không tìm thấy tài khoản.' });
         }
 
         const dsCu = Array.isArray(taiKhoan.ThongBaoDay) ? taiKhoan.ThongBaoDay : [];
@@ -202,16 +208,17 @@ router.post('/push/subscribe', requireLogin, async function (req, res) {
         res.json({ ok: true, subscribed: true });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ ok: false, message: 'Khong luu duoc dang ky thong bao.' });
+        res.status(500).json({ ok: false, message: 'Không lưu được đăng ký thông báo.' });
     }
 });
 
+// API: Gỡ endpoint khi người dùng tắt thông báo đẩy.
 router.post('/push/unsubscribe', requireLogin, async function (req, res) {
     try {
         const endpoint = String(req.body.endpoint || '').trim();
         const taiKhoan = await TaiKhoan.findById(req.session.user._id);
         if (!taiKhoan) {
-            return res.status(404).json({ ok: false, message: 'Khong tim thay tai khoan.' });
+            return res.status(404).json({ ok: false, message: 'Không tìm thấy tài khoản.' });
         }
 
         taiKhoan.ThongBaoDay = (taiKhoan.ThongBaoDay || []).filter(function (item) {
@@ -222,25 +229,26 @@ router.post('/push/unsubscribe', requireLogin, async function (req, res) {
         res.json({ ok: true, subscribed: false });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ ok: false, message: 'Khong huy duoc dang ky thong bao.' });
+        res.status(500).json({ ok: false, message: 'Không hủy được đăng ký thông báo.' });
     }
 });
 
+// API: Gửi thử thông báo để kiểm tra trình duyệt đã đăng ký thành công chưa.
 router.post('/push/test', requireLogin, async function (req, res) {
     try {
         const taiKhoan = await TaiKhoan.findById(req.session.user._id);
         if (!taiKhoan) {
-            return res.status(404).json({ ok: false, message: 'Khong tim thay tai khoan.' });
+            return res.status(404).json({ ok: false, message: 'Không tìm thấy tài khoản.' });
         }
 
         const subscriptions = Array.isArray(taiKhoan.ThongBaoDay) ? taiKhoan.ThongBaoDay : [];
         if (!subscriptions.length) {
-            return res.status(400).json({ ok: false, message: 'Ban chua bat thong bao day tren trinh duyet nay.' });
+            return res.status(400).json({ ok: false, message: 'Bạn chưa bật thông báo đẩy trên trình duyệt này.' });
         }
 
         const payload = {
-            title: 'Thong bao thu nghiem',
-            body: 'He thong KT da gui thong bao day thanh cong.',
+            title: 'Thông báo thử nghiệm',
+            body: 'Hệ thống KT đã gửi thông báo đẩy thành công.',
             url: '/',
             icon: '/images/logo-kt.png',
             badge: '/images/logo-kt.png'
@@ -266,13 +274,13 @@ router.post('/push/test', requireLogin, async function (req, res) {
         }
 
         if (!hopLe.length) {
-            return res.status(400).json({ ok: false, message: 'Dang ky thong bao da het han. Ban hay bat lai thong bao.' });
+            return res.status(400).json({ ok: false, message: 'Đăng ký thông báo đã hết hạn. Bạn hãy bật lại thông báo.' });
         }
 
-        res.json({ ok: true, message: 'Da gui thong bao thu nghiem.' });
+        res.json({ ok: true, message: 'Đã gửi thông báo thử nghiệm.' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ ok: false, message: 'Khong gui duoc thong bao thu nghiem.' });
+        res.status(500).json({ ok: false, message: 'Không gửi được thông báo thử nghiệm.' });
     }
 });
 
@@ -305,5 +313,5 @@ function requireLogin(req, res, next) {
 }
 
 module.exports = router;
-module.exports.requireAdmin = requireAdmin; // Xuất thêm hàm middleware để kiểm tra quyền admin
+module.exports.requireAdmin = requireAdmin; // Middleware dùng cho các router chỉ admin được truy cập.
 module.exports.requireLogin = requireLogin;

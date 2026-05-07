@@ -15,10 +15,12 @@ function xuLyUploadExcel(req, res, next) {
     });
 }
 
+// Lấy giá trị từ một dòng Excel theo tên cột đã quy ước trong file mẫu.
 function layGiaTriDong(dong, truong) {
     return dong[truong] || dong[truong.toLowerCase()] || '';
 }
 
+// Chuẩn hóa danh sách môn học từ form: có thể là 1 ID hoặc nhiều ID.
 function chuanHoaDanhSachMonHoc(duLieu) {
     if (!duLieu) return [];
     if (Array.isArray(duLieu)) return duLieu.filter(Boolean);
@@ -27,6 +29,7 @@ function chuanHoaDanhSachMonHoc(duLieu) {
 
 router.use(requireAdmin);
 
+// GET: Danh sách lớp học và các môn đã gán cho từng lớp.
 router.get('/', async function (req, res) {
     try {
         var dsLop = await LopHoc.find()
@@ -43,16 +46,17 @@ router.get('/', async function (req, res) {
     }
 });
 
+// POST: Import lớp học từ Excel, tự liên kết môn học theo mã môn hoặc tên môn.
 router.post('/import', xuLyUploadExcel, async function (req, res) {
     try {
         if (!req.file) {
-            req.session.error = 'Ban can chon file Excel truoc khi import.';
+            req.session.error = 'Bạn cần chọn file Excel trước khi import.';
             return res.redirect('/lophoc');
         }
 
         const rows = readRowsFromExcel(req.file.buffer);
         if (!rows.length) {
-            req.session.error = 'File Excel khong co dong du lieu nao.';
+            req.session.error = 'File Excel không có dòng dữ liệu nào.';
             return res.redirect('/lophoc');
         }
 
@@ -102,15 +106,16 @@ router.post('/import', xuLyUploadExcel, async function (req, res) {
             }
         }
 
-        req.session.success = 'Import lop hoc thanh cong: ' + taoMoi + ' ban ghi moi, ' + capNhat + ' ban ghi cap nhat.';
+        req.session.success = 'Import lớp học thành công: ' + taoMoi + ' bản ghi mới, ' + capNhat + ' bản ghi cập nhật.';
         res.redirect('/lophoc');
     } catch (err) {
         console.error(err);
-        req.session.error = 'Loi import lop hoc: ' + err.message;
+        req.session.error = 'Lỗi import lớp học: ' + err.message;
         res.redirect('/lophoc');
     }
 });
 
+// GET: Xuất danh sách lớp học ra file Excel.
 router.get('/export', async function (req, res) {
     try {
         const dsLop = await LopHoc.find()
@@ -136,11 +141,12 @@ router.get('/export', async function (req, res) {
         sendWorkbook(res, workbook, 'lophoc.xlsx');
     } catch (err) {
         console.error(err);
-        req.session.error = 'Khong the export lop hoc: ' + err.message;
+        req.session.error = 'Không thể export lớp học: ' + err.message;
         res.redirect('/lophoc');
     }
 });
 
+// GET: Form tạo lớp học mới.
 router.get('/them', async function (req, res) {
     try {
         const dsMonHoc = await MonHoc.find().sort({ TenMonHoc: 1 });
@@ -149,14 +155,15 @@ router.get('/them', async function (req, res) {
             dsMonHoc: dsMonHoc
         });
     } catch (err) {
-        res.status(500).send('Loi tai mon hoc: ' + err.message);
+        res.status(500).send('Lỗi tải môn học: ' + err.message);
     }
 });
 
+// POST: Lưu lớp học mới và danh sách môn học được chọn.
 router.post('/them', async function (req, res) {
     try {
         if (!req.body || !req.body.MaLop || !req.body.TenLop) {
-            return res.send('Ban can nhap MaLop va TenLop.');
+            return res.send('Bạn cần nhập MaLop và TenLop.');
         }
 
         var data = {
@@ -173,10 +180,11 @@ router.post('/them', async function (req, res) {
         await LopHoc.create(data);
         res.redirect('/lophoc');
     } catch (err) {
-        res.status(500).send('Loi khi tao lop moi: ' + err.message);
+        res.status(500).send('Lỗi khi tạo lớp mới: ' + err.message);
     }
 });
 
+// GET: Form cập nhật lớp học.
 router.get('/sua/:id', async function (req, res) {
     try {
         var data = await LopHoc.findById(req.params.id);
@@ -193,6 +201,7 @@ router.get('/sua/:id', async function (req, res) {
     }
 });
 
+// POST: Cập nhật thông tin lớp học và danh sách môn học ràng buộc.
 router.post('/sua/:id', async function (req, res) {
     try {
         const { MaLop, TenLop, NienKhoa, NgayBatDauNamHoc, NgayKetThucNamHoc, SiSo, TrangThai } = req.body;
@@ -215,7 +224,7 @@ router.post('/sua/:id', async function (req, res) {
     }
 });
 
-// API: Lấy chi tiết lớp học kèm danh sách môn học đã ràng buộc
+// API: Lấy chi tiết lớp học kèm danh sách môn học đã ràng buộc.
 router.get('/api/:id', async (req, res) => {
     try {
         const lop = await LopHoc.findById(req.params.id).populate('DanhSachMonHoc');
@@ -227,6 +236,7 @@ router.get('/api/:id', async (req, res) => {
     }
 });
 
+// GET: Xóa lớp học.
 router.get('/xoa/:id', async function (req, res) {
     try {
         await LopHoc.findByIdAndDelete(req.params.id);
@@ -236,6 +246,7 @@ router.get('/xoa/:id', async function (req, res) {
     }
 });
 
+// GET: Đảo trạng thái hoạt động/tạm ngưng của lớp học.
 router.get('/trangthai/:id', async function (req, res) {
     try {
         var lop = await LopHoc.findById(req.params.id);

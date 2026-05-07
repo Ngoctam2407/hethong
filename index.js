@@ -1,4 +1,4 @@
-// Dòng này của file để "giới thiệu" thư viện http
+// Khởi tạo thư viện, router và tiện ích dùng chung cho toàn bộ hệ thống.
 var express = require('express');
 var app = express();
 var mongoose = require('mongoose');
@@ -15,9 +15,10 @@ var { getPublicKey } = require('./utils/push');
 
 
 
+// Cấu hình kết nối MongoDB: mọi model trong thư mục models sẽ dùng chung kết nối này.
 var uri = 'mongodb://user:user2407@ac-r9v15gv-shard-00-01.b99rhcp.mongodb.net:27017/hethong?ssl=true&authSource=admin';
-mongoose.connect(uri).then(() => console.log('Đã kết nối thành công MongoBD rồi nha'))
-    .catch(err => console.log('Hệ thống lỗi kết nối , không kết nối được', err));
+mongoose.connect(uri).then(() => console.log('Đã kết nối thành công MongoDB rồi nha'))
+    .catch(err => console.log('Hệ thống lỗi kết nối, không kết nối được', err));
 
 const TaiKhoan = require('./models/taikhoan');
 const bcryptjs = require('bcryptjs');
@@ -43,8 +44,9 @@ async function taoAdminDauTien() {
         console.log('Lỗi tạo Admin rồi Tâm ơi: ', err);
     }
 }
-taoAdminDauTien(); // Chạy hàm này khi server khởi động
+taoAdminDauTien(); // Tạo tài khoản admin mặc định nếu hệ thống chưa có admin.
 
+// Cấu hình giao diện, public asset và middleware đọc dữ liệu gửi từ form/API.
 app.set('views', './views');
 app.set('view engine', 'ejs');
 app.locals.webPushPublicKey = getPublicKey();
@@ -62,21 +64,21 @@ app.use(session({
     }
 }));
 app.use((req, res, next) => {
-    // Chuyển biến session thành biến cục bộ
+    // Đưa thông tin đăng nhập và thông báo nhanh vào res.locals để mọi view EJS đều dùng được.
     res.locals.session = req.session;
     res.locals.isLoggedIn = (req.session && req.session.user) ? true : false;
     res.locals.user = req.session.user || null;
     res.locals.webPushPublicKey = getPublicKey();
 
-    // Lấy thông báo (lỗi, thành công) của trang trước đó (nếu có)
+    // Lấy thông báo (lỗi, thành công) của trang trước đó nếu có.
     var err = req.session.error;
     var msg = req.session.success;
 
-    // Xóa session sau khi đã truyền qua biến trung gian
+    // Xóa thông báo tạm để tránh hiển thị lặp lại khi người dùng tải lại trang.
     delete req.session.error;
     delete req.session.success;
 
-    // Gán thông báo (lỗi, thành công) vào biến cục bộ
+    // Gán HTML thông báo vào biến cục bộ cho layout/header hiển thị.
     res.locals.message = '';
     if (err) res.locals.message = '<span class="text-danger">' + err + '</span>';
     if (msg) res.locals.message = '<span class="text-success">' + msg + '</span>';
@@ -85,7 +87,7 @@ app.use((req, res, next) => {
 });
 
 
-// 1. Gán đúng "tiền tố" cho từng nhóm chức năng
+// Gắn tiền tố URL cho từng nhóm chức năng chính của hệ thống.
 app.use('/', indexRouter);
 app.use('/taikhoan', taikhoanRouter);
 app.use('/auth', authRouter);

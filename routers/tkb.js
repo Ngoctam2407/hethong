@@ -12,10 +12,10 @@ var { sendNotification } = require('../utils/push');
 var { requireAdmin } = require('./auth');
 var ThongBao = require('../models/thongbao');
 var { buildWorkbook, sendWorkbook } = require('../utils/excel');
-var { tinhNgayHoc, getFormattedNgayHoc, thuToOffset } = require('../utils/date_helpers'); // Import tá»« tiá»‡n Ã­ch má»›i
+var { tinhNgayHoc, getFormattedNgayHoc, thuToOffset } = require('../utils/date_helpers'); // Import từ tiện ích mới
 
 async function calculateWeeksData(selectedTuan) {
-    // TÃ¬m lá»›p há»c cÃ³ ngÃ y báº¯t Ä‘áº§u sá»›m nháº¥t, Ä‘áº£m báº£o bá» qua dá»¯ liá»‡u trá»‘ng
+    // Tìm lớp học có ngày bắt đầu sớm nhất, đảm bảo bỏ qua dữ liệu trống
     const firstLop = await LopHoc.findOne({ NgayBatDauNamHoc: { $exists: true, $ne: null } }).sort({ NgayBatDauNamHoc: 1 });
     const lastLop = await LopHoc.findOne({ NgayKetThucNamHoc: { $exists: true, $ne: null } }).sort({ NgayKetThucNamHoc: -1 });
 
@@ -32,12 +32,12 @@ async function calculateWeeksData(selectedTuan) {
         }
     }
 
-    // Náº¿u Ä‘á»‘i tÆ°á»£ng Date khÃ´ng há»£p lá»‡ (NaN), máº·c Ä‘á»‹nh láº¥y ngÃ y hiá»‡n táº¡i
+    // Nếu đối tượng Date không hợp lệ (NaN), mặc định lấy ngày hiện tại
     if (isNaN(startPoint.getTime())) {
         startPoint = new Date();
     }
 
-    // ÄÆ°a vá» Thá»© 2 cá»§a tuáº§n khai giáº£ng
+    // Đưa về Thứ 2 của tuần khai giảng
     let day = startPoint.getDay();
     startPoint.setDate(startPoint.getDate() - (day === 0 ? 6 : day - 1));
     startPoint.setHours(0, 0, 0, 0);
@@ -46,7 +46,7 @@ async function calculateWeeksData(selectedTuan) {
     let autoWeek = 1;
     let today = new Date();
 
-    for (let i = 0; i < totalWeeks; i++) { // Sá»­ dá»¥ng sá»‘ tuáº§n thá»±c táº¿ tÃ­nh Ä‘Æ°á»£c
+    for (let i = 0; i < totalWeeks; i++) { // Sử dụng số tuần thực tế tính được
         let wStart = new Date(startPoint);
         wStart.setDate(startPoint.getDate() + i * 7);
         let wEnd = new Date(wStart);
@@ -317,11 +317,11 @@ const timeOverlap = (start, end) => ({
 });
 
 function taoNoiDungLich(lich) {
-    const tenMon = lich.MonHoc && lich.MonHoc.TenMonHoc ? lich.MonHoc.TenMonHoc : 'Mon hoc';
-    const tenLop = lich.LopHoc && lich.LopHoc.TenLop ? lich.LopHoc.TenLop : 'Lop hoc';
-    const tenPhong = lich.PhongHoc && lich.PhongHoc.TenPhong ? lich.PhongHoc.TenPhong : 'Phong hoc';
+    const tenMon = lich.MonHoc && lich.MonHoc.TenMonHoc ? lich.MonHoc.TenMonHoc : 'Môn học';
+    const tenLop = lich.LopHoc && lich.LopHoc.TenLop ? lich.LopHoc.TenLop : 'Lớp học';
+    const tenPhong = lich.PhongHoc && lich.PhongHoc.TenPhong ? lich.PhongHoc.TenPhong : 'Phòng học';
     const tiet = `${lich.TietBatDau}-${lich.TietKetThuc}`;
-    return `${tenMon} - ${tenLop} - ${lich.Thu} - tiet ${tiet} - phong ${tenPhong}`;
+    return `${tenMon} - ${tenLop} - ${lich.Thu} - tiết ${tiet} - phòng ${tenPhong}`;
 }
 
 async function guiThongBaoChoTaiKhoan(taiKhoan, payload) {
@@ -425,7 +425,7 @@ async function guiThongBaoLichHoc(loaiThongBao, lichId) {
     }
 }
 
-// GET: Hiá»‡n danh sÃ¡ch TKB
+// GET: Hiện danh sách TKB
 router.get('/', async (req, res) => {
     try {
         const user = req.session.user;
@@ -468,20 +468,20 @@ router.get('/', async (req, res) => {
             dsphong: dsphong,
             cacThu: ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'],
             cacBuoi: ['Sáng', 'Chiều', 'Tối'],
-            dsTKB: dsTKBFormatted, // Gá»­i danh sÃ¡ch Ä‘Ã£ cÃ³ ngÃ y Ä‘á»‹nh dáº¡ng
+            dsTKB: dsTKBFormatted,
             currentWeek,
             weeks,
             realCurrentWeek
         });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lá»—i há»‡ thá»‘ng rá»“i.");
+        res.status(500).send("Lỗi khi tải thời khóa biểu: " + err.message);
     }
 });
 
-// GET: Hiá»‡n trang thÃªm TKB
+// GET: Hiện trang thêm TKB
 router.post('/them', async (req, res) => {
-    // âš ï¸ FIX: Sá»­ dá»¥ng transaction Ä‘á»ƒ Ä‘áº£m báº£o atomicity
+    // Cảnh báo: dùng phiên giao dịch để đảm bảo tạo lịch tự động theo một khối thống nhất.
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -491,20 +491,20 @@ router.post('/them', async (req, res) => {
         const tietKT = parseInt(TietKetThuc, 10);
         const Tuan = parseInt(tuanInput, 10) || 1;
 
-        // Cháº¥p nháº­n cáº£ 1 ID mÃ´n hoáº·c 1 máº£ng ID mÃ´n
+        // Chấp nhận cả 1 ID môn hoặc 1 mảng ID môn
         const monHocIds = Array.isArray(monHocInput) ? monHocInput : [monHocInput];
 
         const { realCurrentWeek } = await calculateWeeksData();
         if (Tuan < realCurrentWeek) {
             await session.abortTransaction();
-            req.session.error = "KhÃ´ng thá»ƒ thÃªm lá»‹ch vÃ o cÃ¡c tuáº§n trong quÃ¡ khá»©.";
+            req.session.error = "Không thể tạo lịch ở các tuần trong quá khứ.";
             return res.redirect('back');
         }
 
-        // âš ï¸ FIX: Validate dá»¯ liá»‡u input
+        // Kiểm tra dữ liệu đầu vào trước khi phân bổ lịch.
         if (tietKT < tietBD) {
             await session.abortTransaction();
-            req.session.error = "Tiáº¿t káº¿t thÃºc pháº£i >= tiáº¿t báº¯t Ä‘áº§u";
+            req.session.error = "Tiết kết thúc phải >= tiết bắt đầu";
             return res.redirect('back');
         }
 
@@ -515,7 +515,7 @@ router.post('/them', async (req, res) => {
 
         if (phong && lop && phong.SucChua < lop.SiSo) {
             await session.abortTransaction();
-            req.session.error = `PhÃ²ng ${phong.TenPhong} chá»‰ chá»©a Ä‘Æ°á»£c ${phong.SucChua} báº¡n, mÃ  lá»›p nÃ y táº­n ${lop.SiSo} báº¡n láº­n TÃ¢m áº¡!`;
+            req.session.error = `Phòng ${phong.TenPhong} chỉ chứa được ${phong.SucChua} bạn, trong khi lớp này có ${lop.SiSo} bạn.`;
             return res.redirect('back');
         }
 
@@ -564,18 +564,17 @@ router.post('/them', async (req, res) => {
 });
 
 
-// GET: Hiá»‡n trang thÃªm TKB (Admin)
+// GET: Hiện trang thêm TKB (Admin)
 router.get('/them', requireAdmin, async (req, res) => {
     try {
         const [dsmon, dsgiangvien, dslop, dsphong] = await Promise.all([
             MonHoc.find(),
             TaiKhoan.find({ QuyenHan: 'giangvien' }),
-            LopHoc.find({ TrangThai: 1 }).populate('DanhSachMonHoc').lean(), // Sá»­ dá»¥ng lean() Ä‘á»ƒ dá»… dÃ ng xá»­ lÃ½ á»Ÿ JS frontend
             PhongHoc.find()
         ]);
         const { weeks, currentWeek, realCurrentWeek } = await calculateWeeksData(req.query.tuan);
         res.render('tkb_them', {
-            title: 'Táº¡o Thá»i KhÃ³a Biá»ƒu Má»›i',
+            title: 'Tạo Thời Khóa Biểu Mới',
             dsmon,
             dsgiangvien,
             dslop,
@@ -585,11 +584,11 @@ router.get('/them', requireAdmin, async (req, res) => {
             realCurrentWeek
         });
     } catch (err) {
-        res.status(500).send("Lá»—i táº£i trang thÃªm: " + err);
+        res.status(500).send("Lỗi tải trang thêm: " + err);
     }
 });
 
-// GET: Hiá»‡n trang Sá»­a TKB
+// GET: Hiện trang sửa TKB
 router.get('/sua/:id', async (req, res) => {
     try {
         const item = await TKB.findById(req.params.id);
@@ -600,7 +599,7 @@ router.get('/sua/:id', async (req, res) => {
         const { weeks } = await calculateWeeksData(item.Tuan);
 
         res.render('tkb_sua', {
-            title: 'Chá»‰nh Sá»­a Lá»‹ch Há»c',
+            title: 'Chỉnh Sửa Lịch Học',
             tkb: item,
             dsPhong: dsPhong,
             dsGiangVien: dsGiangVien,
@@ -609,13 +608,13 @@ router.get('/sua/:id', async (req, res) => {
             weeks
         });
     } catch (err) {
-        res.send("Lá»—i khÃ´ng tÃ¬m tháº¥y lá»‹ch Ä‘á»ƒ sá»­a TÃ¢m Æ¡i: " + err);
+        res.send("Lỗi không tìm thấy lịch để sửa : " + err);
     }
 });
 
-// POST: Cáº­p nháº­t TKB sau khi sá»­a
+// POST: Cập nhật TKB sau khi sửa
 router.post('/sua/:id', async (req, res) => {
-    // âš ï¸ FIX: Sá»­ dá»¥ng transaction Ä‘á»ƒ Ä‘áº£m báº£o consistency
+    // Dùng phiên giao dịch để giữ dữ liệu lịch học nhất quán khi cập nhật.
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -627,27 +626,27 @@ router.post('/sua/:id', async (req, res) => {
         const { realCurrentWeek } = await calculateWeeksData();
         if (parseInt(Tuan) < realCurrentWeek) {
             await session.abortTransaction();
-            req.session.error = "KhÃ´ng thá»ƒ chá»‰nh sá»­a lá»‹ch á»Ÿ cÃ¡c tuáº§n trong quÃ¡ khá»©.";
+            req.session.error = "Không thể chỉnh sửa lịch ở các tuần trong quá khứ.";
             return res.redirect('back');
         }
 
-        // âš ï¸ FIX: Validate input
+        // Kiểm tra dữ liệu đầu vào.
         if (tietKT < tietBD) {
             await session.abortTransaction();
-            req.session.error = "Tiáº¿t káº¿t thÃºc pháº£i >= tiáº¿t báº¯t Ä‘áº§u";
+            req.session.error = "Tiết kết thúc phải >= tiết bắt đầu";
             return res.redirect('back');
         }
 
         const lichCu = await TKB.findById(req.params.id).session(session);
         if (!lichCu) {
             await session.abortTransaction();
-            return res.send("KhÃ´ng tÃ¬m tháº¥y lá»‹ch nÃ y.");
+            return res.send("Không tìm thấy lịch này.");
         }
 
         const ngayHocMoi = await tinhNgayHoc(Tuan, Thu, lopHocID);
         if (laNgayDaQua(ngayHocMoi)) {
             await session.abortTransaction();
-            req.session.error = 'KhÃ´ng thá»ƒ chuyá»ƒn lá»‹ch vá» tuáº§n cÅ© hoáº·c ngÃ y Ä‘Ã£ qua.';
+            req.session.error = 'Không thể chuyển lịch về tuần cũ hoặc ngày đã qua.';
             return res.redirect('back');
         }
 
@@ -663,24 +662,28 @@ router.post('/sua/:id', async (req, res) => {
                 Thu,
                 Tuan: parseInt(Tuan, 10),
                 NgayHoc: ngayHocMoi,
+                Tuan: parseInt(Tuan, 10), // Tuan is part of the unique index
                 ...timeOverlap(tietBD, tietKT),
                 TrangThai: 'da-duyet',
                 _id: { $ne: req.params.id }
             };
 
-            // Kiá»ƒm tra xung Ä‘á»™t giáº£ng viÃªn
+            const gvConflictQuery = { ...conflictQuery };
+            delete gvConflictQuery.NgayHoc;
+
+            // Kiểm tra xung đột giảng viên
             const gvConflict = await TKB.findOne({
                 GiangVien: lichCu.GiangVien,
-                ...conflictQuery
+                ...gvConflictQuery
             }).session(session);
 
             if (gvConflict) {
                 await session.abortTransaction();
-                req.session.error = "Giáº£ng viÃªn nÃ y Ä‘Ã£ cÃ³ lá»‹ch khÃ¡c vÃ o khung giá» má»›i nÃ y";
+                req.session.error = "Giảng viên này đã có lịch khác vào khung giờ mới này";
                 return res.redirect('back');
             }
 
-            // Kiá»ƒm tra xung Ä‘á»™t phÃ²ng (náº¿u Ä‘á»•i phÃ²ng)
+            // Kiểm tra xung đột phòng (nếu đổi phòng)
             if (phongDaThayDoi) {
                 const phongConflict = await TKB.findOne({
                     PhongHoc: phongMoiID,
@@ -689,12 +692,12 @@ router.post('/sua/:id', async (req, res) => {
 
                 if (phongConflict) {
                     await session.abortTransaction();
-                    req.session.error = "PhÃ²ng má»›i nÃ y Ä‘Ã£ báº­n vÃ o khung giá» má»›i";
+                    req.session.error = "Phòng mới này đã bị chiếm dụng trong khung giờ mới";
                     return res.redirect('back');
                 }
             }
 
-            // Kiá»ƒm tra xung Ä‘á»™t lá»›p
+            // Kiểm tra xung đột lớp
             const lopConflict = await TKB.findOne({
                 LopHoc: lopHocID,
                 ...conflictQuery
@@ -702,12 +705,12 @@ router.post('/sua/:id', async (req, res) => {
 
             if (lopConflict) {
                 await session.abortTransaction();
-                req.session.error = "Lá»›p nÃ y Ä‘Ã£ cÃ³ mÃ´n khÃ¡c vÃ o khung giá» má»›i";
+                req.session.error = "Lớp này đã có lịch khác vào khung giờ mới này";
                 return res.redirect('back');
             }
         }
 
-        // âš ï¸ FIX: Náº¿u Ä‘á»•i phÃ²ng, kiá»ƒm tra sá»©c chá»©a
+        // Nếu đổi phòng, kiểm tra sức chứa của phòng mới.
         if (phongDaThayDoi) {
             await kiemTraPhongDangHoatDong(phongMoiID, session);
             const phong = await PhongHoc.findById(phongMoiID).session(session);
@@ -715,39 +718,39 @@ router.post('/sua/:id', async (req, res) => {
 
             if (phong && lop && phong.SucChua < lop.SiSo) {
                 await session.abortTransaction();
-                req.session.error = `PhÃ²ng ${phong.TenPhong} chá»‰ chá»©a ${phong.SucChua}, lá»›p cÃ³ ${lop.SiSo} sinh viÃªn!`;
+                req.session.error = `Phòng ${phong.TenPhong} chỉ chứa ${phong.SucChua}, lớp có ${lop.SiSo} sinh viên!`;
                 return res.redirect('back');
             }
         }
 
-        // âš ï¸ FIX: Cáº­p nháº­t LÆ¯U Lá»šP CA Há»ŒC TRONG TRANSACTION
-        const caHocTuDong = tietBD <= 5 ? 'SÃ¡ng' : (tietBD <= 10 ? 'Chiá»u' : 'Tá»‘i');
+        // Cập nhật và lưu ca học trong cùng phiên giao dịch.
+        const caHocTuDong = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
         await TKB.findByIdAndUpdate(
             req.params.id,
             { ...req.body, NgayHoc: ngayHocMoi, CaHoc: caHocTuDong },
             { session }
         );
 
-        // âš ï¸ FIX: Náº¿u Ä‘á»•i phÃ²ng, cáº­p nháº­t tráº¡ng thÃ¡i cáº£ phÃ²ng cÅ© vÃ  phÃ²ng má»›i
+        // Nếu đổi phòng, cập nhật trạng thái cho cả phòng cũ và phòng mới.
         await session.commitTransaction();
 
         if (lichCu.TrangThai === 'da-duyet') {
             await guiThongBaoLichHoc('cap-nhat', req.params.id);
         }
 
-        req.session.success = "Cáº­p nháº­t lá»‹ch há»c thÃ nh cÃ´ng.";
+        req.session.success = "Cập nhật lịch học thành công.";
         res.redirect('/tkb');
     } catch (err) {
         await session.abortTransaction();
         console.error(err);
-        req.session.error = "Lá»—i cáº­p nháº­t: " + err.message;
+        req.session.error = "Lỗi cập nhật lịch học: " + err.code + ": " + err.message;
         res.redirect('back');
     } finally {
         await session.endSession();
     }
 });
 
-// GET: XÃ³a TKB
+// GET: Xóa TKB
 router.get('/xoa/:id', requireAdmin, async (req, res) => {
     try {
         const id = req.params.id;
@@ -755,7 +758,7 @@ router.get('/xoa/:id', requireAdmin, async (req, res) => {
 
         const { realCurrentWeek } = await calculateWeeksData();
         if (lichCu && lichCu.Tuan < realCurrentWeek) {
-            req.session.error = "Lá»‹ch trong quÃ¡ khá»© khÃ´ng Ä‘Æ°á»£c phÃ©p xÃ³a.";
+            req.session.error = "Lịch trong quá khứ không được phép xóa.";
             return res.redirect('/tkb');
         }
 
@@ -769,7 +772,7 @@ router.get('/xoa/:id', requireAdmin, async (req, res) => {
         res.redirect('/tkb');
     } catch (err) {
         console.error(err);
-        res.status(500).send("Loi xoa lich.");
+        res.status(500).send("Lỗi xóa lịch.");
     }
 });
 
@@ -779,28 +782,24 @@ router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
         if (!user) return res.redirect('/auth/dangnhap');
 
         const { weeks, currentWeek, realCurrentWeek } = await calculateWeeksData(req.query.tuan);
-        // 1. Khá»Ÿi táº¡o query máº·c Ä‘á»‹nh
+        // 1. Khởi tạo query mặc định
         let query = { TrangThai: 'da-duyet' };
         query.Tuan = currentWeek;
 
-        // 2. PHÃ‚N LUá»’NG: TÃ¢m lÆ°u Ã½ chá»— nÃ y Ä‘á»ƒ hiá»‡n Ä‘Ãºng lá»‹ch tá»«ng ngÆ°á»i nhÃ©
+
         if (user.QuyenHan === 'sinhvien') {
-            // VÃ¬ báº£ng TaiKhoan khÃ´ng cÃ³ LopHoc, mÃ¬nh cáº§n tÃ¬m á»Ÿ báº£ng SinhVien Ä‘á»ƒ láº¥y ID lá»›p
             const thongTinSV = await require('../models/sinhvien').findOne({ IDTaiKhoan: user._id });
             if (thongTinSV) query.LopHoc = thongTinSV.IDLop;
         } else if (user.QuyenHan === 'giangvien') {
-            // Giáº£ng viÃªn thÃ¬ lá»c theo ID tÃ i khoáº£n cá»§a há»
             query.GiangVien = user._id;
         }
 
-        // 3. Láº¥y dá»¯ liá»‡u vÃ  dÃ¹ng .populate Ä‘á»ƒ "Ä‘á»• Ä‘áº§y" thÃ´ng tin
         const [dsLich, dsphong] = await Promise.all([
             TKB.find(query).populate('MonHoc PhongHoc GiangVien LopHoc'),
             PhongHoc.find().sort({ TenPhong: 1 })
         ]);
 
-        // 4. Tá»‘i Æ°u Ä‘oáº¡n tÃ­nh ThuIndex (DÃ¹ng Object thay vÃ¬ if/else dÃ i dÃ²ng)
-        const thuMap = { 'Thá»© 2': 2, 'Thá»© 3': 3, 'Thá»© 4': 4, 'Thá»© 5': 5, 'Thá»© 6': 6, 'Thá»© 7': 7, 'Chá»§ Nháº­t': 8 };
+        const thuMap = { 'Thứ 2': 1, 'Thứ 3': 2, 'Thứ 4': 3, 'Thứ 5': 4, 'Thứ 6': 5, 'Thứ 7': 6, 'Chủ Nhật': 7 };
 
         const dsTKB = await Promise.all(dsLich.map(async item => {
             const ngayHocHienThi = await getFormattedNgayHoc(item);
@@ -810,7 +809,7 @@ router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
         }));
 
         res.render('tkb', {
-            title: 'Thá»i KhÃ³a Biá»ƒu Cá»§a TÃ´i',
+            title: 'Thời khóa biểu lưới',
             dsTKB: dsTKB,
             dsphong: dsphong,
             user: user,
@@ -819,33 +818,33 @@ router.get('/thoi-khoa-bieu-luoi', async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lá»—i lÆ°á»›i rá»“i TÃ¢m Æ¡i: " + err.message);
+        res.status(500).send("Lỗi tải thời khóa biểu: " + err.code + ": " + err.message);
     }
 });
 
 // Trong file routers/taikhoan.js
-// Route hiá»ƒn thá»‹ trang Ä‘Äƒng kÃ½
+// Route hiển thị trang đăng ký
 router.get('/dangky', async (req, res) => {
     try {
         const user = req.session.user;
         if (!user) return res.redirect('/auth/dangnhap');
         if (user.QuyenHan === 'sinhvien') {
-            req.session.error = 'Sinh viÃªn khÃ´ng cÃ³ quyá»n Ä‘Äƒng kÃ½ lá»‹ch há»c.';
+            req.session.error = 'Sinh viên không có quyền đăng ký lịch học.';
             return res.redirect('/tkb');
         }
 
-        // TÃ¢m lÆ°u Ã½: Trong Database em dÃ¹ng 'QuyenHan' (khÃ´ng dÃ¹ng 'role')
-        // MÃ¬nh Ä‘ang dÃ¹ng field QuyenHan trong collection TaiKhoan
+        // Lưu ý: trong cơ sở dữ liệu đang dùng field 'QuyenHan' (không dùng 'role').
+        // Mình đang dùng field QuyenHan trong collection TaiKhoan
         const dsGiangVien = await TaiKhoan.find({ QuyenHan: 'giangvien' });
         const dsMon = await MonHoc.find();
         const dsPhong = await PhongHoc.find();
 
-        // Sá»­a lá»—i á»Ÿ Ä‘Ã¢y: DÃ¹ng LopHoc (Ä‘Ã£ require á»Ÿ dÃ²ng 7) thay vÃ¬ Lop
+        // Sửa lỗi ở đây: Dùng LopHoc (đã require ở dòng 7) thay vì Lop
         const dsLop = await LopHoc.find().populate('DanhSachMonHoc');
         const { weeks, currentWeek, realCurrentWeek } = await calculateWeeksData(req.query.tuan);
 
         res.render('tkb_dangky', {
-            title: 'ÄÄƒng kÃ½ há»c pháº§n Edu KT',
+            title: 'Đăng ký học phần Edu KT',
             user,
             dsmon: dsMon,
             dsphong: dsPhong,
@@ -856,14 +855,12 @@ router.get('/dangky', async (req, res) => {
             realCurrentWeek
         });
     } catch (err) {
-        console.error("Lá»—i lá»c dá»¯ liá»‡u TÃ¢m Æ¡i:", err);
-        res.status(500).send("Lá»—i rá»“i. Kiá»ƒm tra Terminal xem lá»—i gÃ¬ nha.");
+        console.error("Lỗi lọc dữ liệu :", err);
+        res.status(500).send("Lỗi tải. Kiểm tra Terminal.");
     }
 });
 
 router.post('/dang-ky-luu', async (req, res) => {
-    // âš ï¸ FIX: Sá»­ dá»¥ng MongoDB Session Ä‘á»ƒ táº¡o transaction
-    // Äiá»u nÃ y giÃºp trÃ¡nh race condition khi nhiá»u ngÆ°á»i Ä‘Äƒng kÃ½ cÃ¹ng lÃºc
     const session = await mongoose.startSession();
     session.startTransaction();
 
@@ -875,11 +872,9 @@ router.post('/dang-ky-luu', async (req, res) => {
         }
         if (user.QuyenHan === 'sinhvien') {
             await session.abortTransaction();
-            req.session.error = 'Sinh viÃªn khÃ´ng cÃ³ quyá»n Ä‘Äƒng kÃ½ lá»‹ch há»c.';
+            req.session.error = 'Sinh viên không có quyền đăng ký lịch học.';
             return res.redirect('/tkb');
         }
-
-        // Äá»•i tÃªn biáº¿n láº¥y tá»« body Ä‘á»ƒ khÃ´ng trÃ¹ng vá»›i tÃªn Model (thÃªm chá»¯ ID vÃ o sau)
         const {
             MonHoc: monHocID,
             GiangVien: giangVienIdTuForm,
@@ -900,46 +895,52 @@ router.post('/dang-ky-luu', async (req, res) => {
         const { realCurrentWeek } = await calculateWeeksData();
         if (tuanInt < realCurrentWeek) {
             await session.abortTransaction();
-            req.session.error = 'KhÃ´ng thá»ƒ Ä‘Äƒng kÃ½ lá»‹ch cho cÃ¡c tuáº§n Ä‘Ã£ qua.';
+            req.session.error = 'Không thể đăng ký lịch trong quá khứ.';
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
         if (tietKT < tietBD) {
             await session.abortTransaction();
-            req.session.error = "Tiáº¿t káº¿t thÃºc pháº£i >= tiáº¿t báº¯t Ä‘áº§u";
+            req.session.error = "Tiết kết thúc phải >= tiết bắt đầu";
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
         const { ngayHoc, query: conflictQuery } = await taoDieuKienXungDot(Thu, tuanInt, tietBD, tietKT, lopHocID);
         if (laNgayDaQua(ngayHoc)) {
             await session.abortTransaction();
-            req.session.error = 'Chá»‰ Ä‘Æ°á»£c Ä‘Äƒng kÃ½ cho ngÃ y má»›i, khÃ´ng cho Ä‘Äƒng kÃ½ tuáº§n cÅ©.';
+            req.session.error = 'Chỉ được đăng ký cho ngày mới, không cho đăng ký tuần cũ.';
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
         await kiemTraMonHocCuaLop(lopHocID, monHocID, session);
 
-        // âš ï¸ FIX: RE-CHECK xung Ä‘á»™t BÃŠN TRONG transaction (láº§n thá»© 2)
-        // Láº§n nÃ y sáº½ lock dá»¯ liá»‡u, nÃªn nÃ³ sáº½ cháº¯c cháº¯n detect Ä‘Æ°á»£c náº¿u cÃ³ trÃ¹ng
+        // Create a specific query for GiangVien conflict that excludes NgayHoc
+        // to align with the unique index on TKB collection.
+        const gvConflictQuery = { ...conflictQuery };
+        delete gvConflictQuery.NgayHoc;
+
+        // Kiểm tra lại xung đột bên trong phiên giao dịch lần thứ hai.
+        // Lần kiểm tra này khóa dữ liệu nên phát hiện chắc chắn nếu có lịch trùng.
         const [gvConflict, roomConflict, lopConflict] = await Promise.all([
             TKB.findOne({ GiangVien: giangVienID, ...conflictQuery }).session(session),
+            TKB.findOne({ GiangVien: giangVienID, ...gvConflictQuery }).session(session),
             TKB.findOne({ PhongHoc: phongHocID, ...conflictQuery }).session(session),
             TKB.findOne({ LopHoc: lopHocID, ...conflictQuery }).session(session)
         ]);
 
         if (gvConflict) {
             await session.abortTransaction();
-            req.session.error = "Giáº£ng viÃªn Ä‘ang sáº¯p cÃ³ lá»‹ch dáº¡y giá» nÃ y";
+            req.session.error = "Giảng viên đang sắp có lịch dạy giờ này";
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
         if (roomConflict) {
             await session.abortTransaction();
-            req.session.error = "PhÃ²ng Ä‘ang dÃ¹ng giá» nÃ y";
+            req.session.error = "Phòng đang dùng giờ này";
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
         if (lopConflict) {
             await session.abortTransaction();
-            req.session.error = "Lá»›p nÃ y Ä‘Ã£ lá»›p khÃ¡c dáº¡y giá» nÃ y rá»“i , nÃªn khÃ´ng Ä‘Æ°á»£c Ä‘Äƒng kÃ½ Ä‘Ã¢u nhÃ©.";
+            req.session.error = "Lớp này đã lớp khác dạy giờ này rồi , nên không được đăng ký đâu nha.";
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
@@ -948,11 +949,11 @@ router.post('/dang-ky-luu', async (req, res) => {
 
         if (phong && lop && phong.SucChua < lop.SiSo) {
             await session.abortTransaction();
-            req.session.error = `PhÃ²ng ${phong.TenPhong} chá»‰ chá»©a ${phong.SucChua}, Lá»›p cÃ³ táº­n ${lop.SiSo} sinh viÃªn!`;
+            req.session.error = `Phòng ${phong.TenPhong} chỉ chứa ${phong.SucChua}, Lớp có tối ${lop.SiSo} sinh viên!`;
             return res.redirect(req.get('referer') || '/tkb/dangky');
         }
 
-        const caHocTuDong = tietBD <= 5 ? 'SÃ¡ng' : (tietBD <= 10 ? 'Chiá»u' : 'Tá»‘i');
+        const caHocTuDong = tietBD <= 5 ? 'Sáng' : (tietBD <= 10 ? 'Chiều' : 'Tối');
 
         const lichMoi = new TKB({
             MonHoc: monHocID,
@@ -968,10 +969,10 @@ router.post('/dang-ky-luu', async (req, res) => {
             TrangThai: 'cho-duyet'
         });
 
-        // âš ï¸ FIX: LÆ°u trong transaction (sáº½ rollback náº¿u cÃ³ lá»—i)
+        // Lưu trong phiên giao dịch để có thể hoàn tác nếu xảy ra lỗi.
         await lichMoi.save({ session });
 
-        // âš ï¸ FIX: Commit transaction sau khi táº¥t cáº£ thÃ nh cÃ´ng
+        // Xác nhận phiên giao dịch sau khi mọi thao tác thành công.
         await session.commitTransaction();
 
         const [monThongBao, gvThongBao] = await Promise.all([
@@ -987,31 +988,31 @@ router.post('/dang-ky-luu', async (req, res) => {
             '/tkb/danhsach?tuan=' + tuanInt
         );
 
-        req.session.success = "ÄÃ£ lÆ°u lá»‹ch rá»“i, chá» duyá»‡t nhÃ©!";
+        req.session.success = "Đã lưu lịch mới, chờ duyệt nhé!";
         res.redirect('/tkb');
     } catch (err) {
-        // âš ï¸ FIX: Rollback náº¿u cÃ³ báº¥t ká»³ lá»—i nÃ o
+        // Hoàn tác phiên giao dịch nếu có bất kỳ lỗi nào.
         await session.abortTransaction();
         console.error(err);
 
-        // PhÃ¡t hiá»‡n lá»—i unique constraint (duplicate)
+        // Phát hiện lỗi trùng dữ liệu duy nhất.
         if (err.code === 11000) {
-            req.session.error = "Lá»‹ch nÃ y Ä‘Ã£ bá»‹ xung Ä‘á»™t! CÃ³ thá»ƒ do nhiá»u ngÆ°á»i Ä‘Äƒng kÃ½ cÃ¹ng lÃºc. Vui lÃ²ng thá»­ láº¡i.";
+            req.session.error = "Lịch này đã bị xung đột! Có thể do nhiều người đăng ký cùng lúc. Vui lòng thử lại.";
         } else {
-            req.session.error = "Lá»—i server: " + err.message;
+            req.session.error = "Lỗi server: " + err.message;
         }
         res.redirect(req.get('referer') || '/tkb/dangky');
     } finally {
-        // âš ï¸ FIX: LuÃ´n luÃ´n close session sau khi hoÃ n thÃ nh
+        // Luôn đóng phiên làm việc sau khi hoàn thành.
         await session.endSession();
     }
 });
 
-// API kiá»ƒm tra danh sÃ¡ch phÃ²ng báº­n Ä‘á»ƒ khÃ³a á»Ÿ giao diá»‡n
+// API kiểm tra danh sách phòng bận để khóa ở giao diện
 router.get('/api/check-phong-ban', async (req, res) => {
     try {
         const { tuan, thu, tietBD, tietKT, lopHocID } = req.query;
-        // Náº¿u thiáº¿u thÃ´ng tin thÃ¬ tráº£ vá» máº£ng rá»—ng (khÃ´ng khÃ³a phÃ²ng nÃ o)
+        // Nếu thiếu thông tin thì trả về mảng rỗng (không khóa phòng nào)
         if (!tuan || !thu || !tietBD || !tietKT || !lopHocID) {
             return res.json([]);
         }
@@ -1030,12 +1031,12 @@ router.get('/api/check-phong-ban', async (req, res) => {
     }
 });
 
-// API tÃ¬m danh sÃ¡ch phÃ²ng há»c Ä‘ang trá»‘ng
+// API tìm danh sách phòng học đang trống
 router.get('/api/room-status', async (req, res) => {
     try {
         const user = req.session.user;
         if (!user || user.QuyenHan === 'sinhvien') {
-            return res.status(403).json({ message: 'Khong co quyen kiem tra phong dang ky.' });
+            return res.status(403).json({ message: 'Không có quyền kiểm tra phòng đăng ký.' });
         }
 
         const { tuan, thu, tietBD, tietKT, lopHocID } = req.query;
@@ -1074,7 +1075,7 @@ router.get('/api/room-status', async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Loi may chu khi kiem tra phong.' });
+        res.status(500).json({ message: 'Lỗi máy chủ khi kiểm tra phòng.' });
     }
 });
 
@@ -1083,10 +1084,10 @@ router.get('/api/check-available-rooms', async (req, res) => {
         const { tuan, thu, tietBD, tietKT, lopHocID } = req.query;
 
         if (!tuan || !thu || !tietBD || !tietKT || !lopHocID) {
-            return res.status(400).json({ message: "Thiáº¿u tham sá»‘ truy váº¥n" });
+            return res.status(400).json({ message: "Thiếu tham số truy vấn" });
         }
 
-        // BÆ°á»›c 1 & 2: TÃ¬m ngÃ y há»c vÃ  cÃ¡c lá»‹ch báº­n giao thoa tiáº¿t há»c
+        // Bước 1 & 2: Tìm ngày học và các lịch bận giao thoa tiết học
         const ngayHoc = await tinhNgayHoc(parseInt(tuan), thu, lopHocID);
         const busyTKB = await TKB.find({
             Tuan: parseInt(tuan),
@@ -1094,9 +1095,9 @@ router.get('/api/check-available-rooms', async (req, res) => {
             NgayHoc: ngayHoc,
             TrangThai: 'da-duyet',
             ...timeOverlap(parseInt(tietBD), parseInt(tietKT))
-        }).distinct('PhongHoc'); // BÆ°á»›c 3: Láº¥y danh sÃ¡ch ID phÃ²ng bá»‹ chiáº¿m
+        }).distinct('PhongHoc'); // Bước 3: Lấy danh sách ID phòng bị chiếm
 
-        // BÆ°á»›c 4: Láº¥y phÃ²ng khÃ´ng náº±m trong danh sÃ¡ch báº­n vÃ  khÃ´ng báº£o trÃ¬
+        // Bước 4: Lấy phòng không nằm trong danh sách bận và không bảo trì
         const availableRooms = await PhongHoc.find({
             _id: { $nin: busyTKB },
             KhoaThuCong: false
@@ -1105,7 +1106,7 @@ router.get('/api/check-available-rooms', async (req, res) => {
         res.json(availableRooms);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Lá»—i mÃ¡y chá»§ khi kiá»ƒm tra phÃ²ng" });
+        res.status(500).json({ message: "Lỗi máy chủ khi kiểm tra phòng." });
     }
 });
 
@@ -1223,7 +1224,7 @@ router.post('/tu-choi-huy/:id', async (req, res) => {
 });
 
 router.post('/xep-tu-dong', async (req, res) => {
-    req.session.error = 'Chá»©c nÄƒng nÃ y Ä‘Ã£ Ä‘á»•i sang tá»± Ä‘á»™ng phÃ¢n bá»• theo tá»•ng sá»‘ tiáº¿t cá»§a mÃ´n. Báº¡n hÃ£y vÃ o trang táº¡o thá»i khÃ³a biá»ƒu Ä‘á»ƒ há»‡ thá»‘ng sinh Ä‘á»§ cÃ¡c buá»•i há»c cho mÃ´n.';
+    req.session.error = 'Chức năng xếp lịch tự động đang được phát triển, sẽ sớm ra mắt trong thời gian tới. Mong bạn thông cảm và quay lại sau nhé!';
     res.redirect('/tkb/them');
 });
 
@@ -1231,7 +1232,7 @@ router.get('/danhsach', async (req, res) => {
     try {
         const { weeks, currentWeek, realCurrentWeek } = await calculateWeeksData(req.query.tuan);
 
-        // Lá»c danh sÃ¡ch Ä‘Äƒng kÃ½ theo tuáº§n Ä‘Æ°á»£c chá»n
+        // Lọc danh sách đăng ký theo tuần được chọn
         const dsLich = await TKB.find({ Tuan: currentWeek })
             .populate('MonHoc')
             .populate('GiangVien')
@@ -1240,59 +1241,59 @@ router.get('/danhsach', async (req, res) => {
             .sort({ NgayDangKy: -1 });
 
         res.render('tkb_danhsach', {
-            title: 'Quáº£n lÃ½ danh sÃ¡ch Ä‘Äƒng kÃ½',
+            title: 'Quản lý danh sách đăng ký',
             dstkb: dsLich,
             weeks,
             currentWeek,
             realCurrentWeek
         });
     } catch (err) {
-        res.status(500).send("Lá»—i rá»“i!");
+        res.status(500).send("Lỗi máy chủ!");
     }
 });
 
-// Trong hÃ m render trang danh sÃ¡ch lá»‹ch há»c
+// Trong hàm render trang danh sách lịch học
 router.get('/danhsachcho', async (req, res) => {
     try {
-        // Chá»‰ láº¥y nhá»¯ng cÃ¡i ÄANG CHá»œ Ä‘á»ƒ duyá»‡t
+        // Chỉ lấy những cái ĐANG CHỜ để duyệt
         const ds = await TKB.find({ TrangThai: 'cho-duyet' })
             .populate('MonHoc LopHoc GiangVien PhongHoc');
-        res.render('tkb_duyet', { dstkb: ds, title: 'PhÃª duyá»‡t lá»‹ch há»c' });
+        res.render('tkb_duyet', { dstkb: ds, title: 'Phê duyệt lịch học' });
     } catch (err) {
-        res.status(500).send("Lá»—i: " + err);
+        res.status(500).send("Lỗi: " + err);
     }
 });
 
-// Route xá»­ lÃ½ duyá»‡t lá»‹ch há»c
+// Route xử lý duyệt lịch học
 router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
-    // âš ï¸ FIX: Sá»­ dá»¥ng transaction Ä‘á»ƒ trÃ¡nh race condition khi duyá»‡t
+    // Dùng phiên giao dịch để tránh nhiều yêu cầu duyệt làm trùng lịch.
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        // 1. TÃ¬m thÃ´ng tin cÃ¡i lá»‹ch Ä‘ang Ä‘á»‹nh duyá»‡t (populate Ä‘á»ƒ táº¡o ná»™i dung thÃ´ng bÃ¡o)
+        // 1. Tìm thông tin cái lịch đang định duyệt (populate để tạo nội dung thông báo)
         const lichSapDuyet = await TKB.findById(req.params.id).populate('MonHoc LopHoc').session(session);
 
         if (!lichSapDuyet) {
             await session.abortTransaction();
-            return res.status(404).json({ success: false, message: 'KhÃ´ng tÃ¬m tháº¥y lá»‹ch chá» duyá»‡t.' });
+            return res.status(404).json({ success: false, message: 'Không tìm thấy lịch chờ duyệt.' });
         }
 
-        // âš ï¸ FIX: Náº¿u Ä‘Ã£ duyá»‡t rá»“i, khÃ´ng duyá»‡t láº¡i
+        // Nếu lịch đã được duyệt thì không duyệt lại.
         if (lichSapDuyet.TrangThai === 'da-duyet') {
             await session.abortTransaction();
-            return res.json({ success: false, message: "Lá»‹ch nÃ y Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t trÆ°á»›c Ä‘Ã³ rá»“i." });
+            return res.json({ success: false, message: "Lịch này đã được duyệt trước đó rồi." });
         }
         const ngayHocDuyet = lichSapDuyet.NgayHoc || await tinhNgayHoc(lichSapDuyet.Tuan, lichSapDuyet.Thu, lichSapDuyet.LopHoc._id);
         if (laNgayDaQua(ngayHocDuyet)) {
             await session.abortTransaction();
-            return res.json({ success: false, message: 'KhÃ´ng thá»ƒ duyá»‡t lá»‹ch cho tuáº§n cÅ© hoáº·c ngÃ y Ä‘Ã£ qua.' });
+            return res.json({ success: false, message: 'Không thể duyệt lịch cho tuần hiện tại hoặc ngày đã qua.' });
         }
         await kiemTraPhongDangHoatDong(lichSapDuyet.PhongHoc, session);
         await kiemTraMonHocCuaLop(lichSapDuyet.LopHoc._id, lichSapDuyet.MonHoc._id, session);
 
-        // 2. Kiá»ƒm tra xem cÃ³ lá»‹ch nÃ o KHÃC Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t mÃ  trÃ¹ng Thá»©, Tiáº¿t, PhÃ²ng khÃ´ng
-        // âš ï¸ FIX: Re-check xung Ä‘á»™t BÃŠN TRONG transaction
+        // 2. Kiểm tra xem có lịch nào KHÁC đã được duyệt mà trùng Thứ, Tiết, Phòng không
+        // Kiểm tra lại xung đột bên trong phiên giao dịch.
         const trungLich = await TKB.findOne({
             _id: { $ne: req.params.id },
             TrangThai: 'da-duyet',
@@ -1307,17 +1308,16 @@ router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
 
         if (trungLich) {
             await session.abortTransaction();
-            return res.json({ success: false, message: "PhÃ²ng nÃ y Ä‘Ã£ cÃ³ lá»‹ch há»c vÃ o thá»i gian nÃ y rá»“i." });
+            return res.json({ success: false, message: "Phòng này đã có lịch học vào thời gian này rồi." });
         }
 
-        // âš ï¸ FIX: Kiá»ƒm tra giáº£ng viÃªn cÅ©ng khÃ´ng Ä‘Æ°á»£c dáº¡y 2 lá»›p cÃ¹ng lÃºc
+        // Kiểm tra giảng viên không được dạy 2 lớp cùng lúc.
         const gvConflict = await TKB.findOne({
             _id: { $ne: req.params.id },
             TrangThai: 'da-duyet',
             GiangVien: lichSapDuyet.GiangVien,
             Thu: lichSapDuyet.Thu,
             Tuan: lichSapDuyet.Tuan,
-            NgayHoc: ngayHocDuyet,
             $or: [
                 { TietBatDau: { $lte: lichSapDuyet.TietKetThuc }, TietKetThuc: { $gte: lichSapDuyet.TietBatDau } }
             ]
@@ -1325,92 +1325,94 @@ router.post('/da-duyet/:id', requireAdmin, async (req, res) => {
 
         if (gvConflict) {
             await session.abortTransaction();
-            return res.json({ success: false, message: "Giáº£ng viÃªn nÃ y Ä‘Ã£ cÃ³ lá»‹ch khÃ¡c vÃ o thá»i gian nÃ y rá»“i." });
+            return res.json({ success: false, message: "Giảng viên này đã có lịch khác vào thời gian này rồi." });
         }
 
-        // 3. Cáº­p nháº­t tráº¡ng thÃ¡i BÃŠN TRONG transaction
+        // 3. Cập nhật trạng thái bên trong phiên giao dịch.
+        const caHocTuDong = lichSapDuyet.TietBatDau <= 5 ? 'Sáng' : (lichSapDuyet.TietBatDau <= 10 ? 'Chiều' : 'Tối');
         await TKB.findByIdAndUpdate(req.params.id, {
             TrangThai: 'da-duyet',
             NgayHoc: ngayHocDuyet,
+            CaHoc: caHocTuDong,
             NgayDuyet: new Date()
         }, { session });
 
         await session.commitTransaction();
 
-        // âš ï¸ NOTE: CÃ¡c thao tÃ¡c gá»­i thÃ´ng bÃ¡o (DB + Web Push) cÃ³ thá»ƒ náº±m ngoÃ i transaction
-        // vÃ¬ chÃºng khÃ´ng áº£nh hÆ°á»Ÿng Ä‘áº¿n tÃ­nh toÃ n váº¹n dá»¯ liá»‡u lá»‹ch há»c
+        // Lưu ý: thao tác gửi thông báo trong hệ thống và thông báo đẩy có thể nằm ngoài phiên giao dịch
+        // vì chúng không ảnh hưởng đến tính toàn vẹn dữ liệu lịch học.
 
         const thongBaoGV = new ThongBao({
             IDNguoiNhan: lichSapDuyet.GiangVien,
-            TieuDe: "Báº¡n cÃ³ lá»‹ch má»›i Ä‘Æ°á»£c duyá»‡t!",
-            NoiDung: "MÃ´n " + (lichSapDuyet.MonHoc ? lichSapDuyet.MonHoc.TenMonHoc : 'MÃ´n há»c') + " lá»›p " + (lichSapDuyet.LopHoc ? lichSapDuyet.LopHoc.TenLop : 'Lá»›p há»c') + " Ä‘Ã£ sáºµn sÃ ng.",
+            TieuDe: "Bạn có lịch mới được duyệt!",
+            NoiDung: "Môn " + (lichSapDuyet.MonHoc ? lichSapDuyet.MonHoc.TenMonHoc : 'Môn học') + " lớp " + (lichSapDuyet.LopHoc ? lichSapDuyet.LopHoc.TenLop : 'Lớp học') + " đã sẵn sàng.",
             LienKet: "/tkb"
         });
         await thongBaoGV.save();
 
-        // B. Gá»­i thÃ´ng bÃ¡o trong Database (in-app) cho tá»«ng Sinh viÃªn trong lá»›p
+        // B. Gửi thông báo trong cơ sở dữ liệu cho từng sinh viên trong lớp.
         const dsSinhVien = await SinhVien.find({ IDLop: lichSapDuyet.LopHoc._id });
         if (dsSinhVien && dsSinhVien.length > 0) {
             for (let i = 0; i < dsSinhVien.length; i++) {
                 const thongBaoSV = new ThongBao({
                     IDNguoiNhan: dsSinhVien[i].IDTaiKhoan,
-                    TieuDe: "ThÃ´ng bÃ¡o: Lá»‹ch há»c má»›i",
-                    NoiDung: "Lá»›p báº¡n vá»«a cÃ³ lá»‹ch má»›i cho mÃ´n " + (lichSapDuyet.MonHoc ? lichSapDuyet.MonHoc.TenMonHoc : 'MÃ´n há»c'),
+                    TieuDe: "Thông báo: Lịch học mới",
+                    NoiDung: "Lớp bạn vừa có lịch mới cho môn " + (lichSapDuyet.MonHoc ? lichSapDuyet.MonHoc.TenMonHoc : 'Môn học'),
                     LienKet: "/tkb"
                 });
                 await thongBaoSV.save();
             }
         }
 
-        // C. Gá»­i Web Push Notification (Logic tá»« nhÃ¡nh Incoming)
+        // C. Gửi thông báo đẩy trên trình duyệt.
         await guiThongBaoLichHoc('duyet-moi', req.params.id);
 
-        res.json({ success: true, message: "ÄÃ£ duyá»‡t thÃ nh cÃ´ng vÃ  gá»­i thÃ´ng bÃ¡o cho má»i ngÆ°á»i!" });
+        res.json({ success: true, message: "Đã duyệt thành công và gửi thông báo cho mọi người!" });
     } catch (err) {
         await session.abortTransaction();
         console.error(err);
-        res.status(500).json({ success: false, message: "Lá»—i : " + err.message });
+        res.status(500).json({ success: false, message: "Lỗi duyệt: " + err.message });
     } finally {
         await session.endSession();
     }
 });
 
-// Route xá»­ lÃ½ Tá»ª CHá»I duyá»‡t lá»‹ch há»c
+// Route xử lý TỪ CHỐI duyệt lịch học
 router.post('/tu-choi/:id', requireAdmin, async (req, res) => {
-    // âš ï¸ FIX: Sá»­ dá»¥ng transaction Ä‘á»ƒ Ä‘áº£m báº£o consistency
+    // Dùng phiên giao dịch để đảm bảo dữ liệu nhất quán khi từ chối lịch.
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        // 1. Chá»‰ cáº­p nháº­t tráº¡ng thÃ¡i thÃ nh 'tu-choi' BÃŠN TRONG transaction
+        // 1. Chỉ cập nhật trạng thái thành 'tu-choi' bên trong phiên giao dịch.
         const lichBiTuChoi = await TKB.findByIdAndUpdate(req.params.id, {
             TrangThai: 'tu-choi'
         }, { session });
 
         if (!lichBiTuChoi) {
             await session.abortTransaction();
-            return res.json({ success: false, message: 'KhÃ´ng tÃ¬m tháº¥y lá»‹ch nÃ y.' });
+            return res.json({ success: false, message: 'Không tìm thấy lịch này.' });
         }
 
-        // âš ï¸ FIX: Giáº£i phÃ³ng tráº¡ng thÃ¡i phÃ²ng há»c vá» 1 (Sáºµn sÃ ng) cÅ©ng trong transaction
+        // Giải phóng trạng thái phòng học về 1 (Sẵn sàng) trong cùng phiên giao dịch.
         await session.commitTransaction();
 
-        // âš ï¸ NOTE: Gá»­i thÃ´ng bÃ¡o cÃ³ thá»ƒ ngoÃ i transaction vÃ¬ khÃ´ng áº£nh hÆ°á»Ÿng Ä‘áº¿n dá»¯ liá»‡u chÃ­nh
+        // Gửi thông báo ngoài phiên giao dịch vì không ảnh hưởng đến dữ liệu chính.
 
-        // 2. Gá»­i thÃ´ng bÃ¡o Database cho Giáº£ng viÃªn Ä‘á»ƒ há» biáº¿t vÃ  Ä‘Äƒng kÃ½ láº¡i
+        // 2. Gửi thông báo trong cơ sở dữ liệu cho giảng viên để họ biết và đăng ký lại.
         const thongBaoReject = new ThongBao({
             IDNguoiNhan: lichBiTuChoi.GiangVien,
-            TieuDe: "Lá»‹ch Ä‘Äƒng kÃ½ khÃ´ng Ä‘Æ°á»£c duyá»‡t",
-            NoiDung: `Lá»‹ch Ä‘Äƒng kÃ½ mÃ´n há»c cá»§a báº¡n Ä‘Ã£ bá»‹ tá»« chá»‘i. Vui lÃ²ng kiá»ƒm tra láº¡i sÆ¡ Ä‘á»“ phÃ²ng há»c vÃ  Ä‘Äƒng kÃ½ khung giá» khÃ¡c nhÃ©.`,
+            TieuDe: "Lịch đăng ký không được duyệt",
+            NoiDung: `Lịch đăng ký môn học của bạn đã bị từ chối. Vui lòng kiểm tra lại số phòng học và đăng ký khung giờ khác.`,
             LienKet: "/tkb/dangky"
         });
         await thongBaoReject.save();
 
-        res.json({ success: true, message: "ÄÃ£ tá»« chá»‘i vÃ  giáº£i phÃ³ng phÃ²ng há»c!" });
+        res.json({ success: true, message: "Đã từ chối và giải phóng phòng học!" });
     } catch (err) {
         await session.abortTransaction();
         console.error(err);
-        res.status(500).json({ success: false, message: "Lá»—i rá»“i: " + err.message });
+        res.status(500).json({ success: false, message: "Lỗi từ chối: " + err.message });
     } finally {
         await session.endSession();
     }
@@ -1419,18 +1421,18 @@ router.post('/tu-choi/:id', requireAdmin, async (req, res) => {
 router.get('/tkb-admin', requireAdmin, async (req, res) => {
     try {
         const { weeks, currentWeek, realCurrentWeek } = await calculateWeeksData(req.query.tuan);
-        // 1. Láº¥y nguyÃªn liá»‡u: Táº¥t cáº£ phÃ²ng vÃ  lá»‹ch Ä‘Ã£ duyá»‡t
+        // 1. Lấy nguyên liệu: Tất cả phòng và lịch đã duyệt
         const [dsphong, dsLich] = await Promise.all([
             PhongHoc.find().sort({ TenPhong: 1 }),
             TKB.find({ TrangThai: 'da-duyet', Tuan: currentWeek })
                 .populate('MonHoc GiangVien LopHoc PhongHoc')
         ]);
 
-        const cacThu = ['Thá»© 2', 'Thá»© 3', 'Thá»© 4', 'Thá»© 5', 'Thá»© 6', 'Thá»© 7', 'Chá»§ Nháº­t'];
-        const cacBuoi = ['SÃ¡ng', 'Chiá»u', 'Tá»‘i'];
+        const cacThu = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+        const cacBuoi = ['Sáng', 'Chiều', 'Tối'];
 
         res.render('tkb', {
-            title: 'Há»‡ thá»‘ng Quáº£n lÃ½ Tá»•ng quÃ¡t - Edu KT',
+            title: 'Hệ thống Quản lý Tổng quát - Edu KT',
             dsphong,
             dsTKB: dsLich,
             currentWeek,
@@ -1442,13 +1444,13 @@ router.get('/tkb-admin', requireAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lá»—i táº£i trang tkb-admin rá»“i TÃ¢m áº¡!");
+        res.status(500).send("Lỗi tải trang tkb-admin!");
     }
 });
 
 router.get('/export-dangky', requireAdmin, async (req, res) => {
     try {
-        // Láº¥y táº¥t cáº£ lá»‹ch Ä‘Äƒng kÃ½, Æ°u tiÃªn nhá»¯ng cÃ¡i má»›i nháº¥t lÃªn Ä‘áº§u Ä‘á»ƒ xem ngÃ y giá» cho dá»…
+        // Lấy tất cả lịch đăng ký, ưu tiên những cái mới nhất lên đầu để xem ngày giờ cho dễ
         const dsLich = await TKB.find()
             .populate('MonHoc')
             .populate('GiangVien')
@@ -1459,16 +1461,16 @@ router.get('/export-dangky', requireAdmin, async (req, res) => {
 
         const rows = dsLich.map((item, index) => ({
             'STT': index + 1,
-            'NgÃ y giá» Ä‘Äƒng kÃ½': item.NgayDangKy ? new Date(item.NgayDangKy).toLocaleString('vi-VN') : 'KhÃ´ng rÃµ',
-            'MÃ´n há»c': item.MonHoc ? item.MonHoc.TenMonHoc : 'N/A',
-            'Giáº£ng viÃªn': item.GiangVien ? item.GiangVien.HoVaTen : 'N/A',
-            'Lá»›p há»c': item.LopHoc ? item.LopHoc.TenLop : 'N/A',
-            'PhÃ²ng há»c': item.PhongHoc ? item.PhongHoc.TenPhong : 'N/A',
-            'NgÃ y há»c': item.NgayHoc ? new Date(item.NgayHoc).toLocaleDateString('vi-VN') : 'KhÃ´ng rÃµ',
-            'Thá»©': item.Thu,
-            'Tiáº¿t há»c': `${item.TietBatDau} - ${item.TietKetThuc}`,
-            'NgÃ y duyá»‡t': item.NgayDuyet ? new Date(item.NgayDuyet).toLocaleString('vi-VN') : '',
-            'Tráº¡ng thÃ¡i': item.TrangThai === 'cho-duyet' ? 'Chá» duyá»‡t' : (item.TrangThai === 'da-duyet' ? 'ÄÃ£ duyá»‡t' : 'Tá»« chá»‘i')
+            'Ngày giờ đăng ký': item.NgayDangKy ? new Date(item.NgayDangKy).toLocaleString('vi-VN') : 'Không rõ',
+            'Môn học': item.MonHoc ? item.MonHoc.TenMonHoc : 'N/A',
+            'Giảng viên': item.GiangVien ? item.GiangVien.HoVaTen : 'N/A',
+            'Lớp học': item.LopHoc ? item.LopHoc.TenLop : 'N/A',
+            'Phòng học': item.PhongHoc ? item.PhongHoc.TenPhong : 'N/A',
+            'Ngày học': item.NgayHoc ? new Date(item.NgayHoc).toLocaleDateString('vi-VN') : 'Không rõ',
+            'Thứ': item.Thu,
+            'Tiết học': `${item.TietBatDau} - ${item.TietKetThuc}`,
+            'Ngày duyệt': item.NgayDuyet ? new Date(item.NgayDuyet).toLocaleString('vi-VN') : '',
+            'Trạng thái': item.TrangThai === 'cho-duyet' ? 'Chờ duyệt' : (item.TrangThai === 'da-duyet' ? 'Đã duyệt' : 'Từ chối')
         }));
 
         const workbook = buildWorkbook('DanhSachDangKy', rows);
@@ -1476,7 +1478,7 @@ router.get('/export-dangky', requireAdmin, async (req, res) => {
         sendWorkbook(res, workbook, fileName);
     } catch (err) {
         console.error(err);
-        res.status(500).send("Lá»—i xuáº¥t Excel: " + err.message);
+        res.status(500).send("Lỗi xuất Excel: " + err.message);
     }
 });
 

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Schema môn học: TongSoTiet dùng để hệ thống tự phân bổ đủ số buổi học.
 const monHocSchema = new mongoose.Schema({
     TenMonHoc: { type: String, required: true },
     MaMonHoc: { type: String, required: true, unique: true },

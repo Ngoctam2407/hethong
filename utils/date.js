@@ -1,6 +1,6 @@
-// utils/dateUtils.js
+// Các hàm tiện ích xử lý tuần học và ngày học theo mốc Thứ 2.
 function tinhNgayTrongTuan(ngayBatDau, soThu, tuanLech = 0) {
-    // soThu: 1 = Thứ 2, 2 = Thứ 3, ..., 7 = Chủ nhật
+    // soThu: 1 = Thứ 2, 2 = Thứ 3, ..., 7 = Chủ nhật.
     const ngayDauTuan = new Date(ngayBatDau);
     ngayDauTuan.setDate(ngayBatDau.getDate() + (tuanLech * 7));
     const ngayThu = new Date(ngayDauTuan);
@@ -14,6 +14,7 @@ function layTuanHienTai(ngayBatDau, ngayHienTai = new Date()) {
     return Math.floor(diffDays / 7);
 }
 
+// Đưa một ngày bất kỳ về Thứ 2 đầu tuần để làm mốc tính lịch.
 function duaVeThuHai(ngayGoc) {
     const ngay = new Date(ngayGoc);
     if (Number.isNaN(ngay.getTime())) {
@@ -26,6 +27,7 @@ function duaVeThuHai(ngayGoc) {
     return ngay;
 }
 
+// Tạo danh sách tuần học cho bộ lọc tuần trên giao diện.
 function taoDuLieuTuanHoc(ngayBatDauNamHoc, selectedTuan, tongSoTuan = 15) {
     let mocBatDau = duaVeThuHai(ngayBatDauNamHoc || new Date());
     if (!mocBatDau) {
@@ -49,7 +51,7 @@ function taoDuLieuTuanHoc(ngayBatDauNamHoc, selectedTuan, tongSoTuan = 15) {
 
         weeks.push({
             number: i + 1,
-            label: `Tuan ${i + 1} (${wStart.getDate().toString().padStart(2, '0')}/${(wStart.getMonth() + 1).toString().padStart(2, '0')} - ${wEnd.getDate().toString().padStart(2, '0')}/${(wEnd.getMonth() + 1).toString().padStart(2, '0')})`
+            label: `Tuần ${i + 1} (${wStart.getDate().toString().padStart(2, '0')}/${(wStart.getMonth() + 1).toString().padStart(2, '0')} - ${wEnd.getDate().toString().padStart(2, '0')}/${(wEnd.getMonth() + 1).toString().padStart(2, '0')})`
         });
     }
 

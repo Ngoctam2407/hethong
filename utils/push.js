@@ -4,6 +4,7 @@ const vapidPublicKey = process.env.WEB_PUSH_PUBLIC_KEY || 'BE5jfyzQTrb0w7VViu_7a
 const vapidPrivateKey = process.env.WEB_PUSH_PRIVATE_KEY || 'rCck0qtpFhvxUsa6EnNwhdRt-wd543caOyp3X_98M3M';
 const vapidContact = process.env.WEB_PUSH_CONTACT || 'mailto:admin@kt.edu.vn';
 
+// VAPID key dùng để trình duyệt xác thực nguồn gửi Web Push.
 webpush.setVapidDetails(vapidContact, vapidPublicKey, vapidPrivateKey);
 
 function getPublicKey() {
@@ -26,16 +27,18 @@ function normalizeSubscription(subscription) {
     };
 }
 
+// Chuẩn hóa payload trước khi gửi để mọi thông báo đều có title, body, icon và URL.
 function serializePayload(payload) {
     return JSON.stringify({
-        title: payload.title || 'Thong bao moi',
-        body: payload.body || 'Ban co mot thong bao moi tu he thong.',
+        title: payload.title || 'Thông báo mới',
+        body: payload.body || 'Bạn có một thông báo mới từ hệ thống.',
         url: payload.url || '/',
         icon: payload.icon || '/images/logo-kt.png',
         badge: payload.badge || '/images/logo-kt.png'
     });
 }
 
+// Gửi thông báo đẩy đến một endpoint đã lưu trong tài khoản người dùng.
 async function sendNotification(subscription, payload) {
     return webpush.sendNotification(subscription, serializePayload(payload));
 }

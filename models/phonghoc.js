@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 
+// Schema phòng học: KhoaThuCong dùng để khóa phòng khi sửa chữa hoặc bảo trì.
 var phongHocSchema = new mongoose.Schema({
 
     TenPhong: {

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Schema giảng viên: liên kết tài khoản đăng nhập với mã giảng viên và chuyên môn.
 const giangVienSchema = new mongoose.Schema({
     IDTaiKhoan: {
         type: mongoose.Schema.Types.ObjectId,
@@ -12,7 +13,7 @@ const giangVienSchema = new mongoose.Schema({
         required: true,
         enum: {
             values: ['Thạc sĩ', 'Tiến sĩ', 'Kỹ sư', 'Cử nhân', 'Giảng viên'],
-            message: '{VALUE} khong nam trong danh sach hoc vi cho phep.'
+            message: '{VALUE} không nằm trong danh sách học vị cho phép.'
         },
         default: 'Giảng viên'
     },

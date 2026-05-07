@@ -112,6 +112,18 @@
                                         id="adminDropdownMenu"
                                         style="border-radius: 18px; z-index: 1300; min-width: 360px; padding: 10px 0;">
                                         <li class="dropdown-header fw-bold text-secondary px-4 pt-2 pb-1"
+                                            style="font-size: 0.78rem; letter-spacing: 0.08em;">TỔNG QUAN</li>
+                                        <li>
+                                            <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/admin' ? 'active' : '' %>"
+                                                href="/admin">
+                                                <i class="fas fa-chart-pie text-primary me-2"></i> Báo cáo hệ thống
+                                                <div class="small text-muted ms-4">Dashboard vận hành trung tâm</div>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider my-1">
+                                        </li>
+                                        <li class="dropdown-header fw-bold text-secondary px-4 pt-2 pb-1"
                                             style="font-size: 0.78rem; letter-spacing: 0.08em;">QUẢN LÝ NGƯỜI DÙNG</li>
                                         <li>
                                             <a class="dropdown-item py-2 px-4 <%= duongDanHienTai === '/taikhoan' ? 'active' : '' %>"
@@ -346,14 +358,14 @@
                                                     });
                                                     notifItems.innerHTML = html;
                                                 } else {
-                                                    notifItems.innerHTML = '<li class="px-4 py-3 text-center text-muted small">Ban chua co thong bao nao moi</li>';
+                                                    notifItems.innerHTML = '<li class="px-4 py-3 text-center text-muted small">Bạn chưa có thông báo nào mới</li>';
                                                 }
                                             })
                                             .catch(function (err) {
-                                                console.error('Loi tai thong bao:', err);
+                                                console.error('Lỗi tải thông báo:', err);
                                                 var notifItems = document.getElementById('notif-items');
                                                 if (notifItems) {
-                                                    notifItems.innerHTML = '<li class="px-4 py-3 text-center text-danger small">Khong the tai thong bao</li>';
+                                                    notifItems.innerHTML = '<li class="px-4 py-3 text-center text-danger small">Không thể tải thông báo</li>';
                                                 }
                                             });
                                     }

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const MonHoc = require('../models/monhoc'); // Model mà chúng mình vừa bàn ở trên nè
+const MonHoc = require('../models/monhoc');
 var { requireAdmin } = require('./auth');
 const { upload, readRowsFromExcel, buildWorkbook, sendWorkbook } = require('../utils/excel');
 
@@ -14,27 +14,29 @@ function xuLyUploadExcel(req, res, next) {
     });
 }
 
+// Lấy giá trị từ file Excel theo tên cột, hỗ trợ cả trường hợp cột viết thường.
 function layGiaTriDong(dong, truong) {
     return dong[truong] || dong[truong.toLowerCase()] || '';
 }
 
 router.use(requireAdmin);
-// 1. Trang danh sách môn học
+// GET: Trang danh sách môn học.
 router.get('/', async (req, res) => {
     const dsMonHoc = await MonHoc.find();
     res.render('monhoc', { title: 'Quản lý môn học', dsMonHoc });
 });
 
+// POST: Import môn học từ Excel, tự cập nhật nếu trùng mã môn.
 router.post('/import', xuLyUploadExcel, async (req, res) => {
     try {
         if (!req.file) {
-            req.session.error = 'Ban can chon file Excel truoc khi import.';
+            req.session.error = 'Bạn cần chọn file Excel trước khi import.';
             return res.redirect('/monhoc');
         }
 
         const rows = readRowsFromExcel(req.file.buffer);
         if (!rows.length) {
-            req.session.error = 'File Excel khong co dong du lieu nao.';
+            req.session.error = 'File Excel không có dòng dữ liệu nào.';
             return res.redirect('/monhoc');
         }
 
@@ -66,15 +68,16 @@ router.post('/import', xuLyUploadExcel, async (req, res) => {
             }
         }
 
-        req.session.success = `Import mon hoc thanh cong: ${taoMoi} ban ghi moi, ${capNhat} ban ghi cap nhat.`;
+        req.session.success = `Import môn học thành công: ${taoMoi} bản ghi mới, ${capNhat} bản ghi cập nhật.`;
         res.redirect('/monhoc');
     } catch (err) {
         console.error(err);
-        req.session.error = 'Loi import mon hoc: ' + err.message;
+        req.session.error = 'Lỗi import môn học: ' + err.message;
         res.redirect('/monhoc');
     }
 });
 
+// GET: Xuất toàn bộ danh sách môn học ra file Excel.
 router.get('/export', async (req, res) => {
     try {
         const dsMonHoc = await MonHoc.find().sort({ MaMonHoc: 1 }).lean();
@@ -91,17 +94,17 @@ router.get('/export', async (req, res) => {
         sendWorkbook(res, workbook, 'monhoc.xlsx');
     } catch (err) {
         console.error(err);
-        req.session.error = 'Khong the export mon hoc: ' + err.message;
+        req.session.error = 'Không thể export môn học: ' + err.message;
         res.redirect('/monhoc');
     }
 });
 
-// 2. Trang thêm môn học
+// GET: Form thêm môn học.
 router.get('/them', (req, res) => {
     res.render('monhoc_them', { title: 'Thêm môn học mới' });
 });
 
-// 3. Xử lý thêm môn học mới
+// POST: Xử lý thêm môn học mới.
 router.post('/them', async (req, res) => {
     try {
         const { TenMonHoc, MaMonHoc, TongSoTiet, MoTa } = req.body;
@@ -113,7 +116,7 @@ router.post('/them', async (req, res) => {
     }
 });
 
-// 4. Trang sửa môn học
+// GET: Form sửa môn học.
 router.get('/sua/:id', async (req, res) => {
     try {
         const monhoc = await MonHoc.findById(req.params.id);
@@ -126,7 +129,7 @@ router.get('/sua/:id', async (req, res) => {
     }
 });
 
-// 5. Xử lý sửa môn học
+// POST: Xử lý sửa môn học.
 router.post('/sua/:id', async (req, res) => {
     try {
         const { TenMonHoc, MaMonHoc, TongSoTiet, MoTa } = req.body;
@@ -137,7 +140,7 @@ router.post('/sua/:id', async (req, res) => {
     }
 });
 
-// 6. Xóa môn học
+// GET: Xóa môn học.
 router.get('/xoa/:id', async (req, res) => {
     try {
         await MonHoc.findByIdAndDelete(req.params.id);
